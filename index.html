@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Gnome</title>
+	<meta charset="utf-8"/>
+	<link rel="stylesheet" href="css.css"/>
+	<link rel="stylesheet" href="dropdown.css"/>
+	<script src="https://unpkg.com/external-svg-loader@latest/svg-loader.min.js" async></script>
+	<script src="js/js.js" defer type="module"></script>
+</head>
+<body>
+	<section id="workarea">
+		<input id="search" type="text" placeholder="Type to search">
+		<div id="workspaces">
+			<canvas></canvas>
+			<canvas></canvas>
+		</div>
+		<div id="dash"><!--
+		--><img src="apps/org.gnome.Nautilus.svg"/><!--
+		--><img src="apps/org.gnome.Software.svg"/><!--
+		--><img src="apps/org.gnome.Settings.svg"/><!--
+		--><img src="img/actions/view-app-grid-symbolic.svg"/>
+		</div>
+	</section>
+	<ul id="panel">
+		<li>
+			<button id="activities">Activities</button>
+		</li>
+		<li>
+			<button>Thu Nov 25  2:15 AM</button>
+		</li>
+		<li>
+			<button><!--
+			 --><svg data-src="img/status/audio-volume-high-symbolic.svg"></svg>
+			</button>
+			<button id="system-status-area" class="dropdown"><!--
+			--><svg data-src="img/status/night-light-symbolic.svg"></svg><!--
+			--><svg data-src="img/status/network-wireless-signal-excellent-symbolic.svg"></svg><!--
+			--><svg data-src="img/status/network-vpn-symbolic.svg"></svg><!--
+			--><svg data-src="img/status/microphone-sensitivity-high-symbolic.svg"></svg><!--
+			--><svg data-src="img/status/battery-level-60-charging-symbolic.svg"></svg>
+			</button>
+		</li>
+	</ul>
+	<form id="audiodropdown" class="dropdown">
+		<div class="device">
+			<h1>System Sounds</h1>
+			<div class="job">
+				<div class="volume-slider">
+					<button></button>
+					<input type="range" min="1" max="100" value="40"/>
+				</div>
+			</div>
+		</div>
+		<div class="device">
+			<h1>Firefox</h1>
+			<div class="job">
+				<div class="media-player">
+					<img class="cover" src="img/placeholder.png"/>
+					<div>
+						<ul>
+							<li class="info">
+								<h2 class="title">Twitch - Streamer</h2>
+							</li>
+							<li class="controls">
+								<button class="play"></button>
+							</li>
+						</ul>
+					</div>
+				</div>
+				<div class="volume-slider">
+					<button></button>
+					<input type="range" min="1" max="100" value="50"/>
+				</div>
+			</div>
+			<div class="job">
+				<div class="media-player">
+					<img class="cover" src="img/placeholder.png"/>
+					<div>
+						<ul>
+							<li class="info">
+								<h2 class="title">Youtube video with a long title...</h2>
+								<h3 class="artist">Creator</h3>
+							</li>
+							<li class="controls">
+								<button class="prev"></button>
+								<button class="play"></button>
+								<button class="next"></button>
+							</li>
+						</ul>
+					</div>
+				</div>
+				<div class="volume-slider">
+					<button></button>
+					<input type="range" min="1" max="100" value="40"/>
+				</div>
+			</div>
+		</div>
+		<div class="device">
+			<h1>Spotify</h1>
+			<div class="job">
+				<div class="media-player">
+					<img class="cover" src="albums/godspeed.webp"/>
+					<div>	
+						<ul>
+							<li class="info">
+								<h2 class="title">Long song</h2>
+								<h3>Artist With Long Name</h3>
+							</li>
+							<li class="controls">
+								<button class="prev"></button>
+								<button class="play"></button>
+								<button class="next"></button>
+							</li>
+						</ul>
+					</div>
+				</div>
+				<div class="volume-slider">
+					<button></button>
+					<input type="range" min="1" max="100" value="40"/>
+				</div>
+			</div>
+		</div>
+	</form>
+</body>
+</html>
