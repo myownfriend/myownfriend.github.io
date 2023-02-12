@@ -3,8 +3,12 @@ import {createThumbnail, srgb_linRGB, linRGB_OkLab, linRGB_sRGB, OKLab_linRGB} f
 
 export class Scene {
 	constructor() {
-		this.primaryColor = 0;
-		this.lights = [];
+		this.paintObjects = [
+			{
+				cvs  : new OffscreenCanvas(75, 75),
+				node : document.documentElement
+			}
+		];
 		this.css = new CSSStyleSheet();
 		this.wallpaper = new Image();
 
@@ -41,55 +45,49 @@ export class Scene {
 		}, {signal});
 
 		analyst.onmessage = (e) => {			
-			scn.lights     = e.data.lights;
+			scn.lights = e.data.lights;
+			//scn.brightness = e.data.lum;
+
+			//let darkModeOverview = 
+			/*
+			stageBrightness  = scn.getSurfaceBrightness(document.documentElement);
+			let
+				targetBrightness = stageBrightness;
+		
+			
+			if (scene.brightness < stageBrightness || scene.saturation < stageBrightness) 
+				targetBrightness = scn.brightness;
+			*/
 			this.refresh();
 		};
 	}
 
 	refresh() {
 		this.color_scheme = (window.matchMedia('(prefers-color-scheme: dark)').matches) ? "dark" : "light";
-		this.drawLights(document.documentElement);
+		for(const object of this.paintObjects)
+			this.drawLights(object);
 	}
-	
-	drawLights(element) {
+
+	drawLights(obj) {
 		const
-			cvs    = new OffscreenCanvas(75, 50),
-			ctx    = cvs.getContext('2d'),
-			input  = srgb_linRGB(Number(window.getComputedStyle(element).getPropertyValue("background-color").split(', ')[1]) / 255),
-			lights = [];
-		
-		for (const light of this.lights) {
-			const rgb = OKLab_linRGB([linRGB_OkLab([input,input,input])[0], light.a, light.b])
-			lights.push({
-				r : rgb[0],
-				g : rgb[1],
-				b : rgb[2],
-				x : light.x,
-				y : light.y
-			});
-		}
-		console.log(lights);
+			cvs = obj.cvs,
+			ctx = cvs.getContext('2d'),
+			L   = this.getSurfaceBrightness(obj.node);
 
 		for(let y = 0; y < cvs.height; y++) {
 			const fy = y / cvs.height;
 			for(let x = 0; x < cvs.width; x++) {
 				const fx = x / cvs.width;
-				let	r = 0, g = 0, b = 0, w = 0;
-				for (const light of lights) {
+				let	a = 0, b = 0, w = 0;
+				for (const light of this.lights) {
 					const distance = Math.sqrt(((light.x - fx) /* * 0.33*/) ** 2 + ((light.y - fy) /* * 0.5*/) ** 2);
-					r += distance * light.r;
-					g += distance * light.g;
+					a += distance * light.a;
 					b += distance * light.b;
 					w += distance;
-					//console.log(distance);
 				}
-				r = linRGB_sRGB(r / w);
-				g = linRGB_sRGB(g / w);
-				b = linRGB_sRGB(b / w);
 
-				//console.log([r * 255,g * 255, b * 255]);
-
-				ctx.fillStyle = `rgb(${r * 255} ${g * 255} ${b * 255})`;
+				const rgb = linRGB_sRGB(OKLab_linRGB([L , a / w, b / w]));
+				ctx.fillStyle = `rgb(${rgb[0] * 255} ${rgb[1] * 255} ${rgb[2] * 255})`;
 				ctx.fillRect(x, y, 1, 1);
 			}
 		}
@@ -100,5 +98,11 @@ export class Scene {
 			this.url = URL.createObjectURL(blob);
 			this.css.replaceSync(`:root {background-image: url(${this.url})`);
 		});
+	}
+
+	getSurfaceBrightness(element){
+		let input = Number(window.getComputedStyle(element).getPropertyValue("background-color").split(', ')[1]) / 255;
+
+		return linRGB_OkLab(srgb_linRGB([input,input,input]))[0];
 	}
 }

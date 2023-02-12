@@ -8,6 +8,8 @@ document.getElementById('activities').addEventListener('click', () => {
 	document.body.classList.toggle('overview');
 });
 
+
+
 monitor.workspaces[0].addEventListener('dragover', (ev) => {
 	ev.preventDefault();
 });

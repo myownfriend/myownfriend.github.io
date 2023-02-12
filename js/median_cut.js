@@ -27,11 +27,12 @@ onmessage = (e) => {
                 for(let x = 0; x < line; x += 4) {
                     const
                         xo = yo + x,
-                        r = srgb_linRGB(data[xo + 0] / 255),// * 255,
-                    	g = srgb_linRGB(data[xo + 1] / 255),// * 255,
-                        b = srgb_linRGB(data[xo + 2] / 255);// * 255;
+                        r = data[xo + 0] / 255,
+                    	g = data[xo + 1] / 255,
+                        b = data[xo + 2] / 255,
+						rgb = srgb_linRGB([r,g,b]);
 
-                    bins[0].push([r, g, b, current_slice]);
+                    bins[0].push([rgb[0], rgb[1], rgb[2], current_slice]);
                 }
             }
         }
@@ -112,24 +113,6 @@ onmessage = (e) => {
 	postMessage(scene);
 }
 
-function srgb_linRGB(c) {
-	if (c <= 0.03928)
-		return c / 12.92;
-	return ((c + 0.055) / 1.055) ** 2.4;
-	/*
-	const sign = c < 0? -1 : 1;
-	const abs  = Math.abs(c);
-	if (abs > 0.0031308)
-		return sign * (1.055 * Math.pow(abs, 1/2.4) - 0.055);
-	return 12.92 * c;
-	*/
-	/*
-    if (c >= 0.0031308)
-        return (1.055) * c ** (1.0 / 2.4) - 0.055;
-    return 12.92 * c;
-	*/
-}
-
 function linRGB_OkLab(rgb) {
 	const // https://www.w3.org/TR/css-color-4/#color-conversion-code
 		l = Math.cbrt(0.4122214708 * rgb[0] + 0.5363325363 * rgb[1] + 0.0514459929 * rgb[2]),
@@ -140,4 +123,28 @@ function linRGB_OkLab(rgb) {
 		1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
 		0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s
 	];
+}
+
+function srgb_linRGB(srgb) {
+	let
+		r = srgb[0],
+		g = srgb[1],
+		b = srgb[2];
+  
+	if (r <= 0.04045)
+		r = r / 12.92;
+	else
+		r = Math.pow((r + 0.055) / 1.055, 2.4);
+  
+	if (g <= 0.04045)
+		g = g / 12.92;
+	else
+		g = Math.pow((g + 0.055) / 1.055, 2.4);
+  
+	if (b <= 0.04045)
+		b = b / 12.92;
+	else
+		b = Math.pow((b + 0.055) / 1.055, 2.4);
+  
+	return [r, g, b];
 }
