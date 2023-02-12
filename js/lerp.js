@@ -29,6 +29,7 @@ export function createThumbnail(image, limit = 64) {
     return buf;
 }
 
+
 export function linRGB_OkLab(RGB) {
 	const // https://www.w3.org/TR/css-color-4/#color-conversion-code
 		l = Math.cbrt(0.4122214708 * RGB[0] + 0.5363325363 * RGB[1] + 0.0514459929 * RGB[2]),
@@ -53,34 +54,50 @@ export function OKLab_linRGB(OKLAB) {
 	];
 }
 
-export function srgb_linRGB(c) {
-	if (c <= 0.03928)
-		return c / 12.92;
-	return ((c + 0.055) / 1.055) ** 2.4;
-	/*
-	const sign = c < 0? -1 : 1;
-	const abs  = Math.abs(c);
-	if (abs > 0.0031308)
-		return sign * (1.055 * Math.pow(abs, 1/2.4) - 0.055);
-	return 12.92 * c;
-	*/
-	/*
-    if (c >= 0.0031308)
-        return (1.055) * c ** (1.0 / 2.4) - 0.055;
-    return 12.92 * c;
-	*/
+export function srgb_linRGB(srgb) {
+	let
+		r = srgb[0],
+		g = srgb[1],
+		b = srgb[2];
+  
+	if (r <= 0.04045)
+		r = r / 12.92;
+	else
+		r = Math.pow((r + 0.055) / 1.055, 2.4);
+  
+	if (g <= 0.04045)
+		g = g / 12.92;
+	else
+		g = Math.pow((g + 0.055) / 1.055, 2.4);
+  
+	if (b <= 0.04045)
+		b = b / 12.92;
+	else
+		b = Math.pow((b + 0.055) / 1.055, 2.4);
+  
+	return [r, g, b];
 }
 
-export function linRGB_sRGB(c) {
-	const sign = c < 0? -1 : 1;
-	const abs  = Math.abs(c);
+export function linRGB_sRGB(linearRgb) {
+  let
+  	r = linearRgb[0],
+  	g = linearRgb[1],
+  	b = linearRgb[2];
 
-	if (abs < 0.04045)
-		return c / 12.92;
-	return sign * (Math.pow((abs + 0.055) / 1.055, 2.4));
-	/*
-	if (c >= 0.04045)
-		return ((c + 0.055)/(1 + 0.055)) ** 2.4;
-	return c / 12.92;
-	*/
+  if (r <= 0.0031308)
+  	r = 12.92 * r;
+  else
+  	r = 1.055 * Math.pow(r, 1/2.4) - 0.055;
+
+  if (g <= 0.0031308)
+  	g = 12.92 * g;
+  else
+  	g = 1.055 * Math.pow(g, 1/2.4) - 0.055;
+
+  if (b <= 0.0031308)
+  	b = 12.92 * b;
+  else
+  	b = 1.055 * Math.pow(b, 1/2.4) - 0.055;
+
+  return [r, g, b];
 }
