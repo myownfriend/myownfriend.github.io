@@ -13,11 +13,13 @@
 label {
 	position: relative;
 }
-input[type=checkbox] {
+input[type=checkbox], input[type=file] {
 	opacity: 0;
 }
-
-input[type=checkbox] ~ span{
+input[type=file] {
+	display: inline-block;
+}
+input[type=checkbox] ~ span, input[type=file] ~ span{
 	display: inline-block;
 	background-color: var(--hover-shade);
 	border-radius: 30px;
