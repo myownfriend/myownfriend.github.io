@@ -2,7 +2,7 @@
 	position: absolute;
 	top: 42px;
 	right: 10px;
-	padding: 20px 20px 30px 10px;
+	padding: 20px 30px 30px;
 	border-radius: 30px;
 	width: 480px;
 	z-index: 999;
@@ -10,14 +10,17 @@
 	contain: content;
 }
 
+
 label {
 	position: relative;
+	margin-right: 10px;
 }
 input[type=checkbox], input[type=file] {
 	opacity: 0;
+	display: none;
 }
 input[type=file] {
-	display: inline-block;
+	float: left;
 }
 input[type=checkbox] ~ span, input[type=file] ~ span{
 	display: inline-block;
