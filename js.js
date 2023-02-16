@@ -4,9 +4,9 @@ import {Monitor} from './monitor.js';
 export const monitor = new Monitor();
 const scene   = {
 	paintObjects : [
-				document.body,
-				document.getElementById('audiodropdown')
-				],
+	            document.body,
+	            document.getElementById('audiodropdown')
+	            ],
 	wallpaper :  new Image(),
 	lights : [],
 	theme : (window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light',
@@ -48,11 +48,11 @@ monitor.workspaces[0].addEventListener('drop', (ev) => {
 		ev.preventDefault();
 		if (ev.dataTransfer.items) {
 			const allowedFiletypes = ["image/jpeg",
-									"image/jpg",
-									"image/png",
-									"image/webp",
-									"image/gif",
-									"image/svg+xml"
+			                        "image/jpg",
+			                        "image/png",
+			                        "image/webp",
+			                        "image/gif",
+			                        "image/svg+xml"
 									];
 			if (allowedFiletypes.includes(ev.dataTransfer.items[0].type)) {
 				if (scene.wallpaper.src != null)
