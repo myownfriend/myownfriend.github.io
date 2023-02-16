@@ -4,10 +4,9 @@ import {Monitor} from './monitor.js';
 export const monitor = new Monitor();
 const scene   = {
 	paintObjects : [
-				document.body,
-				document.getElementById('audiodropdown')
-				],
-	css : new CSSStyleSheet(),
+	            document.body,
+	            document.getElementById('audiodropdown')
+	            ],
 	wallpaper :  new Image(),
 	lights : [],
 	theme : (window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light',
@@ -23,7 +22,6 @@ function setMode() {
 	refresh(scene);
 } setMode();
 
-//document.adoptedStyleSheets = [scene.css];
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { 
 	scene.theme = (window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
 	setMode()
@@ -34,41 +32,44 @@ document.getElementById('dark-mode-check').addEventListener('change', () => {
 	setMode()
 });
 
-scene.wallpaper.src = "img/wallpapers/RainDrops.jpg";
+scene.wallpaper.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
 
 set_background(scene);
 
 document.getElementById('activities').addEventListener('click', () => {
 	document.body.classList.toggle('overview');
-	//refresh(scene);
 });
 
 monitor.workspaces[0].addEventListener('dragover', (ev) => {
 	ev.preventDefault();
 });
 
-monitor.workspaces[0].addEventListener('drop', (ev) => {
-		ev.preventDefault();
-		if (ev.dataTransfer.items) {
-			const allowedFiletypes = ["image/jpeg",
-									"image/jpg",
-									"image/png",
-									"image/webp",
-									"image/gif",
-									"image/svg+xml"
-									];
-			if (allowedFiletypes.includes(ev.dataTransfer.items[0].type)) {
-				if (scene.wallpaper.src != null)
-					URL.revokeObjectURL(scene.wallpaper.src);
-				scene.wallpaper.src = URL.createObjectURL(ev.dataTransfer.items[0].getAsFile())
-				set_background(scene);
-				ev.dataTransfer.items.clear();
-			}
-		}
-	}
-);
-
 window.addEventListener('resize', () => {
 	monitor.refresh();
 	monitor.update(scene);
+});
+
+function uploadFile(file) {
+	if (file) {
+		const allowedFiletypes = ["image/jpeg",
+								"image/jpg",
+								"image/png",
+								"image/webp",
+								"image/gif",
+								"image/svg+xml"
+								];
+		if (allowedFiletypes.includes(file.type)) {
+			if (scene.wallpaper.src != null)
+				URL.revokeObjectURL(scene.wallpaper.src);
+			scene.wallpaper.src = URL.createObjectURL(file)
+			set_background(scene);
+		}
+	}
+}
+monitor.workspaces[0].addEventListener('drop', (ev) => {
+	ev.preventDefault();
+	uploadFile(ev.dataTransfer.items[0].getAsFile());
+});
+document.getElementById("fileUpload").addEventListener('change', (ev) => {
+	uploadFile(ev.target.files[0]);
 });
