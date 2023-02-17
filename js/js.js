@@ -19,17 +19,18 @@ const scene   = {
 function setMode() {
 	document.documentElement.id = scene.theme + "-mode";
 	document.getElementById('dark-mode-check').checked = scene.theme == 'dark' ? true : false;
-	refresh(scene);
 } setMode();
 
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { 
 	scene.theme = (window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
-	setMode()
+	setMode();
+	refresh(scene);
 });
 
 document.getElementById('dark-mode-check').addEventListener('change', () => {
 	scene.theme = (scene.theme == 'dark') ? 'light' : 'dark';
-	setMode()
+	setMode();
+	refresh(scene)
 });
 
 scene.wallpaper.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
@@ -40,9 +41,6 @@ document.getElementById('activities').addEventListener('click', () => {
 	document.body.classList.toggle('overview');
 });
 
-monitor.workspaces[0].addEventListener('dragover', (ev) => {
-	ev.preventDefault();
-});
 
 window.addEventListener('resize', () => {
 	monitor.refresh();
@@ -66,6 +64,9 @@ function uploadFile(file) {
 		}
 	}
 }
+monitor.workspaces[0].addEventListener('dragover', (ev) => {
+	ev.preventDefault();
+});
 monitor.workspaces[0].addEventListener('drop', (ev) => {
 	ev.preventDefault();
 	uploadFile(ev.dataTransfer.items[0].getAsFile());

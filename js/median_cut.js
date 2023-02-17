@@ -106,8 +106,8 @@ onmessage = (e) => {
 			// that OGL allows the first two values of a vec4 to be referanced
 			// as x,y, and next two as a, b. 
 			scene.lights.push({
-				x : (i % slice_w_) / (slice_w_ - 1), // Subtract from 1.0 to flip horitontally. This saves a bunch of subtractions later on
-				y : Math.trunc(i / slice_w_) / (slice_h_ - 1), // Subtract from 1.0 to flip vertically. This saves a bunch of subtractions later on
+				x : (i % slice_w_) / (slice_w_ - 1) + 0.0000000001, // Subtract from 1.0 to flip horitontally. This saves a bunch of subtractions later on
+				y : Math.trunc(i / slice_w_) / (slice_h_ - 1) + 0.0000000001, // Subtract from 1.0 to flip vertically. This saves a bunch of subtractions later on
 				b : color[2],
 				a : color[1],
 				i : Math.random() + 1 
