@@ -19,17 +19,18 @@ const scene   = {
 function setMode() {
 	document.documentElement.id = scene.theme + "-mode";
 	document.getElementById('dark-mode-check').checked = scene.theme == 'dark' ? true : false;
-	refresh(scene);
 } setMode();
 
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { 
 	scene.theme = (window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
-	setMode()
+	setMode();
+	refresh(scene);
 });
 
 document.getElementById('dark-mode-check').addEventListener('change', () => {
 	scene.theme = (scene.theme == 'dark') ? 'light' : 'dark';
-	setMode()
+	setMode();
+	refresh(scene)
 });
 
 scene.wallpaper.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
@@ -44,28 +45,32 @@ monitor.workspaces[0].addEventListener('dragover', (ev) => {
 	ev.preventDefault();
 });
 
-monitor.workspaces[0].addEventListener('drop', (ev) => {
-		ev.preventDefault();
-		if (ev.dataTransfer.items) {
-			const allowedFiletypes = ["image/jpeg",
-			                        "image/jpg",
-			                        "image/png",
-			                        "image/webp",
-			                        "image/gif",
-			                        "image/svg+xml"
-									];
-			if (allowedFiletypes.includes(ev.dataTransfer.items[0].type)) {
-				if (scene.wallpaper.src != null)
-					URL.revokeObjectURL(scene.wallpaper.src);
-				scene.wallpaper.src = URL.createObjectURL(ev.dataTransfer.items[0].getAsFile())
-				set_background(scene);
-				ev.dataTransfer.items.clear();
-			}
-		}
-	}
-);
-
 window.addEventListener('resize', () => {
 	monitor.refresh();
 	monitor.update(scene);
+});
+
+function uploadFile(file) {
+	if (file) {
+		const allowedFiletypes = ["image/jpeg",
+								"image/jpg",
+								"image/png",
+								"image/webp",
+								"image/gif",
+								"image/svg+xml"
+								];
+		if (allowedFiletypes.includes(file.type)) {
+			if (scene.wallpaper.src != null)
+				URL.revokeObjectURL(scene.wallpaper.src);
+			scene.wallpaper.src = URL.createObjectURL(file)
+			set_background(scene);
+		}
+	}
+}
+monitor.workspaces[0].addEventListener('drop', (ev) => {
+	ev.preventDefault();
+	uploadFile(ev.dataTransfer.items[0].getAsFile());
+});
+document.getElementById("fileUpload").addEventListener('change', (ev) => {
+	uploadFile(ev.target.files[0]);
 });
