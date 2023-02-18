@@ -2,11 +2,11 @@
 
 	:root#dark-mode  {
 		--text-color:   rgb(229 229 229);
-		--dash-color:   hsla(0 0% 100% / 0.05);
-		--hover-shade:  hsla(0 0% 100% / 0.14);
-		--search-color: hsla(0 0% 100% / 0.1);
-		--search-hover: hsla(0 0% 100% / 0.2);
-		--search-place: hsla(0 0% 100% / 0.9);
+		--dash-color:   rgba(255 255 255 / 0.05);
+		--hover-shade:  rgba(255 255 255 / 0.14);
+		--search-color: rgba(255 255 255 / 0.1);
+		--search-hover: rgba(255 255 255 / 0.2);
+		--search-place: rgba(255 255 255 / 0.9);
 	}
 
 	#dark-mode  body {
@@ -27,11 +27,11 @@
 	
 	:root#light-mode  {
 		--text-color:   rgb(2 2 2);
-		--dash-color:   hsla(0 0% 0% / 0.2);
-		--hover-shade:  hsla(0 0% 0% / 0.14);
-		--search-color: hsla(0 0% 0% / 0.20);
-		--search-hover: hsla(0 0% 0% / 0.2);
-		--search-place: hsla(0 0% 0% / 0.994);
+		--dash-color:   rgba(0 0 0 / 0.2);
+		--hover-shade:  rgba(0 0 0 / 0.14);
+		--search-color: rgba(0 0 0 / 0.20);
+		--search-hover: rgba(0 0 0 / 0.2);
+		--search-place: rgba(0 0 0 / 0.994);
 	}
 	#light-mode body {
 		background-color: rgb(172 172 172);
