@@ -2,14 +2,50 @@
 	position: absolute;
 	top: 42px;
 	right: 10px;
-	padding: 20px 30px 30px;
+	padding: 20px;
 	border-radius: 30px;
-	width: 480px;
+	width: 450px;
 	z-index: 999;
-	box-shadow: 0 3px 6px rgba(0, 0, 0, 0.8), inset  0 0 4px rgba(255,255,255,0.2);
+	box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5), inset  0 0 4px rgba(255,255,255,0.2);
 	contain: content;
 }
 
+#user-area {
+	height:40px;
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-end;
+}
+#user-area li {
+	height:100%;
+	width:40px;
+	margin-left:10px;
+	border-radius: 50%;
+	background-color: var(--search-color);
+}
+
+#toggles {
+	gap: 1em 0.5em;
+	display: grid;
+	grid-template-columns: 50% 50%;
+}
+
+#toggles input ~ span{
+	display: block;
+	background-color: var(--search-color);
+	border-radius: 30px;
+	padding:12px 25px;
+	width:100%;
+}
+
+#toggles input[type=checkbox]:checked ~ span{
+	background-color: #3584e4;
+}
+
+#audio-main {
+	min-height:30px;
+	padding: 15px 30px;
+}
 
 label {
 	position: relative;
@@ -18,21 +54,6 @@ label {
 input[type=checkbox], input[type=file] {
 	opacity: 0;
 	display: none;
-}
-input[type=file] {
-	float: left;
-}
-input[type=checkbox] ~ span, input[type=file] ~ span{
-	display: inline-block;
-	background-color: var(--hover-shade);
-	border-radius: 30px;
-	padding:15px 25px;
-	width:45%;
-	margin-top:15px;
-}
-
-input[type=checkbox]:checked ~ span{
-	background-color: #3584e4;
 }
 
 .dropdown .job {
@@ -102,6 +123,7 @@ input[type=checkbox]:checked ~ span{
 	display: flex;
 	flex-direction: row;
 }
+
 .dropdown .device .job .volume-slider input[type=range] {
 	flex-grow: 1;
 	margin-left: 10px;

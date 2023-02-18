@@ -8,7 +8,7 @@
 	<script src="https://unpkg.com/external-svg-loader@latest/svg-loader.min.js" async></script>
 	<script src="js/js.js" defer type="module"></script>
 </head>
-<body><canvas class="paint" width="80" height="45"></canvas>
+<body><canvas class="paint" width="2560" height="1440"></canvas>
 	<section id="workarea">
 		<input id="search" type="text" placeholder="Type to search">
 		<div id="workspaces">
@@ -43,6 +43,17 @@
 		</li>
 	</ul>
 	<form id="audiodropdown" class="dropdown"><canvas class="paint" width="30" height="30"></canvas>
+		<ul id="user-area">
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+		</ul>
+		<div id="audio-main">
+			<div class="volume-slider">
+				<input type="range" min="1" max="100" value="40"/>
+			</div>
+		</div>
 		<div id="toggles">
 			<label class="checkbox">
 				<input type="checkbox">
