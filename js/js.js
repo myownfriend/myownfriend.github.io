@@ -1,11 +1,12 @@
-import {set_background, refresh} from './scene.js';
+import {set_background, refresh, PaintObject} from './scene.js';
 import {Monitor} from './monitor.js';
 
 export const monitor = new Monitor();
+
 const scene   = {
 	paintObjects : [
-	            document.body,
-	            document.getElementById('audiodropdown')
+				new PaintObject(document.body),
+				new PaintObject(document.getElementById('audiodropdown'))
 	            ],
 	wallpaper :  new Image(),
 	lights : [],
