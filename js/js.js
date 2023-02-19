@@ -6,7 +6,7 @@ export const monitor = new Monitor();
 const scene   = {
 	paintObjects : [
 				new PaintObject(document.body),
-				new PaintObject(document.getElementById('audiodropdown'))
+				new PaintObject(document.getElementById('quick-settings')),
 	            ],
 	wallpaper :  new Image(),
 	lights : [],
@@ -41,7 +41,6 @@ set_background(scene);
 document.getElementById('activities').addEventListener('click', () => {
 	document.body.classList.toggle('overview');
 });
-
 
 window.addEventListener('resize', () => {
 	monitor.refresh();
