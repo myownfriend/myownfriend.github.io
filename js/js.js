@@ -42,10 +42,7 @@ document.getElementById('activities').addEventListener('click', () => {
 	document.body.classList.toggle('overview');
 });
 
-window.addEventListener('resize', () => {
-	monitor.refresh();
-	monitor.update(scene);
-});
+
 
 function uploadFile(file) {
 	if (file) {
@@ -64,13 +61,19 @@ function uploadFile(file) {
 		}
 	}
 }
-monitor.workspaces[0].addEventListener('dragover', (ev) => {
+
+monitor.workspaces[0].canvas.addEventListener('dragover', (ev) => {
 	ev.preventDefault();
 });
-monitor.workspaces[0].addEventListener('drop', (ev) => {
+monitor.workspaces[0].canvas.addEventListener('drop', (ev) => {
 	ev.preventDefault();
 	uploadFile(ev.dataTransfer.items[0].getAsFile());
 });
 document.getElementById("fileUpload").addEventListener('change', (ev) => {
 	uploadFile(ev.target.files[0]);
+});
+
+window.addEventListener('resize', () => {
+	monitor.refresh();
+	monitor.update(scene);
 });

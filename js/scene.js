@@ -3,13 +3,11 @@ import {OKLAB_to_SRGB, SRGB_to_OKLAB} from './shaders.js';
 
 export class PaintObject {
 	constructor(surface) {
+		const canvas  = document.createElement('canvas');
+		canvas.classList.add('paint');
 		this.surface = surface;
-
-		this.canvas  = document.createElement('canvas');
-		this.canvas.classList.add('paint');
-		this.surface.prepend(this.canvas);
-
-		this.context = this.canvas.getContext('webgl2', {
+		this.surface.prepend(canvas);
+		this.context = canvas.getContext('webgl2', {
 			depth     : false,
 			alpha     : false,
 			stencil   : false,
@@ -18,34 +16,23 @@ export class PaintObject {
 		});
 		this.program  = this.context.createProgram();
 		const
-			vShader  = this.context.createShader(this.context.VERTEX_SHADER),
-			fShader  = this.context.createShader(this.context.FRAGMENT_SHADER);
-
-		// wScale  = document.documentElement.clientWidth  / rect.width,
-		// hScale  = document.documentElement.clientHeight / rect.height,
-		// xOffset = rect.x / document.documentElement.clientWidth,
-		// yOffset = 1 - ((rect.y + rect.height) / document.documentElement.clientHeight),
-
-
+			vShader   = this.context.createShader(this.context.VERTEX_SHADER),
+			fShader   = this.context.createShader(this.context.FRAGMENT_SHADER);
 		this.context.shaderSource(vShader, `#version 300 es
 			precision mediump float;
 			in      vec2  aPosition;
 			uniform float surfaceColor;
 			uniform vec4  rect;
-			uniform vec4  extra;
+			uniform vec4  area;
 			out     float brightness;
 			out     vec2  uv;
 			${SRGB_to_OKLAB}
 			void main() {
-				vec2 s = vec2( 2.0);
-				vec2 o = vec2(-1.0);
+				vec2 s = area.zw / rect.zw;
+				vec2 t = rect.xy / area.zw;
 				uv = aPosition;
 				brightness  = SRGB_to_OKLAB(vec3(surfaceColor / 255.0)).r;
-				gl_Position = mat4(
-					s.x, 0.0, 0.0, 0.0,
-					0.0, s.y, 0.0, 0.0,
-					0.0, 0.0, 1.0, 0.0,
-					o.x, o.y, 0.0, 1.0) * vec4(uv, 0.0, 1.0);
+				gl_Position = vec4((uv - t) * s * 2.0 - 1.0, 0.0, 1.0);
 			}`);
 		this.context.shaderSource(fShader, `#version 300 es
 			precision mediump float;
@@ -77,13 +64,20 @@ export class PaintObject {
 		this.context.compileShader(fShader);
 		this.context.linkProgram(this.program);
 		this.context.useProgram(this.program);
+
+		const aPosition = this.context.getAttribLocation(this.program, 'aPosition');
+		this.context.bindBuffer(this.context.ARRAY_BUFFER, this.context.createBuffer());
+		this.context.bufferData(this.context.ARRAY_BUFFER, new Float32Array([0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0]), this.context.STATIC_DRAW);
+	
+		this.context.enableVertexAttribArray(aPosition);
+		this.context.vertexAttribPointer(aPosition, 2, this.context.FLOAT, false, 0, 0);
 	}
 }
 
 export function refresh(scene) {
 	for(const object of scene.paintObjects) {
 		const
-			surface    = object.canvas,
+			surface    = object.context.canvas,
 			container  = object.surface.getBoundingClientRect();
 		surface.height = container.height;
 		surface.width  = container.width;
@@ -92,39 +86,23 @@ export function refresh(scene) {
 	}
 }
 
+function updateLightLists(scene) {
+	for(const object of scene.paintObjects) {
+		const
+			gl = object.context,
+			program = object.program;
+		gl.bindBufferBase(gl.UNIFORM_BUFFER, 0, gl.createBuffer());
+		gl.bufferData(gl.UNIFORM_BUFFER, new Float32Array(scene.lights), gl.STATIC_DRAW);
+		gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'lighting'), 0);
+	}
+}
+
 function drawLights(scene, obj) {
 	const
 		gl      = obj.context,
-		rect    = obj.surface.getBoundingClientRect(),
-		wScale  = document.documentElement.clientWidth  / rect.width,
-		hScale  = document.documentElement.clientHeight / rect.height,
-		xOffset = rect.x / document.documentElement.clientWidth,
-		yOffset = 1 - ((rect.y + rect.height) / document.documentElement.clientHeight),
-		ubObj   = [];
-
-	for (const light of scene.lights)
-		ubObj.push(
-			(light.x - xOffset) * wScale,
-			(light.y - yOffset) * hScale,
-			light.b, light.a,
-			light.i,     0.0,     0.0,    0.0);
-
-	gl.bindBufferBase(gl.UNIFORM_BUFFER, 0, gl.createBuffer());
-	gl.bufferData(gl.UNIFORM_BUFFER, new Float32Array(ubObj), gl.STATIC_DRAW);
-	gl.uniformBlockBinding(obj.program, gl.getUniformBlockIndex(obj.program, 'lighting'), 0);
-
-	// If an alternative method of transforming the light position to the viewport is found,
-	// the any code after this may be the only data that needs be resent every frame
-	gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0]), gl.STATIC_DRAW);
-
-	const aPosition = gl.getAttribLocation(obj.program, 'aPosition');
-	gl.enableVertexAttribArray(aPosition);
-	gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0);
-	// If we don't need to send a new mesh every frame then THI
-	// is the only stuff that needs to be redone each frame
-	// gl.uniform4fv(gl.getUniformLocation(obj.program, "rect" ), new Float32Array([rect.x, rect.y, rect.width, rect.height]));
-	gl.uniform4fv(gl.getUniformLocation(obj.program, "extra"), new Float32Array([scene.aspect, 1.0, monitor.aspect, 1.0]));
+		rect    = obj.surface.getBoundingClientRect();
+	gl.uniform4fv(gl.getUniformLocation(obj.program, "rect" ), new Float32Array([rect.x, monitor.height - rect.bottom, rect.width, rect.height]));
+	gl.uniform4fv(gl.getUniformLocation(obj.program, "area"), new Float32Array([scene.wallpaper.width, scene.wallpaper.height, monitor.width, monitor.height]));
 	gl.uniform1f( gl.getUniformLocation(obj.program, "surfaceColor"), Number(window.getComputedStyle(obj.surface).getPropertyValue("background-color").split(', ')[1]));
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
@@ -159,6 +137,7 @@ export function set_background(scene) {
 		scene.stage.dark  = Math.min(e.data.lum * e.data.sat, 0.25615);
 		scene.stage.light = Math.max(e.data.lum * (1 - e.data.sat), 1 - 0.25615);
 
+		updateLightLists(scene);
 		refresh(scene);
 	};
 }

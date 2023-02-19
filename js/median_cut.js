@@ -101,14 +101,26 @@ onmessage = (e) => {
 			}
 			// Get average color in bin
 			color = linRGB_OkLab([color[0] / amount, color[1] / amount, color[2] / amount]);
-
+/*
 			scene.lights.push({
 				x : (i % slice_w_) / (slice_w_ - 1), // Subtract from 1.0 to flip horitontally. This saves a bunch of subtractions later on
 				y : 1-Math.trunc(i / slice_w_) / (slice_h_ - 1) , // Subtract from 1.0 to flip vertically. This saves a bunch of subtractions later on
 				b : color[2],
 				a : color[1],
-				i : Math.random() + 1 
+				i : Math.random() + 1,
 			});
+	*/
+
+		scene.lights.push((i % slice_w_) / (slice_w_ - 1));
+		scene.lights.push((1-Math.trunc(i / slice_w_) / (slice_h_ - 1)));// Subtract from 1.0 to flip vertically. This saves a bunch of subtractions later on
+		scene.lights.push(color[2]);
+		scene.lights.push(color[1]);
+		scene.lights.push(Math.random() + 1);
+
+		// padding for UBO
+		scene.lights.push(0.0);
+		scene.lights.push(0.0);
+		scene.lights.push(0.0);
 	}
 
 	postMessage(scene);

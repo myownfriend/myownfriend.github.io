@@ -111,7 +111,6 @@ class Quadree {
 			];
 		}
 
-		
 		this.children[child].insert(pixel);
 	}
 }
