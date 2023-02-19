@@ -4,7 +4,11 @@ import {OKLAB_to_SRGB, SRGB_to_OKLAB} from './shaders.js';
 export class PaintObject {
 	constructor(surface) {
 		this.surface = surface;
-		this.canvas  = this.surface.firstChild,
+
+		this.canvas  = document.createElement('canvas');
+		this.canvas.classList.add('paint');
+		this.surface.prepend(this.canvas);
+
 		this.context = this.canvas.getContext('webgl2', {
 			depth     : false,
 			alpha     : false,
@@ -16,35 +20,49 @@ export class PaintObject {
 		const
 			vShader  = this.context.createShader(this.context.VERTEX_SHADER),
 			fShader  = this.context.createShader(this.context.FRAGMENT_SHADER);
+
+		// wScale  = document.documentElement.clientWidth  / rect.width,
+		// hScale  = document.documentElement.clientHeight / rect.height,
+		// xOffset = rect.x / document.documentElement.clientWidth,
+		// yOffset = 1 - ((rect.y + rect.height) / document.documentElement.clientHeight),
+
+
 		this.context.shaderSource(vShader, `#version 300 es
-		precision mediump float;
-			in  vec2  aPosition;
+			precision mediump float;
+			in      vec2  aPosition;
 			uniform float surfaceColor;
-			out float brightness;
+			// uniform vec4  rect;
+			uniform vec4  extra;
+			out     float brightness;
+			out     vec2  uv;
 			${SRGB_to_OKLAB}
 			void main() {
+				uv = aPosition;// * extra.xy;
 				brightness  = SRGB_to_OKLAB(vec3(surfaceColor / 255.0)).r;
-				gl_Position = vec4(aPosition, 0.0, 1.0);
+				gl_Position = mat4(
+					 2.0,  0.0,  0.0, 0.0,
+					 0.0,  2.0,  0.0, 0.0,
+					 0.0,  0.0,  1.0, 0.0,
+					-1.0, -1.0,  0.0, 1.0) * vec4(uv, 0.0, 1.0);
 			}`);
 		this.context.shaderSource(fShader, `#version 300 es
 			precision mediump float;
-			in  float brightness;
+			in float brightness;
+			in vec2 uv;
 			${OKLAB_to_SRGB}
 			struct light {
 				vec4  pos_color; // x, y, b, a
-				float intensity;
+				vec4 intensity;
 			};
 			layout(std140) uniform lighting {
-				vec4  rect;
 				light lights[6];
 			};
 			layout(location = 0) out vec4 Output;
 			void main() {
 				float i_acc   = 0.0;
 				vec2  ab_acc  = vec2(0.0, 0.0);
-				vec2  uv      = gl_FragCoord.xy / rect.zw;
 				for (int i = 0; i < 6; i++) {
-					float intensity = lights[i].intensity / pow(distance(uv, lights[i].pos_color.xy), 2.0);
+					float intensity = lights[i].intensity.x / pow(distance(uv, lights[i].pos_color.xy), 2.0);
 					i_acc  += intensity;
 					ab_acc += intensity * lights[i].pos_color.ab;
 				}
@@ -80,29 +98,35 @@ function drawLights(scene, obj) {
 		hScale  = document.documentElement.clientHeight / rect.height,
 		xOffset = rect.x / document.documentElement.clientWidth,
 		yOffset = 1 - ((rect.y + rect.height) / document.documentElement.clientHeight),
-		ubObj   = [rect.x, rect.y, rect.width, rect.height];
+		ubObj   = [];
 
 	for (const light of scene.lights)
 		ubObj.push(
 			(light.x - xOffset) * wScale,
-			(light.y - yOffset) * hScale, 
-			 light.b, light.a, light.i, 0.0, 0.0, 0.0);
+			(light.y - yOffset) * hScale,
+			// light.x, light.y,
+			light.b, light.a,
+			light.i,     0.0,     0.0,    0.0);
 
-	gl.uniform1f(gl.getUniformLocation(obj.program, "surfaceColor"), Number(window.getComputedStyle(obj.surface).getPropertyValue("background-color").split(', ')[1]));
 	gl.bindBufferBase(gl.UNIFORM_BUFFER, 0, gl.createBuffer());
 	gl.bufferData(gl.UNIFORM_BUFFER, new Float32Array(ubObj), gl.STATIC_DRAW);
 	gl.uniformBlockBinding(obj.program, gl.getUniformBlockIndex(obj.program, 'lighting'), 0);
 
+	// If an alternative method of transforming the light position to the viewport is found,
+	// the any code after this may be the only data that needs be resent every frame
 	gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1.0,1.0, -1,-1.0, 1.0, 1.0, 1.0,-1.0]), gl.STATIC_DRAW);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0]), gl.STATIC_DRAW);
 
 	const aPosition = gl.getAttribLocation(obj.program, 'aPosition');
 	gl.enableVertexAttribArray(aPosition);
 	gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0);
-
+	// If we don't need to send a new mesh every frame then THI
+	// is the only stuff that needs to be redone each frame
+	// gl.uniform4fv(gl.getUniformLocation(obj.program, "rect" ), new Float32Array([rect.x, rect.y, rect.width, rect.height]));
+	gl.uniform4fv(gl.getUniformLocation(obj.program, "extra"), new Float32Array([scene.aspect[0], scene.aspect[1],document.documentElement.clientWidth,document.documentElement.clientHeight]));
+	gl.uniform1f( gl.getUniformLocation(obj.program, "surfaceColor"), Number(window.getComputedStyle(obj.surface).getPropertyValue("background-color").split(', ')[1]));
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
-
 
 export function set_background(scene) {
 	const
@@ -112,7 +136,12 @@ export function set_background(scene) {
 
 	scene.wallpaper.addEventListener('load', () => {
 
-		scene.aspect = scene.wallpaper.width / scene.wallpaper.height;
+		const aspect = scene.wallpaper.width / scene.wallpaper.height;
+		scene.aspect = [1,1];
+		if(aspect > 1)
+			scene.aspect[0] *= aspect;
+		else
+			scene.aspect[1] /= aspect;
 
 		const
 			thumb = createThumbnail(scene.wallpaper),
@@ -148,6 +177,7 @@ function createThumbnail2(image, limit = 64) {
     let scale = 1;
     if (image.width * image.height > limit * limit)
         scale = limit / (image.width / image.height > 1 ?  image.height : image.width);
+
     const
         // Dividing the dimensions by 2 and then multiplying the rounded result is intentional
         // It makes sure that the result is rounded to the nearest even number.
