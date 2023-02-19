@@ -31,19 +31,21 @@ export class PaintObject {
 			precision mediump float;
 			in      vec2  aPosition;
 			uniform float surfaceColor;
-			// uniform vec4  rect;
+			uniform vec4  rect;
 			uniform vec4  extra;
 			out     float brightness;
 			out     vec2  uv;
 			${SRGB_to_OKLAB}
 			void main() {
-				uv = aPosition;// * extra.xy;
+				vec2 s = vec2( 2.0);
+				vec2 o = vec2(-1.0);
+				uv = aPosition;
 				brightness  = SRGB_to_OKLAB(vec3(surfaceColor / 255.0)).r;
 				gl_Position = mat4(
-					 2.0,  0.0,  0.0, 0.0,
-					 0.0,  2.0,  0.0, 0.0,
-					 0.0,  0.0,  1.0, 0.0,
-					-1.0, -1.0,  0.0, 1.0) * vec4(uv, 0.0, 1.0);
+					s.x, 0.0, 0.0, 0.0,
+					0.0, s.y, 0.0, 0.0,
+					0.0, 0.0, 1.0, 0.0,
+					o.x, o.y, 0.0, 1.0) * vec4(uv, 0.0, 1.0);
 			}`);
 		this.context.shaderSource(fShader, `#version 300 es
 			precision mediump float;
@@ -104,7 +106,6 @@ function drawLights(scene, obj) {
 		ubObj.push(
 			(light.x - xOffset) * wScale,
 			(light.y - yOffset) * hScale,
-			// light.x, light.y,
 			light.b, light.a,
 			light.i,     0.0,     0.0,    0.0);
 
@@ -123,7 +124,7 @@ function drawLights(scene, obj) {
 	// If we don't need to send a new mesh every frame then THI
 	// is the only stuff that needs to be redone each frame
 	// gl.uniform4fv(gl.getUniformLocation(obj.program, "rect" ), new Float32Array([rect.x, rect.y, rect.width, rect.height]));
-	gl.uniform4fv(gl.getUniformLocation(obj.program, "extra"), new Float32Array([scene.aspect[0], scene.aspect[1],document.documentElement.clientWidth,document.documentElement.clientHeight]));
+	gl.uniform4fv(gl.getUniformLocation(obj.program, "extra"), new Float32Array([scene.aspect, 1.0, monitor.aspect, 1.0]));
 	gl.uniform1f( gl.getUniformLocation(obj.program, "surfaceColor"), Number(window.getComputedStyle(obj.surface).getPropertyValue("background-color").split(', ')[1]));
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
@@ -136,12 +137,7 @@ export function set_background(scene) {
 
 	scene.wallpaper.addEventListener('load', () => {
 
-		const aspect = scene.wallpaper.width / scene.wallpaper.height;
-		scene.aspect = [1,1];
-		if(aspect > 1)
-			scene.aspect[0] *= aspect;
-		else
-			scene.aspect[1] /= aspect;
+		scene.aspect = scene.wallpaper.width / scene.wallpaper.height;
 
 		const
 			thumb = createThumbnail(scene.wallpaper),

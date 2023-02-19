@@ -7,19 +7,12 @@ export class Monitor {
     refresh() {
         this.width  = document.documentElement.clientWidth  * window.devicePixelRatio;
         this.height = document.documentElement.clientHeight * window.devicePixelRatio;
-
-		this.aspect = [1,1];
-        const aspect = this.width / this.height;
-		if(aspect > 1)
-			this.aspect[0] *= aspect;
-		else
-			this.aspect[1] /= aspect;
-    
+		this.aspect = this.width / this.height;;
     }
 
 	update(scene) {
 		const
-            scl = this.aspect[0] > scene.aspect[0] ? scene.wallpaper.width / this.width : scene.wallpaper.height / this.height,
+            scl = this.aspect > scene.aspect ? scene.wallpaper.width / this.width : scene.wallpaper.height / this.height,
             sx  = scene.wallpaper.width  - (this.width  * scl),
             sy  = scene.wallpaper.height - (this.height * scl),
             mx  = sx / 2,
