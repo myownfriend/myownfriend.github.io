@@ -8,7 +8,7 @@
 	<script src="https://unpkg.com/external-svg-loader@latest/svg-loader.min.js" async></script>
 	<script src="js/js.js" defer type="module"></script>
 </head>
-<body><canvas class="paint" width="2560" height="1440"></canvas>
+<body></canvas>
 	<section id="workarea">
 		<input id="search" type="text" placeholder="Type to search">
 		<div id="workspaces">
@@ -29,10 +29,11 @@
 		<li>
 			<button>Thu Nov 25  2:15 AM</button>
 		</li>
-		<li>
-			<button><!--
-			 --><svg data-src="img/status/audio-volume-high-symbolic.svg"></svg>
+		<li><!--
+			<button>
+			<svg data-src="img/status/audio-volume-high-symbolic.svg"></svg>
 			</button>
+			 -->
 			<button id="system-status-area"><!--
 			--><svg data-src="img/status/night-light-symbolic.svg"></svg><!--
 			--><svg data-src="img/status/network-wireless-signal-excellent-symbolic.svg"></svg><!--
@@ -42,7 +43,7 @@
 			</button>
 		</li>
 	</ul>
-	<form id="audiodropdown" class="dropdown"><canvas class="paint" width="30" height="30"></canvas>
+	<form id="quick-settings" class="dropdown"></canvas>
 		<ul id="user-area">
 			<li></li>
 			<li></li>
