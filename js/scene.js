@@ -110,8 +110,6 @@ export function sendToAnalyze(scene) {
 export function refresh(scene) {
 	for(const object of scene.paintObjects) {
 		const surface  = object.context.canvas;
-
-	 object.surface.getDi
 		surface.height = object.surface.clientHeight;
 		surface.width  = object.surface.clientWidth;
 		object.context.viewport(0,0,surface.width,surface.height);
