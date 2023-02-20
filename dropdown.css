@@ -8,6 +8,7 @@
 	z-index: 999;
 	box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5), inset  0 0 4px rgba(255,255,255,0.2);
 	contain: content;
+	transition: background-color var(--theme-transition);
 }
 
 #user-area {
@@ -37,10 +38,12 @@
 	border-radius: 30px;
 	padding:12px 25px;
 	width:100%;
+	transition: transform var(--nav-transition);
 }
 
 #toggles input[type=checkbox]:checked ~ span{
 	background-color: #3584e4;
+	transition: transform var(--nav-transition);
 }
 
 #audio-main {

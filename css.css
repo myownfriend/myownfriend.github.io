@@ -9,9 +9,10 @@
 		--search-place: rgba(255 255 255 / 0.9);
 	}
 
-	#dark-mode  body {
+	#dark-mode  body, #dark-mode body.overview {
 		background-color: rgb(36 36 36);
 	}
+
 	#dark-mode  .dropdown {
 		background: rgb(48,48,48);
 	}
@@ -21,7 +22,7 @@
 	#dark-mode  .dropdown .device button:hover {
 		background-color: rgba(255, 255, 255, 0.15);
 	}
-	#user-area li {
+	#dark-mode #user-area li {
 		background-color: rgba(255,255,255,0.1);
 	}
 	
@@ -33,7 +34,7 @@
 		--search-hover: rgba(0 0 0 / 0.2);
 		--search-place: rgba(0 0 0 / 0.994);
 	}
-	#light-mode body {
+	#light-mode body, #light-mode.overview body {
 		background-color: rgb(172 172 172);
 	}
 	#light-mode .dropdown {
@@ -46,6 +47,7 @@
 		background-color: rgba(0, 0, 0, 0.15);
 	}
 
+
 svg path {
 	fill: var(--text-color);
 }
@@ -54,12 +56,12 @@ svg path {
 	position:absolute;
 	top:0;
 	left:0;
-	height:100%;
-	width:100%;
 	z-index: -10;
 }
 
 :root {
+	--theme-transition:  300ms;
+	--nav-transition : 150ms;
 	cursor: default;
 	user-select: none;
 	height:100%;
@@ -116,7 +118,7 @@ input[type=range]::-moz-range-progress {
 #panel > li > button {
 	all:unset;
 	border-radius: 20px;
-	transition: background-color 150ms;
+	transition: background-color var(--nav-transition);
 	padding: 2px 10px;
 	margin: 3px;
 }
@@ -179,12 +181,12 @@ input[type=range]::-moz-range-progress {
 	flex-direction: row;
 	position: relative;
 	z-index: 1;
-	transition: transform 250ms;
+	transition: transform var(--nav-transition);
 }
 #workarea #workspaces > canvas {
 	min-width: 100%;
 	min-height: 100%;
-	transition: border-radius 250ms,  box-shadow 250ms;
+	transition: border-radius var(--nav-transition),  box-shadow var(--nav-transition);
 }
 #workarea #workspaces > canvas + canvas {
 	margin-left: 3vw;
@@ -194,7 +196,7 @@ input[type=range]::-moz-range-progress {
 body {
 	position: relative;
 	height: 100%;
-	transition: backdrop-filter 150ms ease-in-out;
+	transition: background-color var(--theme-transition);
 }
 body.overview #workspaces {
 	transform: scale(0.8) translate(0px, -1%);
@@ -212,6 +214,7 @@ body.overview #workspaces canvas {
 	padding: 10px;
 	height: 106px;
 	background-color: var(--dash-color);
+	transition: transform var(--theme-transition);
 }
 #dash img, #dash svg {
 	border-radius: 15px;
@@ -219,8 +222,7 @@ body.overview #workspaces canvas {
 	padding: 10px;
 	height: 100%;
 	aspect-ratio: 1;
-	transition: background-color 150ms;
-	
+	transition: background-color var(--nav-transition);
 }
 #dash img:hover, #dash svg:hover {
 	background-color: var(--hover-shade);
