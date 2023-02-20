@@ -110,6 +110,8 @@ export function sendToAnalyze(scene) {
 export function refresh(scene) {
 	for(const object of scene.paintObjects) {
 		const surface  = object.context.canvas;
+
+	 object.surface.getDi
 		surface.height = object.surface.clientHeight;
 		surface.width  = object.surface.clientWidth;
 		object.context.viewport(0,0,surface.width,surface.height);
@@ -120,7 +122,6 @@ export function refresh(scene) {
 function drawLights(obj) {
 	const gl = obj.context;
 	gl.uniform4fv(gl.getUniformLocation(obj.program, "rect"), new Float32Array([obj.surface.offsetLeft, monitor.height - (obj.surface.offsetTop + gl.canvas.height), gl.canvas.width, gl.canvas.height]));
-	gl.uniform4fv(gl.getUniformLocation(obj.program, "area"), new Float32Array([monitor.aspect, 0.0, monitor.width, monitor.height]));
 	gl.uniform1f( gl.getUniformLocation(obj.program, "surfaceColor"), Number(window.getComputedStyle(obj.surface).getPropertyValue("background-color").split(', ')[1]));
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }

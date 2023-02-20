@@ -12,10 +12,12 @@ export class Monitor {
     refresh() {
         this.width  = document.documentElement.clientWidth;
         this.height = document.documentElement.clientHeight;
-		this.aspect = this.width / this.height;;
+		this.aspect = this.width / this.height;
     }
 
 	update(scene) {
+        for(const obj of scene.paintObjects)
+            obj.context.uniform4fv(obj.context.getUniformLocation(obj.program, "area"), new Float32Array([this.aspect, 0.0, this.width, this.height]));
         const
             w   = this.width  * window.devicePixelRatio,
             h   = this.height * window.devicePixelRatio,
