@@ -1,4 +1,4 @@
-import {set_background, refresh, PaintObject} from './scene.js';
+import {sendToAnalyze, refresh, PaintObject} from './scene.js';
 import {Monitor} from './monitor.js';
 
 export const monitor = new Monitor();
@@ -8,41 +8,31 @@ const scene   = {
 				new PaintObject(document.body),
 				new PaintObject(document.getElementById('quick-settings')),
 	            ],
-	wallpaper :  new Image(),
-	lights : [],
-	theme : (window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light',
-	stage : {
-		light : 1,
-		dark  : 0
-	}
-}
-
-function setMode() {
-	document.documentElement.id = scene.theme + "-mode";
-	document.getElementById('dark-mode-check').checked = scene.theme == 'dark' ? true : false;
-} setMode();
-
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { 
-	scene.theme = (window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
-	setMode();
-	refresh(scene);
-});
-
-document.getElementById('dark-mode-check').addEventListener('change', () => {
-	scene.theme = (scene.theme == 'dark') ? 'light' : 'dark';
-	setMode();
-	refresh(scene)
-});
-
+	wallpaper : new Image(),
+	theme : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+	css : new CSSStyleSheet()
+};
+document.adoptedStyleSheets = [scene.css];
 scene.wallpaper.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
 
-set_background(scene);
+sendToAnalyze(scene);
+changetoPreferredTheme();
+
+function changetoPreferredTheme() {
+	const darkModeCheck = document.getElementById('dark-mode-check');
+	darkModeCheck.checked = window.matchMedia('(prefers-color-scheme: dark)').matches;
+	darkModeCheck.dispatchEvent(new Event("change"));
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', changetoPreferredTheme);
+document.getElementById('dark-mode-check').addEventListener('change', (e) => {
+	scene.theme = e.target.checked ? 'dark' : 'light';
+	document.documentElement.id = scene.theme + "-mode";
+	//refresh(scene);
+});
 
 document.getElementById('activities').addEventListener('click', () => {
 	document.body.classList.toggle('overview');
 });
-
-
 
 function uploadFile(file) {
 	if (file) {
@@ -57,11 +47,10 @@ function uploadFile(file) {
 			if (scene.wallpaper.src != null)
 				URL.revokeObjectURL(scene.wallpaper.src);
 			scene.wallpaper.src = URL.createObjectURL(file)
-			set_background(scene);
+			sendToAnalyze(scene);
 		}
 	}
 }
-
 monitor.workspaces[0].canvas.addEventListener('dragover', (ev) => {
 	ev.preventDefault();
 });
@@ -77,3 +66,8 @@ window.addEventListener('resize', () => {
 	monitor.refresh();
 	monitor.update(scene);
 });
+
+function continuous_refresh() {
+	refresh(scene);
+	window.requestAnimationFrame(continuous_refresh);
+}; continuous_refresh();

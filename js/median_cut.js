@@ -29,7 +29,12 @@ onmessage = (e) => {
                         r = data[xo + 0] / 255,
                     	g = data[xo + 1] / 255,
                         b = data[xo + 2] / 255,
-						rgb = srgb_linRGB([r,g,b]);
+						rgb = srgb_linRGB([r,g,b]),
+						max = Math.max(rgb[0], rgb[1], rgb[2]),
+						min = Math.min(rgb[0], rgb[1], rgb[2]);
+
+						scene.lum += (rgb[0] + rgb[1] + rgb[2]) / 3;
+						scene.sat += max - min;
 
                     bins[0].push([rgb[0], rgb[1], rgb[2], current_slice]);
                 }
@@ -101,29 +106,52 @@ onmessage = (e) => {
 			}
 			// Get average color in bin
 			color = linRGB_OkLab([color[0] / amount, color[1] / amount, color[2] / amount]);
-/*
-			scene.lights.push({
-				x : (i % slice_w_) / (slice_w_ - 1), // Subtract from 1.0 to flip horitontally. This saves a bunch of subtractions later on
-				y : 1-Math.trunc(i / slice_w_) / (slice_h_ - 1) , // Subtract from 1.0 to flip vertically. This saves a bunch of subtractions later on
-				b : color[2],
-				a : color[1],
-				i : Math.random() + 1,
-			});
-	*/
 
 		scene.lights.push((i % slice_w_) / (slice_w_ - 1));
 		scene.lights.push((1-Math.trunc(i / slice_w_) / (slice_h_ - 1)));// Subtract from 1.0 to flip vertically. This saves a bunch of subtractions later on
 		scene.lights.push(color[2]);
 		scene.lights.push(color[1]);
-		scene.lights.push(Math.random() + 1);
 
+		scene.lights.push(Math.random() + 1);
 		// padding for UBO
 		scene.lights.push(0.0);
 		scene.lights.push(0.0);
 		scene.lights.push(0.0);
 	}
 
+	scene.sat /= (96 * 64);
+	scene.lum /= (96 * 64);
+	scene.sat = linRGB_OkLab([scene.sat, 0 , 0])[0];
+	scene.lum = linRGB_OkLab([scene.lum, 0 , 0])[0];
+
+	const
+		dark  = okLtoR([Math.min(scene.sat, 0.25615), 0, 0]) * 255,
+		light = okLtoR([Math.max(1.0 - (scene.lum), 1 - 0.25615), 0, 0]) * 255;
+
+	scene.css = `
+			#dark-mode body {
+				background-color: rgb(${dark} ${dark} ${dark});
+			}
+			#light-mode body {
+				background-color: rgb(${light} ${light} ${light});
+			}`;
+
 	postMessage(scene);
+}
+
+function okLtoR(okL) {
+	const
+    	l = (okL + 0.3963377774 * 0.0 + 0.2158037573 * 0.0) ** 3,
+    	m = (okL - 0.1055613458 * 0.0 - 0.0638541728 * 0.0) ** 3,
+    	s = (okL - 0.0894841775 * 0.0 - 1.2914855480 * 0.0) ** 3,
+    rgb = [
+		+4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+		-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+		-0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s,
+	];
+	if (rgb[0] <= 0.0031308)
+		return rgb[0] ** 3;
+	return 1.055 * Math.pow(rgb[0], 1/2.4) - 0.055;
 }
 
 function linRGB_OkLab(rgb) {

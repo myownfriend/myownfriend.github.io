@@ -1,6 +1,6 @@
 export class Monitor {
 	constructor() {
-        this.workspaces = []//document.getElementById('workspaces').getElementsByTagName('canvas');
+        this.workspaces = []
         for(let i = 0; i < 2; i++) {
             const canvas = document.createElement('canvas');
             document.getElementById('workspaces').appendChild(canvas);
@@ -17,8 +17,8 @@ export class Monitor {
 
 	update(scene) {
         const
-            w = this.width  * window.devicePixelRatio,
-            h = this.height * window.devicePixelRatio,
+            w   = this.width  * window.devicePixelRatio,
+            h   = this.height * window.devicePixelRatio,
             scl = this.aspect > scene.aspect ? scene.wallpaper.width / w : scene.wallpaper.height / h,
             sx  = scene.wallpaper.width  - (w * scl),
             sy  = scene.wallpaper.height - (h * scl),
