@@ -2,15 +2,19 @@
 	position: absolute;
 	top: 42px;
 	right: 10px;
-	padding: 20px;
 	border-radius: 30px;
 	width: 450px;
 	z-index: 999;
-	box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5), inset  0 0 4px rgba(255,255,255,0.2);
+	box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
 	contain: content;
 	transition: background-color var(--theme-transition);
 }
 
+.dropdown .over-lights {
+	padding: 20px;
+	border-radius: 30px;
+	contain: content;
+}
 #user-area {
 	height:40px;
 	display: flex;
