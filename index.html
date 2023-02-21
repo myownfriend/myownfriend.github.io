@@ -8,7 +8,7 @@
 	<script src="https://unpkg.com/external-svg-loader@latest/svg-loader.min.js" async></script>
 	<script src="js/js.js" defer type="module"></script>
 </head>
-<body></canvas>
+<body>
 	<section id="workarea">
 		<input id="search" type="text" placeholder="Type to search">
 		<div id="workspaces">
@@ -37,43 +37,45 @@
 			</button>
 		</li>
 	</ul>
-	<form id="quick-settings" class="dropdown"></canvas>
-		<ul id="user-area">
-			<li></li>
-			<li></li>
-			<li></li>
-			<li></li>
-		</ul>
-		<div id="audio-main">
-			<div class="volume-slider">
-				<input type="range" min="1" max="100" value="40"/>
+	<form id="quick-settings" class="dropdown">
+		<div class="over-lights">
+			<ul id="user-area">
+				<li></li>
+				<li></li>
+				<li></li>
+				<li></li>
+			</ul>
+			<div id="audio-main">
+				<div class="volume-slider">
+					<input type="range" min="1" max="100" value="40"/>
+				</div>
 			</div>
-		</div>
-		<div id="toggles">
-			<label class="checkbox">
-				<input type="checkbox">
-				<span>Wired</span>
-			</label>
-			<label class="checkbox">
-				<input type="checkbox">
-				<span>Wi-Fi</span>
-			</label>
-			<label class="checkbox">
-				<input type="checkbox">
-				<span>Bluetooth</span>
-			</label>
-			<label class="checkbox">
-				<input type="checkbox">
-				<span>Power Saver</span>
-			</label>
-			<label class="checkbox">
-				<input id="dark-mode-check" type="checkbox">
-				<span>Dark Mode</span>
-			</label>
-			<label class="checkbox">
-				<input id="fileUpload" type="file">
-				<span>Upload Image</span>
-			</label>
+			<div id="toggles">
+				<label class="checkbox">
+					<input type="checkbox">
+					<span>Wired</span>
+				</label>
+				<label class="checkbox">
+					<input type="checkbox">
+					<span>Wi-Fi</span>
+				</label>
+				<label class="checkbox">
+					<input type="checkbox">
+					<span>Bluetooth</span>
+				</label>
+				<label class="checkbox">
+					<input type="checkbox">
+					<span>Power Saver</span>
+				</label>
+				<label class="checkbox">
+					<input id="dark-mode-check" type="checkbox">
+					<span>Dark Mode</span>
+				</label>
+				<label class="checkbox">
+					<input id="fileUpload" type="file">
+					<span>Upload Image</span>
+				</label>
+			</div>
 		</div>
 	</form>
 </body>
