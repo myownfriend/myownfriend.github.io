@@ -17,13 +17,22 @@
 		background: rgb(48,48,48);
 	}
 	#dark-mode .dropdown .job {
-		background: rgba(255, 255, 255, 0.15);
+		background: rgba(255 255 255 / 0.15);
 	}
 	#dark-mode  .dropdown .device button:hover {
-		background-color: rgba(255, 255, 255, 0.15);
+		background-color: rgba(255 255 255 / 0.15);
 	}
 	#dark-mode #user-area li {
-		background-color: rgba(255,255,255,0.1);
+		background-color: rgba(255 255 255 /0.1);
+	}
+	#dark-mode input[type=range]::-moz-range-track {
+		background-color: rgba(255 255 255 / 0.450980392);
+	}
+	#dark-mode input[type=range]::-moz-range-thumb, #dark-mode input[type=range]::-webkit-slider-thumb {
+		background: #eee;
+	}
+	#dark-mode .dropdown .over-lights {
+		box-shadow: inset  0 0 3px rgba(255 255 255 / 0.1);
 	}
 	
 	:root#light-mode  {
@@ -41,10 +50,20 @@
 		background: rgb(155,155,155);
 	}
 	#light-mode .dropdown .job {
-		background: rgba(0, 0, 0, 0.1);
+		background: rgba(0 0 0 / 0.1);
 	}
 	#light-mode .dropdown .device button:hover {
-		background-color: rgba(0, 0, 0, 0.15);
+		background-color: rgba(0 0 0 / 0.15);
+	}
+	#light-mode input[type=range]::-moz-range-track {
+		background-color: rgba(0 0 0 / 0.450980392);
+		height: 4px;
+	}
+	#light-mode	input[type=range]::-moz-range-thumb, #light-mode input[type=range]::-webkit-slider-thumb {
+		background: #000;
+	}
+	#light-mode .dropdown .over-lights {
+		box-shadow: inset  0 0 3px rgba(0,0,0,0.1);
 	}
 
 
@@ -83,12 +102,10 @@ input[type=range] {
 	background: none;
 }
 input[type=range]::-moz-range-track {
-	background: #737373;
 	height: 4px;
 	border-radius: 10px;
 }
 input[type=range]::-moz-range-thumb, input[type=range]::-webkit-slider-thumb {
-	background: #eee;
 	width: 17px;
 	height: 17px;
 	border-radius: 100%;
