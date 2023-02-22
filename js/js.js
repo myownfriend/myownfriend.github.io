@@ -16,7 +16,7 @@ function main() {
 		scene.wallpaper.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
 		scene.wallpaper.addEventListener('load', sendToAnalyze);
 		changetoPreferredTheme();
-		continuous_refresh();
+		
 	});
 
 	createWorkSpaces();
@@ -28,9 +28,11 @@ function main() {
 		updateMonitorRect();
 		fullRedraw();
 	});
+
+	continuous_refresh();
 }
 
-export function createWorkSpaces(amount=2) {
+function createWorkSpaces(amount=2) {
     for(let i = 0; i < amount ; i++) {
         const canvas = document.createElement('canvas');
         document.getElementById('workspaces').appendChild(canvas);
@@ -80,7 +82,7 @@ function changetoPreferredTheme() {
 	darkModeCheck.dispatchEvent(new Event("change"));
 }
 
-export function updateMonitorRect() {
+function updateMonitorRect() {
 	monitor.width  = document.documentElement.clientWidth;
 	monitor.height = document.documentElement.clientHeight;
 	monitor.aspect = [Math.max(1.0, monitor.width / monitor.height), Math.max(1.0, monitor.height / monitor.width)];
