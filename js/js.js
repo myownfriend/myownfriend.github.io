@@ -1,38 +1,95 @@
-import {sendToAnalyze, refresh, PaintObject} from './scene.js';
-import {Monitor} from './monitor.js';
+import { WebGL2 } from "./shaders.js";
+import {sendToAnalyze, scene, fullRedraw, drawLights} from './scene.js';
 
-export const monitor = new Monitor();
+// The demo definately attempts to render some stuff before it's ready to
+// Why not turn this file into a proper "boot up" sequence that gets stuff
+// prepared before updates begin?
 
-const scene   = {
-	paintObjects : [
-				new PaintObject(document.body),
-				new PaintObject(document.getElementById('quick-settings')),
-	            ],
-	wallpaper : new Image(),
-	theme : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
-	css : new CSSStyleSheet()
-};
-document.adoptedStyleSheets = [scene.css];
-scene.wallpaper.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
+export const workspaces = [];
+export const monitor = {};
 
-sendToAnalyze(scene);
-changetoPreferredTheme();
+function main() {
+	document.adoptedStyleSheets = [scene.css];
+	scene.wallpaper.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
+	sendToAnalyze();
+	changetoPreferredTheme();
+
+	createWorkSpaces();
+	
+	createButtonListeners();
+	createThemeListener();
+	createFileUploadListeners();
+
+	window.addEventListener('resize', () => {
+		updateMonitorRect();
+		fullRedraw();
+	});
+
+	updateMonitorRect();
+
+	continuous_refresh();
+}
+
+export function createWorkSpaces(amount=2) {
+    for(let i = 0; i < amount ; i++) {
+        const canvas = document.createElement('canvas');
+        document.getElementById('workspaces').appendChild(canvas);
+        workspaces.push(canvas.getContext('2d'));
+    }
+}
+
+function constructor2() {
+    workspaces = []
+    for(let i = 0; i < 2; i++) {
+        const gl = new WebGL2('','');
+        document.getElementById('workspaces').appendChild(gl.context.canvas);
+        workspaces.push(gl.context);
+    }
+}
+
+function createButtonListeners() {
+	document.getElementById('activities').addEventListener('click', () => {
+		document.body.classList.toggle('overview');
+	});
+}
+
+function createFileUploadListeners() {
+	workspaces[0].canvas.addEventListener('dragover', (ev) => {
+		ev.preventDefault();
+	});
+	workspaces[0].canvas.addEventListener('drop', (ev) => {
+		ev.preventDefault();
+		uploadFile(ev.dataTransfer.items[0].getAsFile());
+	});
+	document.getElementById("fileUpload").addEventListener('change', (ev) => {
+		uploadFile(ev.target.files[0]);
+	});
+}
+
+function createThemeListener() {
+	window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', changetoPreferredTheme);
+	document.getElementById('dark-mode-check').addEventListener('change', (e) => {
+		scene.theme = e.target.checked ? 'dark' : 'light';
+		document.documentElement.id = scene.theme + "-mode";
+	});
+}
 
 function changetoPreferredTheme() {
 	const darkModeCheck = document.getElementById('dark-mode-check');
 	darkModeCheck.checked = window.matchMedia('(prefers-color-scheme: dark)').matches;
 	darkModeCheck.dispatchEvent(new Event("change"));
 }
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', changetoPreferredTheme);
-document.getElementById('dark-mode-check').addEventListener('change', (e) => {
-	scene.theme = e.target.checked ? 'dark' : 'light';
-	document.documentElement.id = scene.theme + "-mode";
-	//refresh(scene);
-});
 
-document.getElementById('activities').addEventListener('click', () => {
-	document.body.classList.toggle('overview');
-});
+function updateMonitorRect() {
+	monitor.width  = document.documentElement.clientWidth;
+	monitor.height = document.documentElement.clientHeight;
+	monitor.aspect = [Math.max(1.0, monitor.width / monitor.height), Math.max(1.0, monitor.height / monitor.width)];
+	for(const obj of scene.lightSurfaces) {
+		const gl = obj.context;
+		gl.uniform4fv(obj.monitor, new Float32Array([monitor.aspect[0], monitor.aspect[1], monitor.width, monitor.height]));
+		gl.uniform4fv(obj.rect, new Float32Array([obj.surface.offsetLeft, monitor.height - (obj.surface.offsetTop + gl.canvas.height), gl.canvas.width, gl.canvas.height]));
+	}
+}
 
 function uploadFile(file) {
 	if (file) {
@@ -47,27 +104,14 @@ function uploadFile(file) {
 			if (scene.wallpaper.src != null)
 				URL.revokeObjectURL(scene.wallpaper.src);
 			scene.wallpaper.src = URL.createObjectURL(file)
-			sendToAnalyze(scene);
+			sendToAnalyze();
 		}
 	}
 }
-monitor.workspaces[0].canvas.addEventListener('dragover', (ev) => {
-	ev.preventDefault();
-});
-monitor.workspaces[0].canvas.addEventListener('drop', (ev) => {
-	ev.preventDefault();
-	uploadFile(ev.dataTransfer.items[0].getAsFile());
-});
-document.getElementById("fileUpload").addEventListener('change', (ev) => {
-	uploadFile(ev.target.files[0]);
-});
-
-window.addEventListener('resize', () => {
-	monitor.refresh();
-	monitor.update(scene);
-});
 
 function continuous_refresh() {
-	refresh(scene);
+	drawLights();
 	window.requestAnimationFrame(continuous_refresh);
-}; continuous_refresh();
+};
+
+main();
