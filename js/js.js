@@ -9,13 +9,17 @@ export const workspaces = [];
 export const monitor = {};
 
 function main() {
+
 	document.adoptedStyleSheets = [scene.css];
-	scene.wallpaper.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
-	sendToAnalyze();
-	changetoPreferredTheme();
+	window.addEventListener('load', () => {
+		updateMonitorRect();
+		scene.wallpaper.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
+		scene.wallpaper.addEventListener('load', sendToAnalyze);
+		changetoPreferredTheme();
+		continuous_refresh();
+	});
 
 	createWorkSpaces();
-	
 	createButtonListeners();
 	createThemeListener();
 	createFileUploadListeners();
@@ -24,9 +28,6 @@ function main() {
 		updateMonitorRect();
 		fullRedraw();
 	});
-
-	updateMonitorRect();
-	continuous_refresh();
 }
 
 export function createWorkSpaces(amount=2) {
@@ -79,7 +80,7 @@ function changetoPreferredTheme() {
 	darkModeCheck.dispatchEvent(new Event("change"));
 }
 
-function updateMonitorRect() {
+export function updateMonitorRect() {
 	monitor.width  = document.documentElement.clientWidth;
 	monitor.height = document.documentElement.clientHeight;
 	monitor.aspect = [Math.max(1.0, monitor.width / monitor.height), Math.max(1.0, monitor.height / monitor.width)];

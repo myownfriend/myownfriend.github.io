@@ -7,6 +7,7 @@ export const scene = {
 				createLightSurface(document.getElementById('quick-settings')),
 	            ],
 	wallpaper : new Image(),
+	analyst   : new Worker('./js/median_cut.js'),
 	theme : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
 	css : new CSSStyleSheet()
 };
@@ -51,50 +52,31 @@ function createThumbnail2(image, limit = 64) {
     return buf;
 }
 
-function createThumbnail(image, limit = 64) {
-    // THIS IS A FAKE FUNCTION FOR TESTING MEDIAN CUT
-    const
-        buf = new OffscreenCanvas(192 / 2, 128 / 2),
-        ctx = buf.getContext('2d');
-        ctx.drawImage(image, 0, 0, buf.width, buf.height);
-    return buf;
-}
-
 export function sendToAnalyze() {
 	const
-		analyst = new Worker('./js/median_cut.js'),
-		control = new AbortController(),
-		signal  = control.signal;
+		thumb = new OffscreenCanvas(192 / 2, 128 / 2),
+		ctx = thumb.getContext('2d');
+		ctx.drawImage(scene.wallpaper, 0, 0, thumb.width, thumb.height);
 
-	scene.wallpaper.addEventListener('load', () => {
-		scene.aspect = [Math.max(1.0, scene.wallpaper.width / scene.wallpaper.height), Math.max(1.0, scene.wallpaper.height / scene.wallpaper.width)];
-		const
-			thumb = createThumbnail(scene.wallpaper),
-			ctx   = thumb.getContext('2d');
-
-		analyst.postMessage({
-			width : thumb.width,
-			height: thumb.height,
-			image : ctx.getImageData(0, 0, thumb.width, thumb.height).data
-		});
-		control.abort();
-	}, {signal});
-
-	analyst.onmessage = (e) => {			
-		scene.css.replaceSync(e.data.css);
-		// This is done per-object because WebGL2 doesn't allow a program to be shared across contexts
-		for(const obj of scene.lightSurfaces) {
-			const gl = obj.context;
-			gl.uniform4fv(obj.wallpaper, new Float32Array([scene.aspect[0], scene.aspect[1], scene.aspect.width, scene.aspect.height]));
-			gl.bindBufferBase(gl.UNIFORM_BUFFER, 0, gl.createBuffer());
-			gl.bufferData(gl.UNIFORM_BUFFER, new Float32Array(e.data.lights), gl.STATIC_DRAW);
-			gl.uniformBlockBinding(obj.program, gl.getUniformBlockIndex(obj.program, 'lighting'), 0);
-		}
-		// This is only here because it contains the code that redraws the wallpaper
-		// This should moved into the refresh function, but only after we stop redrawing every frame
-		fullRedraw();
-	};
+	scene.aspect = [Math.max(1.0, scene.wallpaper.width / scene.wallpaper.height), Math.max(1.0, scene.wallpaper.height / scene.wallpaper.width)];
+	scene.analyst.postMessage({
+		width : thumb.width,
+		height: thumb.height,
+		image : ctx.getImageData(0, 0, thumb.width, thumb.height).data
+	});
 }
+
+scene.analyst.onmessage = (e) => {			
+	for(const obj of scene.lightSurfaces) {
+		const gl = obj.context;
+		gl.uniform4fv(obj.wallpaper, new Float32Array([scene.aspect[0], scene.aspect[1], scene.aspect.width, scene.aspect.height]));
+		gl.bindBufferBase(gl.UNIFORM_BUFFER, 0, gl.createBuffer());
+		gl.bufferData(gl.UNIFORM_BUFFER, new Float32Array(e.data.lights), gl.STATIC_DRAW);
+		gl.uniformBlockBinding(obj.program, gl.getUniformBlockIndex(obj.program, 'lighting'), 0);
+	}
+	scene.css.replaceSync(e.data.css);
+	fullRedraw();
+};
 
 export function drawLights() {
 	for(const obj of scene.lightSurfaces) {
@@ -135,4 +117,3 @@ export function fullRedraw() {
 	}
 	drawLights();
 }
-
