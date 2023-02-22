@@ -1,10 +1,6 @@
 import { WebGL2 } from "./shaders.js";
 import {sendToAnalyze, scene, fullRedraw, drawLights} from './scene.js';
 
-// The demo definately attempts to render some stuff before it's ready to
-// Why not turn this file into a proper "boot up" sequence that gets stuff
-// prepared before updates begin?
-
 export const workspaces = [];
 export const monitor = {};
 
@@ -16,7 +12,6 @@ function main() {
 		scene.wallpaper.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
 		scene.wallpaper.addEventListener('load', sendToAnalyze);
 		changetoPreferredTheme();
-		
 	});
 
 	createWorkSpaces();
