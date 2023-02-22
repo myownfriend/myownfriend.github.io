@@ -29,7 +29,7 @@ onmessage = (e) => {
                         r = data[xo + 0] / 255,
                     	g = data[xo + 1] / 255,
                         b = data[xo + 2] / 255,
-						rgb = srgb_linRGB([r,g,b]),
+						rgb = srgb_linRGB([r,g,b], 2.2),
 						max = Math.max(rgb[0], rgb[1], rgb[2]),
 						min = Math.min(rgb[0], rgb[1], rgb[2]);
 
@@ -107,8 +107,8 @@ onmessage = (e) => {
 			// Get average color in bin
 			color = linRGB_OkLab([color[0] / amount, color[1] / amount, color[2] / amount]);
 
-		scene.lights.push((i % slice_w_) / (slice_w_ - 1));
-		scene.lights.push((1-Math.trunc(i / slice_w_) / (slice_h_ - 1)));// Subtract from 1.0 to flip vertically. This saves a bunch of subtractions later on
+		scene.lights.push((i % slice_w_) / (slice_w_ - 1) + 0.00000001);
+		scene.lights.push((1-Math.trunc(i / slice_w_) / (slice_h_ - 1))) + 0.00000001;// Subtract from 1.0 to flip vertically. This saves a bunch of subtractions later on
 		scene.lights.push(color[2]);
 		scene.lights.push(color[1]);
 
@@ -166,7 +166,7 @@ function linRGB_OkLab(rgb) {
 	];
 }
 
-function srgb_linRGB(srgb) {
+function srgb_linRGB(srgb , gamma) {
 	let
 		r = srgb[0],
 		g = srgb[1],
@@ -175,17 +175,17 @@ function srgb_linRGB(srgb) {
 	if (r <= 0.04045)
 		r = r / 12.92;
 	else
-		r = Math.pow((r + 0.055) / 1.055, 2.4);
+		r = Math.pow((r + 0.055) / 1.055, gamma);
   
 	if (g <= 0.04045)
 		g = g / 12.92;
 	else
-		g = Math.pow((g + 0.055) / 1.055, 2.4);
+		g = Math.pow((g + 0.055) / 1.055, gamma);
   
 	if (b <= 0.04045)
 		b = b / 12.92;
 	else
-		b = Math.pow((b + 0.055) / 1.055, 2.4);
+		b = Math.pow((b + 0.055) / 1.055, gamma);
   
 	return [r, g, b];
 }

@@ -26,7 +26,6 @@ function main() {
 	});
 
 	updateMonitorRect();
-
 	continuous_refresh();
 }
 
