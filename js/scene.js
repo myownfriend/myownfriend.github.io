@@ -27,6 +27,8 @@ function createLightSurface(surface) {
 	data.monitor = data.context.getUniformLocation(data.program, "monitor");
 	data.wallpaper = data.context.getUniformLocation(data.program, "wallpaper");
 	data.rect = data.context.getUniformLocation(data.program, "rect");
+	data.lights = data.context.getUniformBlockIndex(data.program, 'lighting');
+	data.context.bindBufferBase(data.context.UNIFORM_BUFFER, 0, data.context.createBuffer());
 
 	const aPosition = data.context.getAttribLocation(data.program, 'aPosition');
 	data.context.bindBuffer(data.context.ARRAY_BUFFER, data.context.createBuffer());
@@ -39,42 +41,34 @@ function createLightSurface(surface) {
 }
 
 function createThumbnail2(image, limit = 64) {
-
     let scale = 1;
     if (image.width * image.height > limit * limit)
         scale = limit / (image.width / image.height > 1 ?  image.height : image.width);
-    const
-        // Dividing the dimensions by 2 and then multiplying the rounded result is intentional
-        // It makes sure that the result is rounded to the nearest even number.
-        // Someone smarter than me thought of this
-		buf = new WebGL2('','', {enable : true, width : 2 * Math.round(image.width * scale / 2), height : 2 * Math.round(image.height * scale / 2)})
-        //ctx.drawImage(image, 0, 0, buf.width, buf.height);
+    const buf = new WebGL2('','', {enable : true, width : 2 * Math.round(image.width * scale / 2), height : 2 * Math.round(image.height * scale / 2)})
     return buf;
 }
 
 export function sendToAnalyze() {
-	const
-		thumb = new OffscreenCanvas(192 / 2, 128 / 2),
-		ctx = thumb.getContext('2d');
-		ctx.drawImage(scene.wallpaper, 0, 0, thumb.width, thumb.height);
-
+	const thumb = new OffscreenCanvas(192 / 2, 128 / 2).getContext('2d');
+	thumb.drawImage(scene.wallpaper, 0, 0, thumb.canvas.width, thumb.canvas.height);
+	// It's minor but the aspect ratio calculation should be 
+	// part of the worker since it's technically a kind of analysis
 	scene.aspect = [Math.max(1.0, scene.wallpaper.width / scene.wallpaper.height), Math.max(1.0, scene.wallpaper.height / scene.wallpaper.width)];
 	scene.analyst.postMessage({
-		width : thumb.width,
-		height: thumb.height,
-		image : ctx.getImageData(0, 0, thumb.width, thumb.height).data
+		width : thumb.canvas.width,
+		height: thumb.canvas.height,
+		image : thumb.getImageData(0, 0, thumb.canvas.width, thumb.canvas.height).data
 	});
 }
 
 scene.analyst.onmessage = (e) => {			
+	scene.css.replaceSync(e.data.css);
 	for(const obj of scene.lightSurfaces) {
 		const gl = obj.context;
-		gl.uniform4fv(obj.wallpaper, new Float32Array([scene.aspect[0], scene.aspect[1], scene.aspect.width, scene.aspect.height]));
-		gl.bindBufferBase(gl.UNIFORM_BUFFER, 0, gl.createBuffer());
+		gl.uniform4fv(obj.wallpaper, new Float32Array([scene.aspect[0], scene.aspect[1], scene.wallpaper.width, scene.wallpaper.height]));
 		gl.bufferData(gl.UNIFORM_BUFFER, new Float32Array(e.data.lights), gl.STATIC_DRAW);
-		gl.uniformBlockBinding(obj.program, gl.getUniformBlockIndex(obj.program, 'lighting'), 0);
+		gl.uniformBlockBinding(obj.program, obj.lights, 0);
 	}
-	scene.css.replaceSync(e.data.css);
 	fullRedraw();
 };
 
@@ -89,7 +83,7 @@ export function drawLights() {
 export function fullRedraw() {
 	const
 		mAspect = [Math.max(1.0, document.documentElement.clientWidth / document.documentElement.clientHeight), Math.max(1.0, document.documentElement.clientHeight / document.documentElement.clientWidth)],
-		scale = (mAspect[0] > scene.aspect[0]) ? scene.aspect[0] / mAspect[0] : mAspect[1] / mAspect[1],
+		scale = (mAspect[0] > scene.aspect[0]) ? scene.aspect[0] / mAspect[0] : scene.aspect[1] / mAspect[1],
 		monitor_scaled  = [mAspect[0] * scale, mAspect[1] * scale],
 		float_w  = monitor_scaled[0] / scene.aspect[0],
 		float_h  = monitor_scaled[1] / scene.aspect[1],
