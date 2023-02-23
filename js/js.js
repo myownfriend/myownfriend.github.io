@@ -2,7 +2,6 @@ import { WebGL2 } from "./shaders.js";
 import {sendToAnalyze, scene, fullRedraw, drawLights} from './scene.js';
 
 export const workspaces = [];
-export const monitor = {};
 
 function main() {
 
@@ -11,12 +10,12 @@ function main() {
 		updateMonitorRect();
 		scene.wallpaper.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
 		scene.wallpaper.addEventListener('load', sendToAnalyze);
-		changetoPreferredTheme();
+		setToPreferredTheme();
 	});
 
 	createWorkSpaces();
 	createButtonListeners();
-	createThemeListener();
+	createThemeListeners();
 	createFileUploadListeners();
 
 	window.addEventListener('resize', () => {
@@ -32,15 +31,6 @@ function createWorkSpaces(amount=2) {
         const canvas = document.createElement('canvas');
         document.getElementById('workspaces').appendChild(canvas);
         workspaces.push(canvas.getContext('2d'));
-    }
-}
-
-function constructor2() {
-    workspaces = []
-    for(let i = 0; i < 2; i++) {
-        const gl = new WebGL2('','');
-        document.getElementById('workspaces').appendChild(gl.context.canvas);
-        workspaces.push(gl.context);
     }
 }
 
@@ -63,28 +53,37 @@ function createFileUploadListeners() {
 	});
 }
 
-function createThemeListener() {
-	window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', changetoPreferredTheme);
+function createThemeListeners() {
+	window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', setToPreferredTheme);
 	document.getElementById('dark-mode-check').addEventListener('change', (e) => {
 		scene.theme = e.target.checked ? 'dark' : 'light';
 		document.documentElement.id = scene.theme + "-mode";
 	});
 }
 
-function changetoPreferredTheme() {
+function setToPreferredTheme() {
 	const darkModeCheck = document.getElementById('dark-mode-check');
 	darkModeCheck.checked = window.matchMedia('(prefers-color-scheme: dark)').matches;
 	darkModeCheck.dispatchEvent(new Event("change"));
 }
 
 function updateMonitorRect() {
-	monitor.width  = document.documentElement.clientWidth;
-	monitor.height = document.documentElement.clientHeight;
-	monitor.aspect = [Math.max(1.0, monitor.width / monitor.height), Math.max(1.0, monitor.height / monitor.width)];
+	const
+		width    = document.documentElement.clientWidth,
+		height   = document.documentElement.clientHeight,
+		uMonitor = new Float32Array([Math.max(1.0, width / height), Math.max(1.0, height / width), width, height]);
+
+	for(const workspace of workspaces) {
+		workspace.canvas.width  = width  * window.devicePixelRatio;
+		workspace.canvas.height = height * window.devicePixelRatio;
+	}
 	for(const obj of scene.lightSurfaces) {
 		const gl = obj.context;
-		gl.uniform4fv(obj.monitor, new Float32Array([monitor.aspect[0], monitor.aspect[1], monitor.width, monitor.height]));
-		gl.uniform4fv(obj.rect, new Float32Array([obj.surface.offsetLeft, monitor.height - (obj.surface.offsetTop + gl.canvas.height), gl.canvas.width, gl.canvas.height]));
+		gl.canvas.height = obj.surface.clientHeight;
+		gl.canvas.width  = obj.surface.clientWidth;
+		gl.uniform4fv(obj.monitor, uMonitor);
+		gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+		gl.uniform4fv(obj.rect, new Float32Array([obj.surface.offsetLeft, height - (obj.surface.offsetTop + gl.canvas.height), gl.canvas.width, gl.canvas.height]));
 	}
 }
 

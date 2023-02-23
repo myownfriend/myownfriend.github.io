@@ -1,4 +1,4 @@
-import {monitor, workspaces} from './js.js';
+import {workspaces} from './js.js';
 import {WebGL2, vs_drawLights, fs_drawLights} from './shaders.js';
 
 export const scene = {
@@ -80,25 +80,17 @@ scene.analyst.onmessage = (e) => {
 
 export function drawLights() {
 	for(const obj of scene.lightSurfaces) {
-		const
-			surface  = obj.context.canvas,
-			gl = obj.context;
-		surface.height = obj.surface.clientHeight;
-		surface.width  = obj.surface.clientWidth;
-		gl.viewport(0,0,surface.width,surface.height);
-		// draws lights
-		gl.uniform1f( obj.surfaceColor, Number(window.getComputedStyle(obj.surface).getPropertyValue("background-color").split(', ')[1]));
+		const gl = obj.context;
+		gl.uniform1f(obj.surfaceColor, Number(window.getComputedStyle(obj.surface).getPropertyValue("background-color").split(', ')[1]));
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	}
 }
 
 export function fullRedraw() {
-	// We only scale monitor coordinates to background texture coordinates. Both in floats
-	// This function redraws the backgrounds AND the lights
-	// The background only needs to change it's changed (duh) or if the window is resized
 	const
-		scale = monitor.aspect[0] > scene.aspect[0] ? scene.aspect[0] / monitor.aspect[0] : monitor.aspect[1] / monitor.aspect[1],
-		monitor_scaled  = [monitor.aspect[0] * scale, monitor.aspect[1] * scale],
+		mAspect = [Math.max(1.0, document.documentElement.clientWidth / document.documentElement.clientHeight), Math.max(1.0, document.documentElement.clientHeight / document.documentElement.clientWidth)],
+		scale = (mAspect[0] > scene.aspect[0]) ? scene.aspect[0] / mAspect[0] : mAspect[1] / mAspect[1],
+		monitor_scaled  = [mAspect[0] * scale, mAspect[1] * scale],
 		float_w  = monitor_scaled[0] / scene.aspect[0],
 		float_h  = monitor_scaled[1] / scene.aspect[1],
 		float_x  = (1 - float_w) / 2,
@@ -109,11 +101,8 @@ export function fullRedraw() {
 		pixel_w = float_w * scene.wallpaper.width ,
 		pixel_h = float_h * scene.wallpaper.height;
 
-	for(const workspace of workspaces) {
-		workspace.canvas.width  = monitor.width  * window.devicePixelRatio;
-		workspace.canvas.height = monitor.height * window.devicePixelRatio;
-		workspace.drawImage(scene.wallpaper, pixel_x, pixel_y, pixel_w, pixel_h,
-											0, 0, workspace.canvas.width, workspace.canvas.height);
-	}
+	for(const workspace of workspaces) 
+		workspace.drawImage(scene.wallpaper, pixel_x, pixel_y, pixel_w, pixel_h, 0, 0, workspace.canvas.width, workspace.canvas.height);
+
 	drawLights();
 }
