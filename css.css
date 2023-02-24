@@ -81,14 +81,6 @@ body #workspaces {
 	height: 100%;
 	width:  100%;
 	z-index: 1;
-	/*
-	transition:
-		height        var(--nav-transition),
-		margin        var(--nav-transition),
-		padding       var(--nav-transition),
-		transform     var(--nav-transition),
-		gap           var(--nav-transition);
-		*/
 	transition:
 		height        var(--nav-transition),
 		transform     var(--nav-transition),
@@ -124,7 +116,6 @@ body.app-grid #workspaces {
 	gap:1.5svw;
 }
 body.app-grid #workspaces canvas {
-	
 	border-radius: 10px;
 	box-shadow: 0 16px 32px 8px rgba(0, 0, 0, 0.2);
 }
@@ -132,15 +123,19 @@ body #workarea.app-grid #workspaces > canvas + canvas {
 	scale: 1.0;
 }
 
+#app-list {
+	display: flex;
+	align-items: start;
+	justify-content: start;
+
+}
 #app-list ul {
+	width:clamp(1280px, 50%, 100%);
 	display: grid;
 	grid-template-columns: auto auto auto auto auto auto auto auto ;
-	gap:3em 1.5em ;
-	margin-bottom: 10vh;
+	gap:3em 2em ;
 }
 #app-list li {
-	height:170px;
-	width:170px;
 	border-radius: 20px;
 	padding:15px;
 	text-align: center;
@@ -158,6 +153,6 @@ body #workarea.app-grid #workspaces > canvas + canvas {
 	transition: color var(--theme-transition);
 }
 #app-list li img{
-	height:110px;
+	height:clamp(64px, 5svw, 170px);
 	margin:0 0 5px;
 }
