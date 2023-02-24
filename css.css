@@ -83,7 +83,6 @@ body #workspaces {
 	z-index: 1;
 	transition:
 		height        var(--nav-transition),
-		transform     var(--nav-transition),
 		scale         var(--nav-transition),
 		translate     var(--nav-transition),
 		gap           var(--nav-transition);
@@ -93,8 +92,7 @@ body #workspaces > canvas {
 	transition:
 		border-radius var(--nav-transition),
 		box-shadow    var(--nav-transition),
-		margin        var(--nav-transition),
-		transform     var(--nav-transition);
+		margin        var(--nav-transition);
 }
 body.overview #workspaces > canvas + canvas {
 	scale: 0.92;
@@ -127,7 +125,6 @@ body #workarea.app-grid #workspaces > canvas + canvas {
 	display: flex;
 	align-items: start;
 	justify-content: start;
-
 }
 #app-list ul {
 	width:clamp(1280px, 50%, 100%);
@@ -137,7 +134,7 @@ body #workarea.app-grid #workspaces > canvas + canvas {
 }
 #app-list li {
 	border-radius: 20px;
-	padding:15px;
+	padding:15px 30px 0px;
 	text-align: center;
 	text-overflow: ellipsis;
 	transition: background-color var(--theme-transition);
@@ -153,6 +150,6 @@ body #workarea.app-grid #workspaces > canvas + canvas {
 	transition: color var(--theme-transition);
 }
 #app-list li img{
-	height:clamp(64px, 5svw, 170px);
+	height:clamp(64px, 4.2svw, 160px);
 	margin:0 0 5px;
 }
