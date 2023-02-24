@@ -2,7 +2,7 @@
 
 :root#dark-mode  {
 	--text-color:   rgb(229 229 229);
-	--dash-color:   rgba(255 255 255 / 0.05);
+	--dash-color:   rgb(48 48 48);/*rgba(255 255 255 / 0.05);*/
 	--hover-shade:  rgba(255 255 255 / 0.14);
 	--toggle-color: rgba(255 255 255 / 0.05);
 	--search-color: rgba(255 255 255 / 0.1);
@@ -15,7 +15,7 @@
 }	
 :root#light-mode  {
 	--text-color:   rgb(2 2 2);
-	--dash-color:   rgba(0 0 0 / 0.2);
+	--dash-color:  rgb(156, 156, 156); /* rgba(0 0 0 / 0.2);*/
 	--hover-shade:  rgba(0 0 0 / 0.14);
 	--toggle-color: rgba(0 0 0 / 0.10);
 	--search-color: rgba(0 0 0 / 0.20);
