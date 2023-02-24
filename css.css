@@ -79,13 +79,21 @@ body #workarea {
 body #workspaces {
 	display:flex;
 	height: 100%;
-	width:  100svw;
+	width:  100%;
 	z-index: 1;
+	/*
 	transition:
 		height        var(--nav-transition),
 		margin        var(--nav-transition),
 		padding       var(--nav-transition),
 		transform     var(--nav-transition),
+		gap           var(--nav-transition);
+		*/
+	transition:
+		height        var(--nav-transition),
+		transform     var(--nav-transition),
+		scale         var(--nav-transition),
+		translate     var(--nav-transition),
 		gap           var(--nav-transition);
 }
 body #workspaces > canvas {
@@ -102,7 +110,8 @@ body.overview #workspaces > canvas + canvas {
 
 body.overview #workspaces {
 	gap:3svw;
-	transform: translate(0,-1vh) scale(0.8);
+	scale:0.8;
+	translate:0 -1svh;
 }
 body.overview #workspaces canvas {
 	border-radius: 30px;
@@ -110,13 +119,12 @@ body.overview #workspaces canvas {
 }
 
 body.app-grid #workspaces {
-	height:15vh;
-	padding:0 35% 0;
-	margin:15vh auto 0;
-	transform: translate(-2vw, 0);
+	translate:34svw 15svh;
+	height:15svh;
 	gap:1.5svw;
 }
 body.app-grid #workspaces canvas {
+	
 	border-radius: 10px;
 	box-shadow: 0 16px 32px 8px rgba(0, 0, 0, 0.2);
 }
@@ -127,15 +135,29 @@ body #workarea.app-grid #workspaces > canvas + canvas {
 #app-list ul {
 	display: grid;
 	grid-template-columns: auto auto auto auto auto auto auto auto ;
-	gap:3em;
+	gap:3em 1.5em ;
 	margin-bottom: 10vh;
 }
-
 #app-list li {
-	height:140px;
-	width:140px;
+	height:170px;
+	width:170px;
 	border-radius: 20px;
-	padding:10px;
-	background-color: var(--search-hover);
+	padding:15px;
 	text-align: center;
+	text-overflow: ellipsis;
+	transition: background-color var(--theme-transition);
+	display:flex;
+	flex-direction: column;
+	align-items: center;
+}
+#app-list li:hover {
+	background-color: var(--toggle-color);
+}
+#app-list li span{
+	display: block;
+	transition: color var(--theme-transition);
+}
+#app-list li img{
+	height:110px;
+	margin:0 0 5px;
 }

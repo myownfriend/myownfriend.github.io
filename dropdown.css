@@ -44,7 +44,7 @@
 	border-radius: 30px;
 	padding:12px 25px;
 	width:100%;
-	transition: transform var(--nav-transition);
+	transition: transform var(--nav-transition), color var(--theme-transition);
 }
 
 #toggles input[type=checkbox]:checked ~ span{
