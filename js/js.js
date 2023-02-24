@@ -36,18 +36,35 @@ function createWorkSpaces(amount=2) {
 
 function createButtonListeners() {
 	document.getElementById('activities').addEventListener('click', () => {
+		if(document.body.classList.contains('app-grid')) {
+			document.body.classList.remove('overview');
+			document.body.classList.remove('app-grid');
+		} else {
+			document.body.classList.toggle('overview');
+			document.body.classList.remove('app-grid');
+		}
+	});
+	document.getElementById('app-grid-toggle').addEventListener('click', () => {
+		document.body.classList.toggle('app-grid');
 		document.body.classList.toggle('overview');
 	});
+	for(const workspace of workspaces)
+		workspace.canvas.addEventListener('click', () => {
+			document.body.classList.remove('overview');
+			document.body.classList.remove('app-grid');
+		});
 }
 
 function createFileUploadListeners() {
-	workspaces[0].canvas.addEventListener('dragover', (ev) => {
-		ev.preventDefault();
-	});
-	workspaces[0].canvas.addEventListener('drop', (ev) => {
-		ev.preventDefault();
-		uploadFile(ev.dataTransfer.items[0].getAsFile());
-	});
+	for(const workspace of workspaces) {
+		workspace.canvas.addEventListener('dragover', (ev) => {
+			ev.preventDefault();
+		});
+		workspace.canvas.addEventListener('drop', (ev) => {
+			ev.preventDefault();
+			uploadFile(ev.dataTransfer.items[0].getAsFile());
+		});
+	}
 	document.getElementById("fileUpload").addEventListener('change', (ev) => {
 		uploadFile(ev.target.files[0]);
 	});
@@ -74,8 +91,8 @@ function updateMonitorRect() {
 		uMonitor = new Float32Array([Math.max(1.0, width / height), Math.max(1.0, height / width), width, height]);
 
 	for(const workspace of workspaces) {
-		workspace.canvas.width  = width  * window.devicePixelRatio;
-		workspace.canvas.height = height * window.devicePixelRatio;
+		workspace.canvas.width  = width;
+		workspace.canvas.height = height;
 	}
 	for(const obj of scene.lightSurfaces) {
 		const gl = obj.context;

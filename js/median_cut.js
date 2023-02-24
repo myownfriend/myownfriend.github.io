@@ -136,6 +136,8 @@ onmessage = (e) => {
 				background-color: rgb(${light} ${light} ${light});
 			}`;
 
+	scene.aspect = [Math.max(1.0, e.data.width / e.data.height), Math.max(1.0, e.data.height / e.data.width)];
+
 	postMessage(scene);
 }
 

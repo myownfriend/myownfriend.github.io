@@ -83,7 +83,7 @@ export function drawLights() {
 export function fullRedraw() {
 	const
 		mAspect = [Math.max(1.0, document.documentElement.clientWidth / document.documentElement.clientHeight), Math.max(1.0, document.documentElement.clientHeight / document.documentElement.clientWidth)],
-		scale = (mAspect[0] > scene.aspect[0]) ? scene.aspect[0] / mAspect[0] : scene.aspect[1] / mAspect[1],
+		scale = Math.min(scene.aspect[0] / mAspect[0], scene.aspect[1] / mAspect[1]),
 		monitor_scaled  = [mAspect[0] * scale, mAspect[1] * scale],
 		float_w  = monitor_scaled[0] / scene.aspect[0],
 		float_h  = monitor_scaled[1] / scene.aspect[1],
