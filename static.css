@@ -1,0 +1,83 @@
+#panel {
+	height: 2.2em;
+	display: flex;
+	justify-content: space-between;
+	position: fixed;
+	top: 0;
+	width:100%;
+	z-index: 1;
+	contain: content;
+}
+#panel > li {
+	width: 33%;
+	display: flex;
+	flex-direction: row;
+}
+#panel > li > button {
+	all:unset;
+	border-radius: 20px;
+	transition: background-color var(--nav-transition);
+	padding: 2px 10px;
+	margin: 3px;
+}
+#panel > li > button:hover, body.overview #activities {
+	background: var(--hover-shade);
+}
+#panel > li > button svg {
+	margin: 2px 4px 0;
+}
+#panel :nth-child(2) {
+	justify-content: center;
+}
+#panel :last-child {
+	justify-content: flex-end;
+}
+.panel #capture-menu {
+	background: #1a5fb4;
+}
+
+#search {
+	position: absolute;
+	font-weight: 400;
+	background: var(--search-color);
+	padding:8px 20px 8px 40px;
+	border-radius: 20px;
+	width:350px;
+	border: 2px solid transparent;
+	margin:48px auto 0;
+	color:var(--text-color);
+}
+#search:hover {
+	background: var(--search-hover);
+}
+#search:focus {
+	border: 2px solid #3584e4;
+	outline: none;
+}
+
+#search::placeholder {
+	color:var(--search-place);
+}
+
+#dash {
+	position: fixed;
+	margin-top:12px;
+	bottom: 0.5vw;
+	flex-direction: row;
+	border-radius: calc(12px + 16px);
+	padding: 10px;
+	height: 106px;
+	background-color: var(--dash-color);
+	transition: background-color var(--theme-transition);
+}
+#dash img, #dash svg {
+	border-radius: 15px;
+	margin: 0 2.5px;
+	padding: 10px;
+	height: 100%;
+	aspect-ratio: 1;
+	transition: background-color var(--nav-transition);
+}
+#dash img:hover, #dash svg:hover {
+	background-color: var(--hover-shade);
+}

@@ -2,18 +2,20 @@
 	position: absolute;
 	top: 42px;
 	right: 10px;
-	border-radius: 30px;
-	width: 450px;
+	border-radius:calc(16px * 2.25);
+	width: 420px;
 	z-index: 999;
 	box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
 	contain: content;
 	transition: background-color var(--theme-transition);
+	background-color: var(--dropdown-color);
 }
 
 .dropdown .over-lights {
-	padding: 20px;
-	border-radius: 30px;
+	padding: calc(6px * 3);
+	border-radius:calc(16px * 2.25);
 	contain: content;
+	box-shadow: inset  0 0 3px var(--toggle-color);
 }
 #user-area {
 	height:40px;
@@ -26,11 +28,11 @@
 	width:40px;
 	margin-left:10px;
 	border-radius: 50%;
-	background-color: var(--search-color);
+	background-color: var(--toggle-color);
 }
 
 #toggles {
-	margin:0.9em 0;
+	margin:0.9em 0 0.5em;
 	gap: 1em 0.5em;
 	display: grid;
 	grid-template-columns: 50% 50%;
@@ -38,7 +40,7 @@
 
 #toggles input ~ span{
 	display: block;
-	background-color: var(--search-color);
+	background-color: var(--toggle-color);
 	border-radius: 30px;
 	padding:12px 25px;
 	width:100%;
@@ -153,3 +155,22 @@ input[type=checkbox], input[type=file] {
 	background-repeat: no-repeat;
 }
 
+input[type=range] {
+	width: 100%;
+	background: none;
+}
+input[type=range]::-moz-range-track {
+	height: 4px;
+	border-radius: 10px;
+}
+input[type=range]::-moz-range-thumb, input[type=range]::-webkit-slider-thumb {
+	width: 17px;
+	height: 17px;
+	border-radius: 100%;
+	border: none;
+}
+input[type=range]::-moz-range-progress {
+	background: #1c6cd0;
+	height: 4px;
+	border-radius: 10px;
+}
