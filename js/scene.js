@@ -5,6 +5,7 @@ export const scene = {
 	lightSurfaces : [
 				createLightSurface(document.body),
 				createLightSurface(document.getElementById('quick-settings')),
+				createLightSurface(document.getElementById('dash'))
 	            ],
 	wallpaper : new Image(),
 	analyst   : new Worker('./js/median_cut.js'),
