@@ -91,8 +91,8 @@ function updateMonitorRect() {
 		uMonitor = new Float32Array([Math.max(1.0, width / height), Math.max(1.0, height / width), width, height]);
 
 	for(const workspace of workspaces) {
-		workspace.canvas.width  = width;
-		workspace.canvas.height = height;
+		workspace.canvas.width  = width  * devicePixelRatio;
+		workspace.canvas.height = height * devicePixelRatio;
 	}
 	for(const obj of scene.lightSurfaces) {
 		const gl = obj.context;
