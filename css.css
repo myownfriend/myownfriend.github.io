@@ -29,7 +29,7 @@
 
 :root {
 	--theme-transition:  300ms;
-	--nav-transition : 250ms;/*250ms;*/
+	--nav-transition : 250ms;
 	cursor: default;
 	user-select: none;
 	height:100%;
@@ -83,6 +83,7 @@ body #workspaces {
 	display:flex;
 	height: 100%;
 	width:  100%;
+	gap: 3svw;
 	z-index: 1;
 	translate:0;
 	transition:
@@ -92,7 +93,6 @@ body #workspaces {
 		gap           var(--nav-transition);
 }
 #workspaces > canvas {
-	gap:0;
 	transition:
 		border-radius var(--nav-transition),
 		box-shadow    var(--nav-transition),
@@ -106,7 +106,6 @@ body #workspaces {
 }
 
 body.overview #workspaces {
-	gap: 3svw;
 	scale: 0.8;
 	translate: 0 -1svh;
 }
