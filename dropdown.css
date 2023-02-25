@@ -42,7 +42,7 @@
 	display: block;
 	background-color: var(--toggle-color);
 	border-radius: 30px;
-	padding:12px 25px;
+	padding:10px 25px;
 	width:100%;
 	transition: transform var(--nav-transition), color var(--theme-transition);
 }
