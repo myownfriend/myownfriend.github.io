@@ -27,6 +27,14 @@
 	--thumb-color: #000;
 }
 
+:root {
+	--theme-transition:  300ms;
+	--nav-transition : 250ms;/*250ms;*/
+	cursor: default;
+	user-select: none;
+	height:100%;
+}
+
 svg path {
 	fill: var(--text-color);
 	transition: fill var(--theme-transition);
@@ -41,13 +49,7 @@ svg path {
 	z-index: -10;
 }
 
-:root {
-	--theme-transition:  300ms;
-	--nav-transition : 250ms;
-	cursor: default;
-	user-select: none;
-	height:100%;
-}
+
 * {
 	font-family:Canterall, sans-serif;
 	font-size: 11pt;
@@ -96,28 +98,35 @@ body #workspaces > canvas {
 		box-shadow    var(--nav-transition),
 		margin        var(--nav-transition);
 }
-body.overview #workspaces > canvas + canvas {
-	scale: 0.92;
+body #workspaces > canvas + canvas {
+	transition:
+		border-radius var(--nav-transition),
+		scale var(--nav-transition);
 }
 
+
 body.overview #workspaces {
-	gap:3svw;
-	scale:0.8;
-	translate:0 -1svh;
+	gap: 3svw;
+	scale: 0.8;
+	translate: 0 -1svh;
 }
 body.overview #workspaces canvas {
 	border-radius: 30px;
 	box-shadow: 0 16px 32px 8px rgba(0, 0, 0, 0.4);
 }
+body.overview #workspaces > canvas + canvas {
+	scale: 0.92;
+}
 
 body.app-grid #workspaces {
 	translate:34svw 15svh;
 	height:15svh;
+	scale:1.0;
 	gap:1.5svw;
 }
 body.app-grid #workspaces canvas {
 	border-radius: 10px;
-	box-shadow: 0 16px 32px 8px rgba(0, 0, 0, 0.2);
+	box-shadow: 0 4px 8px 4px rgba(0, 0, 0, 0.2);
 }
 body #workarea.app-grid #workspaces > canvas + canvas {
 	scale: 1.0;
@@ -132,7 +141,7 @@ body #workarea.app-grid #workspaces > canvas + canvas {
 	width:clamp(1280px, 50%, 100%);
 	display: grid;
 	grid-template-columns: auto auto auto auto auto auto auto auto ;
-	gap:3em 2em ;
+	gap:3em 2em;
 }
 #app-list li {
 	border-radius: 20px;
