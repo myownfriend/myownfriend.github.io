@@ -5,7 +5,7 @@
 	--dash-color:   rgb(48 48 48);/*rgba(255 255 255 / 0.05);*/
 	--hover-shade:  rgba(255 255 255 / 0.14);
 	--toggle-color: rgba(255 255 255 / 0.05);
-	--search-color: rgba(255 255 255 / 0.1);
+	--search-color: rgba(255 255 255 / 0.05);
 	--search-hover: rgba(255 255 255 / 0.2);
 	--search-place: rgba(255 255 255 / 0.9);
 	--dropdown-color: rgb(48,48,48);
@@ -18,7 +18,7 @@
 	--dash-color:  rgb(156, 156, 156); /* rgba(0 0 0 / 0.2);*/
 	--hover-shade:  rgba(0 0 0 / 0.14);
 	--toggle-color: rgba(0 0 0 / 0.10);
-	--search-color: rgba(0 0 0 / 0.20);
+	--search-color: rgba(0 0 0 / 0.14);
 	--search-hover: rgba(0 0 0 / 0.2);
 	--search-place: rgba(0 0 0 / 0.994);
 	--dropdown-color: rgb(190,190,190);
@@ -29,6 +29,7 @@
 
 svg path {
 	fill: var(--text-color);
+	transition: fill var(--theme-transition);
 }
 
 .paint {
@@ -81,6 +82,7 @@ body #workspaces {
 	height: 100%;
 	width:  100%;
 	z-index: 1;
+	translate:0;
 	transition:
 		height        var(--nav-transition),
 		scale         var(--nav-transition),
