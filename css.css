@@ -91,19 +91,19 @@ body #workspaces {
 		translate     var(--nav-transition),
 		gap           var(--nav-transition);
 }
-body #workspaces > canvas {
+#workspaces > canvas {
 	gap:0;
 	transition:
 		border-radius var(--nav-transition),
 		box-shadow    var(--nav-transition),
 		margin        var(--nav-transition);
 }
-body #workspaces > canvas + canvas {
+#workspaces > canvas + canvas {
+	scale: 0.92;
 	transition:
 		border-radius var(--nav-transition),
 		scale var(--nav-transition);
 }
-
 
 body.overview #workspaces {
 	gap: 3svw;
@@ -114,12 +114,10 @@ body.overview #workspaces canvas {
 	border-radius: 30px;
 	box-shadow: 0 16px 32px 8px rgba(0, 0, 0, 0.4);
 }
-body.overview #workspaces > canvas + canvas {
-	scale: 0.92;
-}
+
 
 body.app-grid #workspaces {
-	translate:34svw 15svh;
+	translate:34% 15svh;
 	height:15svh;
 	scale:1.0;
 	gap:1.5svw;
@@ -128,7 +126,7 @@ body.app-grid #workspaces canvas {
 	border-radius: 10px;
 	box-shadow: 0 4px 8px 4px rgba(0, 0, 0, 0.2);
 }
-body #workarea.app-grid #workspaces > canvas + canvas {
+body.app-grid #workarea #workspaces > canvas + canvas {
 	scale: 1.0;
 }
 
