@@ -3,10 +3,8 @@ import {sendToAnalyze, scene, update} from './scene.js';
 document.adoptedStyleSheets = [scene.css];
 
 window.addEventListener('load', () => {
-	//scene.wallpaper.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
-
-	scene.wallpaper.src = "./Wallpaper/16-by-9-screens.jpg";
-
+	updateMonitorRect();
+	scene.wallpaper.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
 	scene.wallpaper.addEventListener('load', sendToAnalyze);
 	setToPreferredTheme();
 });
@@ -68,7 +66,7 @@ export function updateMonitorRect() {
 		gl.uniform2fv(obj.monitor, aspect);
 		gl.uniform4fv(obj.rect, new Float32Array([
 			obj.surface.offsetLeft / width * 2.0,
-			(1 - ((obj.surface.offsetTop + obj.surface.offsetHeight) / height)) * 2,
+			(1 - ((obj.surface.offsetTop + obj.surface.offsetHeight) / height)) * 2.0,
 			width  / obj.surface.offsetWidth,
 			height / obj.surface.offsetHeight
 		]));
