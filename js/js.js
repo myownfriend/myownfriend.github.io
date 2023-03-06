@@ -1,82 +1,54 @@
-import { WebGL2 } from "./shaders.js";
-import {sendToAnalyze, scene, fullRedraw, drawLights} from './scene.js';
+import {sendToAnalyze, scene, update} from './scene.js';
 
-export const workspaces = [];
+document.adoptedStyleSheets = [scene.css];
 
-function main() {
+window.addEventListener('load', () => {
+	//scene.wallpaper.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
 
-	document.adoptedStyleSheets = [scene.css];
-	window.addEventListener('load', () => {
-		updateMonitorRect();
-		scene.wallpaper.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
-		scene.wallpaper.addEventListener('load', sendToAnalyze);
-		setToPreferredTheme();
+	scene.wallpaper.src = "./Wallpaper/16-by-9-screens.jpg";
+
+	scene.wallpaper.addEventListener('load', sendToAnalyze);
+	setToPreferredTheme();
+});
+for(const workspace of document.getElementsByClassName('workspace')) {
+	workspace.addEventListener('dragover', (ev) => {
+		ev.preventDefault();
 	});
-
-	createWorkSpaces();
-	createButtonListeners();
-	createThemeListeners();
-	createFileUploadListeners();
-
-	window.addEventListener('resize', () => {
-		updateMonitorRect();
-		fullRedraw();
+	workspace.addEventListener('drop', (ev) => {
+		ev.preventDefault();
+		uploadFile(ev.dataTransfer.items[0].getAsFile());
 	});
-
-	continuous_refresh();
+	workspace.addEventListener('click', () => {
+		document.body.classList.remove('overview','app-grid');
+		document.body.classList.add('desktop');
+		update(300);
+	});
 }
-
-function createWorkSpaces(amount=2) {
-    for(let i = 0; i < amount ; i++) {
-        const canvas = document.createElement('canvas');
-        document.getElementById('workspaces').appendChild(canvas);
-        workspaces.push(canvas.getContext('2d'));
-    }
-}
-
-function createButtonListeners() {
-	document.getElementById('activities').addEventListener('click', () => {
-		if(document.body.classList.contains('app-grid')) {
-			document.body.classList.remove('overview');
-			document.body.classList.remove('app-grid');
-		} else {
-			document.body.classList.toggle('overview');
-			document.body.classList.remove('app-grid');
-		}
-	});
-	document.getElementById('app-grid-toggle').addEventListener('click', () => {
-		document.body.classList.toggle('app-grid');
+document.getElementById("fileUpload").addEventListener('change', (ev) => {
+	uploadFile(ev.target.files[0]);
+});
+document.getElementById('activities').addEventListener('click', () => {
+	if(document.body.classList.contains('app-grid')) {
+		document.body.classList.remove('overview'), 'app-grid';
+		document.body.classList.add('desktop');
+	} else {
 		document.body.classList.toggle('overview');
-	});
-	for(const workspace of workspaces)
-		workspace.canvas.addEventListener('click', () => {
-			document.body.classList.remove('overview');
-			document.body.classList.remove('app-grid');
-		});
-}
-
-function createFileUploadListeners() {
-	for(const workspace of workspaces) {
-		workspace.canvas.addEventListener('dragover', (ev) => {
-			ev.preventDefault();
-		});
-		workspace.canvas.addEventListener('drop', (ev) => {
-			ev.preventDefault();
-			uploadFile(ev.dataTransfer.items[0].getAsFile());
-		});
+		document.body.classList.toggle('desktop');
+		document.body.classList.remove('app-grid');
 	}
-	document.getElementById("fileUpload").addEventListener('change', (ev) => {
-		uploadFile(ev.target.files[0]);
-	});
-}
-
-function createThemeListeners() {
-	window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', setToPreferredTheme);
-	document.getElementById('dark-mode-check').addEventListener('change', (e) => {
-		scene.theme = e.target.checked ? 'dark' : 'light';
-		document.documentElement.id = scene.theme + "-mode";
-	});
-}
+	update(300);
+});
+document.getElementById('app-grid-toggle').addEventListener('click', () => {
+	document.body.classList.toggle('app-grid');
+	document.body.classList.toggle('overview');
+});
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', setToPreferredTheme);
+document.getElementById('dark-mode-check').addEventListener('change', (e) => {
+	scene.theme = e.target.checked ? 'dark' : 'light';
+	document.documentElement.id = scene.theme + "-mode";
+	update(300);
+});
+window.addEventListener('resize', updateMonitorRect);
 
 function setToPreferredTheme() {
 	const darkModeCheck = document.getElementById('dark-mode-check');
@@ -84,47 +56,31 @@ function setToPreferredTheme() {
 	darkModeCheck.dispatchEvent(new Event("change"));
 }
 
-function updateMonitorRect() {
+export function updateMonitorRect() {
 	const
-		width    = document.documentElement.clientWidth,
-		height   = document.documentElement.clientHeight,
-		uMonitor = new Float32Array([Math.max(1.0, width / height), Math.max(1.0, height / width), width, height]);
-
-	for(const workspace of workspaces) {
-		workspace.canvas.width  = width  * devicePixelRatio;
-		workspace.canvas.height = height * devicePixelRatio;
-	}
-	for(const obj of scene.lightSurfaces) {
+		width  = document.documentElement.offsetWidth,
+		height = document.documentElement.offsetHeight,
+		aspect = new Float32Array([Math.max(1.0, width / height), Math.max(1.0, height / width)]);
+	for(const obj of scene.paintObjects) {
 		const gl = obj.context;
-		gl.canvas.height = obj.surface.clientHeight;
-		gl.canvas.width  = obj.surface.clientWidth;
-		gl.uniform4fv(obj.monitor, uMonitor);
+		gl.canvas.height = obj.surface.offsetHeight;
+		gl.canvas.width  = obj.surface.offsetWidth;
+		gl.uniform2fv(obj.monitor, aspect);
+		gl.uniform4fv(obj.rect, new Float32Array([
+			obj.surface.offsetLeft / width * 2.0,
+			(1 - ((obj.surface.offsetTop + obj.surface.offsetHeight) / height)) * 2,
+			width  / obj.surface.offsetWidth,
+			height / obj.surface.offsetHeight
+		]));
 		gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-		gl.uniform4fv(obj.rect, new Float32Array([obj.surface.offsetLeft, height - (obj.surface.offsetTop + gl.canvas.height), gl.canvas.width, gl.canvas.height]));
 	}
+	update();
 }
 
 function uploadFile(file) {
-	if (file) {
-		const allowedFiletypes = ["image/jpeg",
-								"image/jpg",
-								"image/png",
-								"image/webp",
-								"image/gif",
-								"image/svg+xml"
-								];
-		if (allowedFiletypes.includes(file.type)) {
-			if (scene.wallpaper.src != null)
-				URL.revokeObjectURL(scene.wallpaper.src);
-			scene.wallpaper.src = URL.createObjectURL(file)
-			sendToAnalyze();
-		}
+	const allowedFiletypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
+	if (allowedFiletypes.includes(file.type)) {
+		scene.wallpaper.src = URL.createObjectURL(file);
+		sendToAnalyze();
 	}
 }
-
-function continuous_refresh() {
-	drawLights();
-	window.requestAnimationFrame(continuous_refresh);
-};
-
-main();

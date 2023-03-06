@@ -1,52 +1,69 @@
-import {workspaces} from './js.js';
-import {WebGL2, vs_drawLights, fs_drawLights} from './shaders.js';
+import {WebGL2, vs_drawLights, fs_drawLights, fs_drawWallpaper} from './shaders.js';
+import {updateMonitorRect} from './js.js';
 
 export const scene = {
-	lightSurfaces : [
-				createLightSurface(document.body),
-				createLightSurface(document.getElementById('quick-settings')),
-				createLightSurface(document.getElementById('dash'))
+	paintObjects : [
+				createLights(document.body),
+				createLights(document.getElementById('quick-settings')),
+				createLights(document.getElementById('dash')),
+				createWorkSpaces(document.getElementById('workspaces')),
+				createWorkSpaces(document.getElementById('workspaces'))
 	            ],
 	wallpaper : new Image(),
 	analyst   : new Worker('./js/median_cut.js'),
-	theme : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
-	css : new CSSStyleSheet()
+	theme     : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+	aspect    : [],
+	css       : new CSSStyleSheet()
 };
 
-function createLightSurface(surface) {
+function createPaint(surface,vs,fs,type) {
 	const
-		setup = new WebGL2(vs_drawLights,fs_drawLights),
+		setup = new WebGL2(vs, fs),
 		data = {
 			context : setup.context,
 			program : setup.program
 		};
 	data.surface = surface;
-	data.context.canvas.classList.add('paint');
+	data.context.canvas.classList.add(type);
 	data.surface.prepend(data.context.canvas);
-
-	data.surfaceColor = data.context.getUniformLocation(data.program, "surfaceColor");
-	data.monitor = data.context.getUniformLocation(data.program, "monitor");
-	data.wallpaper = data.context.getUniformLocation(data.program, "wallpaper");
 	data.rect = data.context.getUniformLocation(data.program, "rect");
-	data.lights = data.context.getUniformBlockIndex(data.program, 'lighting');
-	data.context.bindBufferBase(data.context.UNIFORM_BUFFER, 0, data.context.createBuffer());
+	data.monitor = data.context.getUniformLocation(data.program, "monitor");
+	data.background = data.context.getUniformLocation(data.program, "background");
 
-	const aPosition = data.context.getAttribLocation(data.program, 'aPosition');
+	const vPosition = data.context.getAttribLocation(data.program, 'vPosition');
 	data.context.bindBuffer(data.context.ARRAY_BUFFER, data.context.createBuffer());
-	data.context.bufferData(data.context.ARRAY_BUFFER, new Float32Array([0.0,1.0, 0.0,0.0, 1.0,1.0, 1.0,0.0]), data.context.STATIC_DRAW);
+	data.context.bufferData(data.context.ARRAY_BUFFER, new Float32Array([-1.0,1.0, -1.0,-1.0, 1.0,1.0, 1.0,-1.0]), data.context.STATIC_DRAW);
 
-	data.context.enableVertexAttribArray(aPosition);
-	data.context.vertexAttribPointer(aPosition, 2, data.context.FLOAT, false, 0, 0);
+	data.context.enableVertexAttribArray(vPosition);
+	data.context.vertexAttribPointer(vPosition, 2, data.context.FLOAT, false, 0, 0);
 
 	return data;
 }
 
-function createThumbnail2(image, limit = 64) {
-    let scale = 1;
-    if (image.width * image.height > limit * limit)
-        scale = limit / (image.width / image.height > 1 ?  image.height : image.width);
-    const buf = new WebGL2('','', {enable : true, width : 2 * Math.round(image.width * scale / 2), height : 2 * Math.round(image.height * scale / 2)})
-    return buf;
+function createLights(surface) {
+	const data = createPaint(surface, vs_drawLights, fs_drawLights, 'light');
+	data.lights = data.context.getUniformBlockIndex(data.program, 'lighting');
+	data.surfaceColor = data.context.getUniformLocation(data.program, "surfaceColor");
+	data.context.bindBufferBase(data.context.UNIFORM_BUFFER, 0, data.context.createBuffer());
+	return data;
+}
+
+function createWorkSpaces(surface) {
+	const
+		data = createPaint(surface, vs_drawLights, fs_drawWallpaper, 'workspace'),
+		uv   = data.context.getAttribLocation(data.program, 'tuv');
+	data.context.bindBuffer(data.context.ARRAY_BUFFER, data.context.createBuffer());
+	data.context.bufferData(data.context.ARRAY_BUFFER, new Float32Array([0.0,1.0, 0.0,0.0, 1.0,1.0, 1.0,0.0]), data.context.STATIC_DRAW);
+	data.context.enableVertexAttribArray(uv);
+	data.context.vertexAttribPointer(uv, 2, data.context.FLOAT, false, 0, 0);
+	
+	data.context.uniform1i(data.context.getUniformLocation(data.program, 'wallpaper'), 0);
+	data.context.pixelStorei(data.context.UNPACK_FLIP_Y_WEBGL, true);
+	data.context.bindTexture(data.context.TEXTURE_2D, data.context.createTexture());
+	data.context.activeTexture(data.context.TEXTURE0);
+	data.context.texParameteri(data.context.TEXTURE_2D, data.context.TEXTURE_MIN_FILTER, data.context.LINEAR);
+	data.context.texParameteri(data.context.TEXTURE_2D, data.context.TEXTURE_MAG_FILTER, data.context.LINEAR);
+	return data;
 }
 
 export function sendToAnalyze() {
@@ -54,50 +71,41 @@ export function sendToAnalyze() {
 	thumb.drawImage(scene.wallpaper, 0, 0, thumb.canvas.width, thumb.canvas.height);
 	// It's minor but the aspect ratio calculation should be 
 	// part of the worker since it's technically a kind of analysis
-	scene.aspect = [Math.max(1.0, scene.wallpaper.width / scene.wallpaper.height), Math.max(1.0, scene.wallpaper.height / scene.wallpaper.width)];
+	// That can't be done until the bullshit createThumbnail function is replaced
 	scene.analyst.postMessage({
-		width : thumb.canvas.width,
-		height: thumb.canvas.height,
-		image : thumb.getImageData(0, 0, thumb.canvas.width, thumb.canvas.height).data
+		wWidth : scene.wallpaper.width,
+		wHeight: scene.wallpaper.height,
+		width  : thumb.canvas.width,
+		height : thumb.canvas.height,
+		image  : thumb.getImageData(0, 0, thumb.canvas.width, thumb.canvas.height).data
 	});
+	URL.revokeObjectURL(scene.wallpaper.src);
 }
 
-scene.analyst.onmessage = (e) => {			
+scene.analyst.onmessage = (e) => {
 	scene.css.replaceSync(e.data.css);
-	for(const obj of scene.lightSurfaces) {
-		const gl = obj.context;
-		gl.uniform4fv(obj.wallpaper, new Float32Array([scene.aspect[0], scene.aspect[1], scene.wallpaper.width, scene.wallpaper.height]));
-		gl.bufferData(gl.UNIFORM_BUFFER, new Float32Array(e.data.lights), gl.STATIC_DRAW);
-		gl.uniformBlockBinding(obj.program, obj.lights, 0);
+	for(const obj of scene.paintObjects) {
+		obj.context.uniform2fv(obj.background, e.data.aspect);
+		if (obj.context.canvas.classList.contains('light'))
+			obj.context.bufferData(obj.context.UNIFORM_BUFFER, new Float32Array(e.data.lights), obj.context.STATIC_DRAW);
+		else
+			obj.context.texImage2D(obj.context.TEXTURE_2D, 0, obj.context.RGB, scene.wallpaper.width, scene.wallpaper.height, 0, obj.context.RGB, obj.context.UNSIGNED_BYTE, scene.wallpaper);
 	}
-	fullRedraw();
+	updateMonitorRect();
+	update(250);
 };
 
-export function drawLights() {
-	for(const obj of scene.lightSurfaces) {
-		const gl = obj.context;
-		gl.uniform1f(obj.surfaceColor, Number(window.getComputedStyle(obj.surface).getPropertyValue("background-color").split(', ')[1]));
-		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-	}
+export function update(length = 1) {
+	const end = window.performance.now() + length;
+	window.requestAnimationFrame(refresh);
+	function refresh(timestamp) {
+		for(const obj of scene.paintObjects) {
+			if(obj.context.canvas.classList.contains('light'))
+				obj.context.uniform1f(obj.surfaceColor, Number(window.getComputedStyle(obj.surface).getPropertyValue("background-color").split(', ')[1]));
+			obj.context.drawArrays(obj.context.TRIANGLE_STRIP, 0, 4);
+		}
+		if(timestamp < end)
+			window.requestAnimationFrame(refresh);
+	};
 }
 
-export function fullRedraw() {
-	const
-		mAspect = [Math.max(1.0, document.documentElement.clientWidth / document.documentElement.clientHeight), Math.max(1.0, document.documentElement.clientHeight / document.documentElement.clientWidth)],
-		scale = Math.min(scene.aspect[0] / mAspect[0], scene.aspect[1] / mAspect[1]),
-		monitor_scaled  = [mAspect[0] * scale, mAspect[1] * scale],
-		float_w  = monitor_scaled[0] / scene.aspect[0],
-		float_h  = monitor_scaled[1] / scene.aspect[1],
-		float_x  = (1 - float_w) / 2,
-		float_y  = (1 - float_h) / 2;
-	const
-		pixel_x = float_x * scene.wallpaper.width ,
-		pixel_y = float_y * scene.wallpaper.height,
-		pixel_w = float_w * scene.wallpaper.width ,
-		pixel_h = float_h * scene.wallpaper.height;
-
-	for(const workspace of workspaces) 
-		workspace.drawImage(scene.wallpaper, pixel_x, pixel_y, pixel_w, pixel_h, 0, 0, workspace.canvas.width, workspace.canvas.height);
-
-	drawLights();
-}

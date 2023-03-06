@@ -14,6 +14,11 @@ onmessage = (e) => {
         wline  = e.data.width * 4,
         line   = 2 * Math.round(wline / slice_w_ / 2);
 
+	scene.aspect = new Float32Array([
+		Math.max(1.0, e.data.wWidth / e.data.wHeight),
+		Math.max(1.0, e.data.wHeight / e.data.wWidth)
+	]);
+
 	// convert image data to pixel array + slicing
     for(let y_slice = 0; y_slice < slice_h_; y_slice++) {
         const yso = y_slice * wline * sliceh;
@@ -107,8 +112,8 @@ onmessage = (e) => {
 			// Get average color in bin
 			color = linRGB_OkLab([color[0] / amount, color[1] / amount, color[2] / amount]);
 
-		scene.lights.push((i % slice_w_) / (slice_w_ - 1) + 0.00000001);
-		scene.lights.push((1-Math.trunc(i / slice_w_) / (slice_h_ - 1))) + 0.00000001;// Subtract from 1.0 to flip vertically. This saves a bunch of subtractions later on
+		scene.lights.push(toClipSpace((i % slice_w_) / (slice_w_ - 1) + 0.00000001 * scene.aspect[0]));
+		scene.lights.push(toClipSpace((1-Math.trunc(i / slice_w_) / (slice_h_ - 1))) + 0.00000001 * scene.aspect[1]);// Subtract from 1.0 to flip vertically. This saves a bunch of subtractions later on
 		scene.lights.push(color[2]);
 		scene.lights.push(color[1]);
 
@@ -125,20 +130,22 @@ onmessage = (e) => {
 	scene.lum = linRGB_OkLab([scene.lum, 0 , 0])[0];
 
 	const
-		dark  = okLtoR([Math.min(scene.sat, 0.25615), 0, 0]) * 255,
-		light = okLtoR([Math.max(1.0 - (scene.lum), 1 - 0.25615), 0, 0]) * 255;
+		dark  = okLtoR(Math.min(scene.sat, 0.25615)) * 255,
+		light = okLtoR(Math.max(1.0 - (scene.lum), 1 - 0.25615)) * 255;
 
 	scene.css = `
-			#dark-mode body {
+			#dark-mode body.desktop {
 				background-color: rgb(${dark} ${dark} ${dark});
 			}
-			#light-mode body {
+			#light-mode body.desktop {
 				background-color: rgb(${light} ${light} ${light});
 			}`;
 
-	scene.aspect = [Math.max(1.0, e.data.width / e.data.height), Math.max(1.0, e.data.height / e.data.width)];
-
 	postMessage(scene);
+}
+
+function toClipSpace(a) {
+	return a * 2 - 1;
 }
 
 function okLtoR(okL) {
