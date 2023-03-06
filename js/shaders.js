@@ -50,23 +50,18 @@ export const vs_drawLights = `#version 300 es
 	out     float brightness;
     out     vec2  luv;
 	out     vec2  uv;
-    vec3 SRGB_to_OKLAB(vec3 sRGB) {
-        vec3 RGB = mix(pow((sRGB + 0.055) / 1.055, vec3(2.4)), sRGB / 12.92, lessThanEqual(sRGB,vec3(0.04045)));
-        vec3 LMS = mat3(0.4122214708,  0.2119034982, 0.0883024619,  0.5363325363,  0.6806995451, 0.2817188376,  0.0514459929,  0.1073969566, 0.6299787005) * RGB;
-        return mat3(0.2104542553,  1.9779984951, 0.0259040371, 0.7936177850, -2.4285922050, 0.7827717662, -0.0040720468,  0.4505937099,-0.8086757660) * (sign(LMS) * pow(abs(LMS), vec3(0.3333333333333)));
-    }
+   ${SRGB_to_OKLAB}
 	void main() {
         brightness  = SRGB_to_OKLAB(vec3(surfaceColor / 255.0)).r;
         luv = vPosition;
         uv  = tuv;
 
 		vec2 diff  = background / monitor;
-
         vec2 scale = diff * (1.0 / min(diff.x, diff.y)) * rect.zw;
+        vec2 translate = rect.xy;
 
-        vec2 translate = rect.xy * monitor;
-
-		gl_Position = vec4(vPosition * scale - translate, 1.0, 1.0);
+		gl_Position = vec4((vPosition + translate) * scale, 1.0, 1.0);
+        //gl_Position = vec4(vPosition * scale + translate, 1.0, 1.0);
 	}`;
 
 export const fs_drawLights = `#version 300 es

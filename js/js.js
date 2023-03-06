@@ -56,17 +56,20 @@ function setToPreferredTheme() {
 
 export function updateMonitorRect() {
 	const
-		width  = document.documentElement.offsetWidth,
-		height = document.documentElement.offsetHeight,
-		aspect = new Float32Array([Math.max(1.0, width / height), Math.max(1.0, height / width)]);
+		width  = document.documentElement.clientWidth,
+		height = document.documentElement.clientHeight,
+		aspect = new Float32Array([Math.max(1.0, width / height), Math.max(1.0, height / width)]),
+		center_x = width  / 2,
+		center_y = height / 2;
+
 	for(const obj of scene.paintObjects) {
 		const gl = obj.context;
-		gl.canvas.height = obj.surface.offsetHeight;
-		gl.canvas.width  = obj.surface.offsetWidth;
+		gl.canvas.height = obj.surface.clientHeight;
+		gl.canvas.width  = obj.surface.clientWidth;
 		gl.uniform2fv(obj.monitor, aspect);
 		gl.uniform4fv(obj.rect, new Float32Array([
-			obj.surface.offsetLeft / width * 2.0,
-			(1 - ((obj.surface.offsetTop + obj.surface.offsetHeight) / height)) * 2.0,
+			(obj.surface.offsetLeft + (obj.surface.offsetWidth  / 2) -  center_x) / width  * -2.0,
+			(obj.surface.offsetTop  + (obj.surface.offsetHeight / 2) -  center_y) / height *  2.0,
 			width  / obj.surface.offsetWidth,
 			height / obj.surface.offsetHeight
 		]));
