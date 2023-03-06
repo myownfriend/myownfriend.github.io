@@ -59,8 +59,7 @@ export function updateMonitorRect() {
 		width  = document.documentElement.clientWidth,
 		height = document.documentElement.clientHeight,
 		aspect = new Float32Array([Math.max(1.0, width / height), Math.max(1.0, height / width)]),
-		center_x = width  / 2,
-		center_y = height / 2;
+		center = [width  / 2, height / 2];
 
 	for(const obj of scene.paintObjects) {
 		const gl = obj.context;
@@ -68,8 +67,8 @@ export function updateMonitorRect() {
 		gl.canvas.width  = obj.surface.clientWidth;
 		gl.uniform2fv(obj.monitor, aspect);
 		gl.uniform4fv(obj.rect, new Float32Array([
-			(obj.surface.offsetLeft + (obj.surface.offsetWidth  / 2) -  center_x) / width  * -2.0,
-			(obj.surface.offsetTop  + (obj.surface.offsetHeight / 2) -  center_y) / height *  2.0,
+			(obj.surface.offsetLeft + (obj.surface.offsetWidth  / 2) -  center[0]) / width  * -2.0,
+			(obj.surface.offsetTop  + (obj.surface.offsetHeight / 2) -  center[1]) / height *  2.0,
 			width  / obj.surface.offsetWidth,
 			height / obj.surface.offsetHeight
 		]));
@@ -80,8 +79,6 @@ export function updateMonitorRect() {
 
 function uploadFile(file) {
 	const allowedFiletypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
-	if (allowedFiletypes.includes(file.type)) {
+	if (allowedFiletypes.includes(file.type))
 		scene.wallpaper.src = URL.createObjectURL(file);
-		sendToAnalyze();
-	}
 }
