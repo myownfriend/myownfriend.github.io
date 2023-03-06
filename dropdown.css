@@ -1,6 +1,6 @@
 .dropdown {
 	position: absolute;
-	top: 42px;
+	top: 8px;
 	right: 10px;
 	border-radius:calc(16px * 2.25);
 	width: 420px;
@@ -42,7 +42,7 @@
 	display: block;
 	background-color: var(--toggle-color);
 	border-radius: 30px;
-	padding:10px 25px;
+	padding:13px 25px;
 	width:100%;
 	transition: transform var(--nav-transition), color var(--theme-transition);
 }

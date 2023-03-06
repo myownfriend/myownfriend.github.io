@@ -2,10 +2,7 @@
 	height: 2.2em;
 	display: flex;
 	justify-content: space-between;
-	position: fixed;
-	top: 0;
 	width:100%;
-	z-index: 1;
 	contain: content;
 }
 #panel > li {
@@ -20,7 +17,7 @@
 	padding: 2px 12px;
 	margin: 3px;
 }
-#panel > li > button:hover, body.overview #activities {
+#panel > li > button:hover, body:is(.overview, .app-grid) #activities {
 	background: var(--hover-shade);
 }
 #panel > li > button svg {
@@ -44,7 +41,7 @@
 	border-radius: 20px;
 	width:350px;
 	border: 2px solid transparent;
-	margin:48px auto 0;
+	margin:12px auto;
 	color:var(--text-color);
 }
 #search:hover {
@@ -61,15 +58,14 @@
 
 #dash {
 	position: fixed;
-	margin-top:12px;
-	bottom: 0.5vw;
+	bottom:12px;
 	flex-direction: row;
 	padding: 10px;
 	height: 106px;
 	background-color: var(--dash-color);
 	transition: background-color var(--theme-transition);
 }
-#dash, #dash .paint {
+#dash, #dash .light {
 	border-radius: calc(12px + 16px);
 }
 #dash img, #dash svg {
@@ -81,5 +77,9 @@
 	transition: background-color var(--nav-transition);
 }
 #dash img:hover, #dash svg:hover {
+	background-color: var(--dash-hover);
+}
+
+body.app-grid #dash #app-grid-toggle {
 	background-color: var(--hover-shade);
 }

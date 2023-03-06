@@ -3,6 +3,7 @@
 :root#dark-mode  {
 	--text-color:   rgb(229 229 229);
 	--dash-color:   rgb(48 48 48);/*rgba(255 255 255 / 0.05);*/
+	--dash-hover:   rgba(255 255 255 / 0.08);
 	--hover-shade:  rgba(255 255 255 / 0.14);
 	--toggle-color: rgba(255 255 255 / 0.05);
 	--search-color: rgba(255 255 255 / 0.05);
@@ -16,13 +17,14 @@
 :root#light-mode  {
 	--text-color:   rgb(2 2 2);
 	--dash-color:  rgb(156, 156, 156); /* rgba(0 0 0 / 0.2);*/
+	--dash-hover:  rgba(0 0 0 / 0.08);
 	--hover-shade:  rgba(0 0 0 / 0.14);
 	--toggle-color: rgba(0 0 0 / 0.10);
 	--search-color: rgba(0 0 0 / 0.14);
 	--search-hover: rgba(0 0 0 / 0.2);
 	--search-place: rgba(0 0 0 / 0.994);
-	--dropdown-color: rgb(190,190,190);
-	--stage-color: rgb(172 172 172);
+	--dropdown-color: rgb(190 190 190);
+	--stage-color:  rgb(172 172 172);
 	--track-color: rgba(0 0 0 / 0.450980392);
 	--thumb-color: #000;
 }
@@ -40,7 +42,7 @@ svg path {
 	transition: fill var(--theme-transition);
 }
 
-.paint {
+.light {
 	position:absolute;
 	top:0;
 	left:0;
@@ -63,17 +65,18 @@ svg path {
 }
 
 body {
-	position: relative;
+	display: flex;
 	height: 100%;
 	transition: background-color var(--theme-transition);
 	background-color: var(--stage-color);
+	flex-direction: column;
 }
 
 body #workarea {
+	position: relative;
 	overflow: hidden;
-	height: 100%;
+	height: calc(100% - 2.2em);
 	min-width: 100%;
-	clip-path: inset(2.2em 0 0 0);
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: center;
@@ -83,7 +86,7 @@ body #workspaces {
 	display:flex;
 	height: 100%;
 	width:  100%;
-	gap: 3svw;
+	gap: 2.8svw;
 	z-index: 1;
 	translate:0;
 	transition:
@@ -106,14 +109,13 @@ body #workspaces {
 }
 
 body.overview #workspaces {
-	scale: 0.8;
-	translate: 0 -1svh;
+	scale: 0.81;
+	translate: 0 -2.5svh;
 }
 body.overview #workspaces canvas {
 	border-radius: 30px;
-	box-shadow: 0 16px 32px 8px rgba(0, 0, 0, 0.4);
+	box-shadow: 0 16px 32px 8px rgba(0, 0, 0, 0.3);
 }
-
 
 body.app-grid #workspaces {
 	translate:34% 15svh;
@@ -125,7 +127,7 @@ body.app-grid #workspaces canvas {
 	border-radius: 10px;
 	box-shadow: 0 4px 8px 4px rgba(0, 0, 0, 0.2);
 }
-body.app-grid #workarea #workspaces > canvas + canvas {
+body.app-grid #workspaces > canvas + canvas {
 	scale: 1.0;
 }
 
