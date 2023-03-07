@@ -146,15 +146,3 @@ function okLtoR(okL) {
 		return rgb[0] ** 3;
 	return 1.055 * Math.pow(rgb[0], 1/2.4) - 0.055;
 }
-
-function linRGB_OkLab(rgb) {
-	const // https://www.w3.org/TR/css-color-4/#color-conversion-code
-		l = Math.cbrt(0.4122214708 * rgb[0] + 0.5363325363 * rgb[1] + 0.0514459929 * rgb[2]),
-		m = Math.cbrt(0.2119034982 * rgb[0] + 0.6806995451 * rgb[1] + 0.1073969566 * rgb[2]),
-		s = Math.cbrt(0.0883024619 * rgb[0] + 0.2817188376 * rgb[1] + 0.6299787005 * rgb[2]);
-	return [
-		0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
-		1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
-		0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s
-	];
-}

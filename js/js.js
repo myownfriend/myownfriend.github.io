@@ -27,7 +27,7 @@ document.getElementById("fileUpload").addEventListener('change', (ev) => {
 });
 document.getElementById('activities').addEventListener('click', () => {
 	if(document.body.classList.contains('app-grid')) {
-		document.body.classList.remove('overview'), 'app-grid';
+		document.body.classList.remove('overview', 'app-grid');
 		document.body.classList.add('desktop');
 	} else {
 		document.body.classList.toggle('overview');
