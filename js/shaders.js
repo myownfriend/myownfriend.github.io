@@ -10,7 +10,7 @@ export class WebGL2 {
             alpha     : false,
             stencil   : false,
             antialias : false,
-            preserveDrawingBuffer: true
+            preserveDrawingBuffer: true,
          });
         this.program = this.context.createProgram();
         const vShader = this.context.createShader(this.context.VERTEX_SHADER);
@@ -26,6 +26,34 @@ export class WebGL2 {
     }
 }
 
+export const SRGB_to_LinRGB = `
+    vec3 SRGB_to_OKLAB(vec3 sRGB) {
+        return mix(pow((sRGB + 0.055) / 1.055, vec3(2.4)), sRGB / 12.92, lessThanEqual(sRGB,vec3(0.04045)));
+    }`;
+
+export const vs_no_clip = `#version 300 es
+    precision mediump float;
+	in      vec2  vPosition;
+    in      vec2  tuv;
+	out     vec2  uv;
+	void main() {
+        uv  = tuv;
+		gl_Position = vec4(vPosition, 0.0, 1.0);
+	}`;
+
+export const fs_thumb = `#version 300 es
+    precision mediump float;
+    in vec2 uv;
+	uniform sampler2D wallpaper;
+	out vec4 color;
+    ${SRGB_to_LinRGB}
+	void main() {
+
+        float sat = max(wallpaper.r, wallpaper.g, wallpaper.b) - min(wallpaper.r, wallpaper.g, wallpaper.b);
+
+		color = vec4(SRGB_to_OKLAB(texture(wallpaper, uv).rgb), sat);
+	}`;
+
 export const SRGB_to_OKLAB = `
     vec3 SRGB_to_OKLAB(vec3 sRGB) {
         vec3 RGB = mix(pow((sRGB + 0.055) / 1.055, vec3(2.4)), sRGB / 12.92, lessThanEqual(sRGB,vec3(0.04045)));
@@ -39,7 +67,7 @@ export const SRGB_to_OKLAB = `
             -0.0040720468,  0.4505937099,-0.8086757660) * (sign(LMS) * pow(abs(LMS), vec3(0.3333333333333)));
     }`;
 
-export const vs_drawLights = `#version 300 es
+export const vs_clip = `#version 300 es
     precision mediump float;
 	in      vec2  vPosition;
     in      vec2  tuv;
@@ -55,13 +83,10 @@ export const vs_drawLights = `#version 300 es
         brightness  = SRGB_to_OKLAB(vec3(surfaceColor / 255.0)).r;
         luv = vPosition;
         uv  = tuv;
-
 		vec2 diff  = background / monitor;
         vec2 scale = diff * (1.0 / min(diff.x, diff.y)) * rect.zw;
         vec2 translate = rect.xy;
-
 		gl_Position = vec4((vPosition + translate) * scale, 1.0, 1.0);
-        //gl_Position = vec4(vPosition * scale + translate, 1.0, 1.0);
 	}`;
 
 export const fs_drawLights = `#version 300 es

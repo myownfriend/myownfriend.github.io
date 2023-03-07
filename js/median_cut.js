@@ -6,7 +6,7 @@ onmessage = (e) => {
             avg    : 0,
             sat    : 0,
             lum    : 0,
-            lights : []
+			lights : []
         },
         bins   = [[]],
         data   = e.data.image,
@@ -31,17 +31,12 @@ onmessage = (e) => {
                 for(let x = 0; x < line; x += 4) {
                     const
                         xo = yo + x,
-                        r = data[xo + 0] / 255,
-                    	g = data[xo + 1] / 255,
-                        b = data[xo + 2] / 255,
-						rgb = srgb_linRGB([r,g,b], 2.2),
-						max = Math.max(rgb[0], rgb[1], rgb[2]),
-						min = Math.min(rgb[0], rgb[1], rgb[2]);
-
-						scene.lum += (rgb[0] + rgb[1] + rgb[2]) / 3;
-						scene.sat += max - min;
-
-                    bins[0].push([rgb[0], rgb[1], rgb[2], current_slice]);
+                        r = data[xo + 0],
+                    	g = data[xo + 1],
+                        b = data[xo + 2];
+					scene.lum += (r + g + b) / 3;
+					scene.sat += data[xo + 3];
+                    bins[0].push([r, g, b, current_slice]);
                 }
             }
         }
@@ -112,17 +107,18 @@ onmessage = (e) => {
 			// Get average color in bin
 			color = linRGB_OkLab([color[0] / amount, color[1] / amount, color[2] / amount]);
 
-		scene.lights.push(toClipSpace((i % slice_w_) / (slice_w_ - 1) + 0.00000001 * scene.aspect[0]));
-		scene.lights.push(toClipSpace((1-Math.trunc(i / slice_w_) / (slice_h_ - 1))) + 0.00000001 * scene.aspect[1]);// Subtract from 1.0 to flip vertically. This saves a bunch of subtractions later on
-		scene.lights.push(color[2]);
-		scene.lights.push(color[1]);
+		scene.lights.push(2 * ((i % slice_w_) / (slice_w_ - 1) + 0.00000001 * scene.aspect[0]) - 1);  // x
+		scene.lights.push(2 * ((1-Math.trunc(i / slice_w_) / (slice_h_ - 1)) + 0.00000001 * scene.aspect[1]) - 1); // y
+		scene.lights.push(color[2]); // a
+		scene.lights.push(color[1]); // b
 
-		scene.lights.push(Math.random() + 1);
-		// padding for UBO
-		scene.lights.push(0.0);
-		scene.lights.push(0.0);
-		scene.lights.push(0.0);
+		scene.lights.push(Math.random() + 1); // Intensity
+		scene.lights.push(0.0); // padding for UBO
+		scene.lights.push(0.0); // padding for UBO
+		scene.lights.push(0.0); // padding for UBO
 	}
+
+	scene.lights = new Float32Array(scene.lights);
 
 	scene.sat /= (96 * 64);
 	scene.lum /= (96 * 64);
@@ -133,19 +129,9 @@ onmessage = (e) => {
 		dark  = okLtoR(Math.min(scene.sat, 0.25615)) * 255,
 		light = okLtoR(Math.max(1.0 - (scene.lum), 1 - 0.25615)) * 255;
 
-	scene.css = `
-			#dark-mode body.desktop {
-				background-color: rgb(${dark} ${dark} ${dark});
-			}
-			#light-mode body.desktop {
-				background-color: rgb(${light} ${light} ${light});
-			}`;
+	scene.css = `#dark-mode  body.desktop {background-color: rgb(${dark} ${dark} ${dark})} #light-mode body.desktop {background-color: rgb(${light} ${light} ${light})}`;
 
 	postMessage(scene);
-}
-
-function toClipSpace(a) {
-	return a * 2 - 1;
 }
 
 function okLtoR(okL) {
@@ -173,28 +159,4 @@ function linRGB_OkLab(rgb) {
 		1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
 		0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s
 	];
-}
-
-function srgb_linRGB(srgb , gamma) {
-	let
-		r = srgb[0],
-		g = srgb[1],
-		b = srgb[2];
-  
-	if (r <= 0.04045)
-		r = r / 12.92;
-	else
-		r = Math.pow((r + 0.055) / 1.055, gamma);
-  
-	if (g <= 0.04045)
-		g = g / 12.92;
-	else
-		g = Math.pow((g + 0.055) / 1.055, gamma);
-  
-	if (b <= 0.04045)
-		b = b / 12.92;
-	else
-		b = Math.pow((b + 0.055) / 1.055, gamma);
-  
-	return [r, g, b];
 }
