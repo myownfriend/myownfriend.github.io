@@ -27,7 +27,7 @@ export class WebGL2 {
 }
 
 export const SRGB_to_LinRGB = `
-    vec3 SRGB_to_OKLAB(vec3 sRGB) {
+    vec3 SRGB_to_LinRGB(vec3 sRGB) {
         return mix(pow((sRGB + 0.055) / 1.055, vec3(2.4)), sRGB / 12.92, lessThanEqual(sRGB,vec3(0.04045)));
     }`;
 
@@ -51,7 +51,7 @@ export const fs_thumb = `#version 300 es
 
         float sat = max(wallpaper.r, wallpaper.g, wallpaper.b) - min(wallpaper.r, wallpaper.g, wallpaper.b);
 
-		color = vec4(SRGB_to_OKLAB(texture(wallpaper, uv).rgb), sat);
+		color = vec4(SRGB_to_LinRGB(texture(wallpaper, uv).rgb), sat);
 	}`;
 
 export const SRGB_to_OKLAB = `
