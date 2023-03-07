@@ -31,12 +31,12 @@ onmessage = (e) => {
                 for(let x = 0; x < line; x += 4) {
                     const
                         xo = yo + x,
-                        r = data[xo + 0],
-                    	g = data[xo + 1],
+                        l = data[xo + 0],
+                    	a = data[xo + 1],
                         b = data[xo + 2];
-					scene.lum += (r + g + b) / 3;
 					scene.sat += data[xo + 3];
-                    bins[0].push([r, g, b, current_slice]);
+					scene.lum += l;
+                    bins[0].push([l, a, b, current_slice]);
                 }
             }
         }
@@ -48,8 +48,8 @@ onmessage = (e) => {
 		const colors = bins.length;
 		var winner = 0;
 		for(let i = 0; i < colors; i++) {
-			let rgbMin = [0,0,0];
-			let rgbMax = [0,0,0];
+			let rgbMin = [ 1.0,  1.0, 1.0];
+			let rgbMax = [-1.0, -1.0,-1.0];
 			for(let pixel of bins[i]) {
 				rgbMin = [Math.min(rgbMin[0], pixel[0]), Math.min(rgbMin[1], pixel[1]), Math.min(rgbMin[2], pixel[2])];
 				rgbMax = [Math.max(rgbMax[0], pixel[0]), Math.max(rgbMax[1], pixel[1]), Math.max(rgbMax[2], pixel[2])];
@@ -92,7 +92,7 @@ onmessage = (e) => {
 			if(slices[b] == undefined)
 				slices[b] = [];
 			slices[b].push({
-				color: [c.color[0], c.color[1], c.color[2]], // This is where the array indexes shift
+				color: [c.color[0], c.color[1], c.color[2]],
 				weight: c.slices[b]});
 		}
   
@@ -105,15 +105,15 @@ onmessage = (e) => {
 				amount += c.weight;
 			}
 			// Get average color in bin
-			color = linRGB_OkLab([color[0] / amount, color[1] / amount, color[2] / amount]);
+			color = [color[0] / amount, color[1] / amount, color[2] / amount];
 
 		scene.lights.push(2 * ((i % slice_w_) / (slice_w_ - 1) + 0.00000001 * scene.aspect[0]) - 1);  // x
 		scene.lights.push(2 * ((1-Math.trunc(i / slice_w_) / (slice_h_ - 1)) + 0.00000001 * scene.aspect[1]) - 1); // y
-		scene.lights.push(color[2]); // a
-		scene.lights.push(color[1]); // b
+		scene.lights.push(color[2]); // b
+		scene.lights.push(color[1]); // a
 
 		scene.lights.push(Math.random() + 1); // Intensity
-		scene.lights.push(0.0); // padding for UBO
+		scene.lights.push(color[0]); // Lightness
 		scene.lights.push(0.0); // padding for UBO
 		scene.lights.push(0.0); // padding for UBO
 	}
@@ -122,8 +122,6 @@ onmessage = (e) => {
 
 	scene.sat /= (96 * 64);
 	scene.lum /= (96 * 64);
-	scene.sat = linRGB_OkLab([scene.sat, 0 , 0])[0];
-	scene.lum = linRGB_OkLab([scene.lum, 0 , 0])[0];
 
 	const
 		dark  = okLtoR(Math.min(scene.sat, 0.25615)) * 255,

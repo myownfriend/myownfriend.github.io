@@ -26,9 +26,18 @@ export class WebGL2 {
     }
 }
 
-export const SRGB_to_LinRGB = `
-    vec3 SRGB_to_LinRGB(vec3 sRGB) {
-        return mix(pow((sRGB + 0.055) / 1.055, vec3(2.4)), sRGB / 12.92, lessThanEqual(sRGB,vec3(0.04045)));
+
+export const SRGB_to_OKLAB = `
+    vec3 SRGB_to_OKLAB(vec3 sRGB) {
+        vec3 RGB = mix(pow((sRGB + 0.055) / 1.055, vec3(2.4)), sRGB / 12.92, lessThanEqual(sRGB,vec3(0.04045)));
+        vec3 LMS = mat3(
+                0.4122214708,  0.2119034982, 0.0883024619, 
+                0.5363325363,  0.6806995451, 0.2817188376, 
+                0.0514459929,  0.1073969566, 0.6299787005) * RGB;
+        return mat3(
+                0.2104542553,  1.9779984951, 0.0259040371,
+                0.7936177850, -2.4285922050, 0.7827717662,
+               -0.0040720468,  0.4505937099,-0.8086757660) * (sign(LMS) * pow(abs(LMS), vec3(0.3333333333333)));
     }`;
 
 export const vs_no_clip = `#version 300 es
@@ -46,26 +55,15 @@ export const fs_thumb = `#version 300 es
     in vec2 uv;
 	uniform sampler2D wallpaper;
 	out vec4 color;
-    ${SRGB_to_LinRGB}
+    ${SRGB_to_OKLAB}
 	void main() {
-
-        float sat = max(wallpaper.r, wallpaper.g, wallpaper.b) - min(wallpaper.r, wallpaper.g, wallpaper.b);
-
-		color = vec4(SRGB_to_LinRGB(texture(wallpaper, uv).rgb), sat);
+        vec3 tex  = texture(wallpaper, uv).rgb;
+		color = vec4(
+            SRGB_to_OKLAB(tex),
+            (abs(tex.g) + abs(tex.b)) / 2.0
+        );
 	}`;
 
-export const SRGB_to_OKLAB = `
-    vec3 SRGB_to_OKLAB(vec3 sRGB) {
-        vec3 RGB = mix(pow((sRGB + 0.055) / 1.055, vec3(2.4)), sRGB / 12.92, lessThanEqual(sRGB,vec3(0.04045)));
-        vec3 LMS = mat3(
-             0.4122214708,  0.2119034982, 0.0883024619, 
-             0.5363325363,  0.6806995451, 0.2817188376, 
-             0.0514459929,  0.1073969566, 0.6299787005) * RGB;
-        return mat3(
-             0.2104542553,  1.9779984951, 0.0259040371,
-             0.7936177850, -2.4285922050, 0.7827717662,
-            -0.0040720468,  0.4505937099,-0.8086757660) * (sign(LMS) * pow(abs(LMS), vec3(0.3333333333333)));
-    }`;
 
 export const vs_clip = `#version 300 es
     precision mediump float;

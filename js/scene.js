@@ -1,4 +1,4 @@
-import {WebGL2, vs_clip, vs_no_clip, fs_drawLights, fs_drawWallpaper} from './shaders.js';
+import {WebGL2, vs_clip, vs_no_clip, fs_drawLights, fs_drawWallpaper, fs_thumb} from './shaders.js';
 
 export const scene = {
 	paintObjects : [
@@ -62,7 +62,7 @@ function createWorkSpaces(surface) {
 
 export function sendToAnalyze() {
 	const
-		thumb = new WebGL2(vs_no_clip, fs_drawWallpaper, {
+		thumb = new WebGL2(vs_no_clip, fs_thumb, {
 			enable : true,
 			width  : 192 / 2,
 			height : 128 / 2
@@ -113,6 +113,7 @@ export function sendToAnalyze() {
 
 scene.analyst.onmessage = (e) => {
 	scene.css.replaceSync(e.data.css);
+	//console.log( e.data.lights);
 	for(const obj of scene.paintObjects) {
 		obj.context.uniform2fv(obj.background, e.data.aspect);
 		if (obj.context.canvas.classList.contains('light'))
