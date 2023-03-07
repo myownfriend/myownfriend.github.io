@@ -4,7 +4,7 @@ document.adoptedStyleSheets = [scene.css];
 
 window.addEventListener('load', () => {
 	updateMonitorRect();
-	scene.wallpaper.src = "./Wallpaper/16-by-9-screens.jpg";
+	scene.wallpaper.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
 	scene.wallpaper.addEventListener('load', sendToAnalyze);
 	setToPreferredTheme();
 });
