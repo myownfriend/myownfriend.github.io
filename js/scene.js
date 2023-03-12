@@ -1,4 +1,4 @@
-import {WebGL2, vs_clip, vs_no_clip, fs_drawLights, fs_drawWallpaper, fs_thumb} from './shaders.js';
+import {WebGL2, vs_clip, fs_drawLights, fs_drawWallpaper} from './shaders.js';
 
 export const scene = {
 	paintObjects : [
