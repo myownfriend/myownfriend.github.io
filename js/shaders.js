@@ -26,10 +26,9 @@ export class WebGL2 {
     }
 }
 
-
 export const SRGB_to_OKLAB = `
     vec3 SRGB_to_OKLAB(vec3 sRGB) {
-        vec3 RGB = mix(pow((sRGB + 0.055) / 1.055, vec3(2.4)), sRGB / 12.92, lessThanEqual(sRGB,vec3(0.04045)));
+        vec3 RGB = mix(pow((sRGB + 0.055) / 1.055, vec3(2.2)), sRGB / 12.92, lessThanEqual(sRGB,vec3(0.04045)));
         vec3 LMS = mat3(
                 0.4122214708,  0.2119034982, 0.0883024619, 
                 0.5363325363,  0.6806995451, 0.2817188376, 
@@ -39,31 +38,6 @@ export const SRGB_to_OKLAB = `
                 0.7936177850, -2.4285922050, 0.7827717662,
                -0.0040720468,  0.4505937099,-0.8086757660) * (sign(LMS) * pow(abs(LMS), vec3(0.3333333333333)));
     }`;
-
-export const vs_no_clip = `#version 300 es
-    precision mediump float;
-	in      vec2  vPosition;
-    in      vec2  tuv;
-	out     vec2  uv;
-	void main() {
-        uv  = tuv;
-		gl_Position = vec4(vPosition, 0.0, 1.0);
-	}`;
-
-export const fs_thumb = `#version 300 es
-    precision mediump float;
-    in vec2 uv;
-	uniform sampler2D wallpaper;
-	out vec4 color;
-    ${SRGB_to_OKLAB}
-	void main() {
-        vec3 tex  = texture(wallpaper, uv).rgb;
-		color = vec4(
-            SRGB_to_OKLAB(tex),
-            (abs(tex.g) + abs(tex.b)) / 2.0
-        );
-	}`;
-
 
 export const vs_clip = `#version 300 es
     precision mediump float;
@@ -91,12 +65,13 @@ export const fs_drawLights = `#version 300 es
     precision mediump float;
     in vec2 luv;
 	in float brightness;
+    uniform int length;
 	struct light {
 		vec4 pos_color;
 		vec4 intensity;
 	};
 	layout(std140) uniform lighting {
-		light lights[6];
+		light lights[8];
 	};
     out vec4 color;
     vec3 OKLAB_to_SRGB(vec3 OKLAB) {
@@ -113,7 +88,7 @@ export const fs_drawLights = `#version 300 es
 	void main() {
 		float i_acc  = 0.0;
 		vec2  ab_acc = vec2(0.0, 0.0);
-		for (int i = 0; i < 6; i++) {
+		for (int i = 0; i < length; i++) {
 			float intensity = lights[i].intensity.x / pow(distance(luv, lights[i].pos_color.xy), 2.0);
 			i_acc  += intensity;
 			ab_acc += intensity * lights[i].pos_color.ab;

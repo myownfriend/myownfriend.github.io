@@ -1,11 +1,16 @@
-import {sendToAnalyze, scene, update} from './scene.js';
+import {scene, update} from './scene.js';
 
 document.adoptedStyleSheets = [scene.css];
 
 window.addEventListener('load', () => {
 	updateMonitorRect();
 	scene.wallpaper.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
-	scene.wallpaper.addEventListener('load', sendToAnalyze);
+	scene.wallpaper.addEventListener('load', () => {
+		createImageBitmap(scene.wallpaper).then((background) => {
+			scene.analyst.postMessage(background, [background]);
+		});
+		URL.revokeObjectURL(scene.wallpaper.src);
+	});
 	setToPreferredTheme();
 });
 for(const workspace of document.getElementsByClassName('workspace')) {

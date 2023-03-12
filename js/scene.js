@@ -22,7 +22,7 @@ function createPaint(surface,vs,fs,type) {
 			program : setup.program
 		};
 	data.surface = surface;
-	data.context.canvas.classList.add(type);
+	data.context.canvas.className = type;
 	data.surface.prepend(data.context.canvas);
 	data.rect = data.context.getUniformLocation(data.program, "rect");
 	data.monitor = data.context.getUniformLocation(data.program, "monitor");
@@ -39,6 +39,7 @@ function createLights(surface) {
 	const data = createPaint(surface, vs_clip, fs_drawLights, 'light');
 	data.lights = data.context.getUniformBlockIndex(data.program, 'lighting');
 	data.surfaceColor = data.context.getUniformLocation(data.program, "surfaceColor");
+	data.light_length = data.context.getUniformLocation(data.program, "length");
 	data.context.bindBufferBase(data.context.UNIFORM_BUFFER, 0, data.context.createBuffer());
 	return data;
 }
@@ -60,65 +61,14 @@ function createWorkSpaces(surface) {
 	return data;
 }
 
-export function sendToAnalyze() {
-	const
-		thumb = new WebGL2(vs_no_clip, fs_thumb, {
-			enable : true,
-			width  : 192 / 2,
-			height : 128 / 2
-		}),
-		gl = thumb.context,
-		program = thumb.program,
-		uv   = gl.getAttribLocation(program, 'tuv'),
-		pixels = new Float32Array(gl.canvas.width * gl.canvas.height * 4),
-		vPosition = gl.getAttribLocation(program, 'vPosition'),
-		thumbnail  = gl.createTexture(),
-		rgbaBuffer = gl.createFramebuffer();
-
-	gl.getExtension("EXT_color_buffer_float");
-
-	gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1.0,1.0, -1.0,-1.0, 1.0,1.0, 1.0,-1.0]), gl.STATIC_DRAW);
-	gl.enableVertexAttribArray(vPosition);
-	gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
-	gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0.0,1.0, 0.0,0.0, 1.0,1.0, 1.0,0.0]), gl.STATIC_DRAW);
-	gl.enableVertexAttribArray(uv);
-	gl.vertexAttribPointer(uv, 2, gl.FLOAT, false, 0, 0);
-
-	gl.activeTexture(gl.TEXTURE0);
-	gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, scene.wallpaper.width, scene.wallpaper.height, 0, gl.RGB, gl.UNSIGNED_BYTE, scene.wallpaper);
-	gl.activeTexture(gl.TEXTURE1);
-	gl.bindTexture(gl.TEXTURE_2D, thumbnail);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, gl.canvas.width, gl.canvas.height, 0, gl.RGBA, gl.FLOAT, null);
-
-	gl.bindFramebuffer(gl.FRAMEBUFFER, rgbaBuffer);
-	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, thumbnail, 0);
-	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-	
-	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-	gl.readPixels(0, 0, gl.canvas.width, gl.canvas.height, gl.RGBA, gl.FLOAT, pixels);
-
-	scene.analyst.postMessage({
-		wWidth : scene.wallpaper.width,
-		wHeight: scene.wallpaper.height,
-		width  : gl.canvas.width,
-		height : gl.canvas.height,
-		image  : pixels
-	});
-	URL.revokeObjectURL(scene.wallpaper.src);
-}
-
 scene.analyst.onmessage = (e) => {
 	scene.css.replaceSync(e.data.css);
-	//console.log( e.data.lights);
 	for(const obj of scene.paintObjects) {
 		obj.context.uniform2fv(obj.background, e.data.aspect);
-		if (obj.context.canvas.classList.contains('light'))
+		if (obj.context.canvas.classList.contains('light')) {
+			obj.context.uniform1i(obj.light_length, e.data.light_length);
 			obj.context.bufferData(obj.context.UNIFORM_BUFFER, e.data.lights, obj.context.STATIC_DRAW);
-		else
+		} else
 			obj.context.texImage2D(obj.context.TEXTURE_2D, 0, obj.context.RGB, scene.wallpaper.width, scene.wallpaper.height, 0, obj.context.RGB, obj.context.UNSIGNED_BYTE, scene.wallpaper);
 	}
 	update(250);
