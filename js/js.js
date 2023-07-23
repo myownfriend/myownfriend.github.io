@@ -1,15 +1,16 @@
+"use strict";
 import {scene, update} from './scene.js';
 
 document.adoptedStyleSheets = [scene.css];
 
 window.addEventListener('load', () => {
 	updateMonitorRect();
-	scene.wallpaper.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
-	scene.wallpaper.addEventListener('load', () => {
-		createImageBitmap(scene.wallpaper).then((background) => {
-			scene.analyst.postMessage(background, [background]);
+	scene.background.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
+	scene.background.addEventListener('load', () => {
+		createImageBitmap(scene.background).then((image) => {
+			scene.analyst.postMessage(image, [image]);
 		});
-		URL.revokeObjectURL(scene.wallpaper.src);
+		URL.revokeObjectURL(scene.background.src);
 	});
 	setToPreferredTheme();
 });
@@ -63,17 +64,23 @@ export function updateMonitorRect() {
 	const
 		width  = document.documentElement.clientWidth,
 		height = document.documentElement.clientHeight,
-		aspect = new Float32Array([Math.max(1.0, width / height), Math.max(1.0, height / width)]),
-		center = [width  / 2, height / 2];
-
-	for(const obj of scene.paintObjects) {
-		const gl = obj.context;
+		center = {x :width  / 2.0, y : height / 2.0},
+		diff   = {
+			x : scene.aspect.width  / Math.max(1.0, width / height),
+			y : scene.aspect.height / Math.max(1.0, height / width)
+		},
+		min    = 1.0 / Math.min(diff.x, diff.y),
+		scale  = new Float32Array([diff.x * min, diff.y * min]);
+	for(let i = 0; i < scene.paintObjects.length; i++) {
+		const
+			obj = scene.paintObjects[i],
+			gl  = obj.context;
 		gl.canvas.height = obj.surface.clientHeight;
 		gl.canvas.width  = obj.surface.clientWidth;
-		gl.uniform2fv(obj.monitor, aspect);
+		gl.uniform2fv(obj.scale, scale);
 		gl.uniform4fv(obj.rect, new Float32Array([
-			(obj.surface.offsetLeft + (obj.surface.offsetWidth  / 2) -  center[0]) / width  * -2.0,
-			(obj.surface.offsetTop  + (obj.surface.offsetHeight / 2) -  center[1]) / height *  2.0,
+			(obj.surface.offsetLeft + (obj.surface.offsetWidth  / 2.0) -  center.x) / width  * -2.0,
+			(obj.surface.offsetTop  + (obj.surface.offsetHeight / 2.0) -  center.y) / height *  2.0,
 			width  / obj.surface.offsetWidth,
 			height / obj.surface.offsetHeight
 		]));
@@ -83,7 +90,7 @@ export function updateMonitorRect() {
 }
 
 function uploadFile(file) {
-	const allowedFiletypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
+	const allowedFiletypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/svg+xml", "image/jxl"];
 	if (allowedFiletypes.includes(file.type))
-		scene.wallpaper.src = URL.createObjectURL(file);
+		scene.background.src = URL.createObjectURL(file);
 }
