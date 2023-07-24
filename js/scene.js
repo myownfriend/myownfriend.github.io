@@ -12,7 +12,7 @@ export const scene = {
 	            ],
 	background: new Image(),
 	aspect    : {width: 1.0, height : 1.0},
-	analyst   : new Worker('./js/analysis.js'),
+	analyst   : new Worker('./js/median_cut.js'),
 	theme     : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
 	css       : new CSSStyleSheet()
 };
