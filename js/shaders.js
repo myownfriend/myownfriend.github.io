@@ -43,23 +43,38 @@ export const vs_clip = `#version 300 es
     precision mediump float;
 	in      vec2  vPosition;
     in      vec2  tuv;
-	uniform float surfaceColor;
 	uniform vec4  rect;
+    uniform vec2  global_scale;
     uniform vec2  background;
-    uniform vec2  monitor;
+    // These will be removed eventually when
+    // brightness animation gets moved to js
+    // Those values will be sent to the fragment
+    // shader
+    uniform float surfaceColor;
 	out     float brightness;
+
     out     vec2  luv;
 	out     vec2  uv;
    ${SRGB_to_OKLAB}
 	void main() {
         brightness  = SRGB_to_OKLAB(vec3(surfaceColor / 255.0)).r;
-        luv = vPosition;
+        luv = vPosition * background;
         uv  = tuv;
-		vec2 diff  = background / monitor;
-        vec2 scale = diff * (1.0 / min(diff.x, diff.y)) * rect.zw;
-        vec2 translate = rect.xy;
-		gl_Position = vec4((vPosition + translate) * scale, 1.0, 1.0);
+		gl_Position = vec4((vPosition + rect.xy) * (global_scale * rect.zw), 1.0, 1.0);
 	}`;
+
+export const OKLAB_to_SRGB = `
+    vec3 OKLAB_to_SRGB(vec3 OKLAB) {
+        vec3 LMS = mat3(
+            1.0000000000,  1.0000000000, 1.0000000000, 
+            0.3963377774, -0.1055613458,-0.0894841775, 
+            0.2158037573, -0.0638541728,-1.2914855480) * OKLAB;
+        vec3 RGB = mat3(
+            4.0767245293, -1.2681437731, -0.0041119885,
+            -3.3072168827, 2.6093323231, -0.7034763098,
+            0.2307590544, -0.3411344290,  1.7068625689) * pow(LMS, vec3(3.0));
+        return mix(1.055 * pow(RGB, vec3(1.0/2.2)) - 0.055, RGB * 12.92, lessThanEqual(RGB, vec3(0.0031308)));
+    }`
 
 export const fs_drawLights = `#version 300 es
     precision mediump float;
@@ -74,17 +89,7 @@ export const fs_drawLights = `#version 300 es
 		light lights[8];
 	};
     out vec4 color;
-    vec3 OKLAB_to_SRGB(vec3 OKLAB) {
-        vec3 LMS = mat3(
-            1.0000000000,  1.0000000000, 1.0000000000, 
-            0.3963377774, -0.1055613458,-0.0894841775, 
-            0.2158037573, -0.0638541728,-1.2914855480) * OKLAB;
-        vec3 RGB = mat3(
-             4.0767416621, -1.2684380046, -0.0041960863,
-            -3.3077115913,  2.6097574011, -0.7034186147,
-             0.2309699292, -0.3413193965,  1.7076147010) * pow(LMS, vec3(3.0));
-        return mix(1.055 * pow(RGB, vec3(1.0/2.4)) - 0.055, RGB * 12.92, lessThanEqual(RGB, vec3(0.0031308)));
-    }
+    ${OKLAB_to_SRGB}
 	void main() {
 		float i_acc  = 0.0;
 		vec2  ab_acc = vec2(0.0, 0.0);
