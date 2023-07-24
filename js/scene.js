@@ -8,10 +8,10 @@ export const scene = {
 				createLights(document.getElementById('quick-settings')),
 				createLights(document.getElementById('dash'))
 	            ],
-	wallpaper : new Image(),
-	analyst   : new Worker('./js/median_cut.js'),
-	theme     : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
-	css       : new CSSStyleSheet()
+	background : new Image(),
+	analyst    : new Worker('./js/median_cut.js'),
+	theme      : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+	css        : new CSSStyleSheet()
 };
 
 function createPaint(surface,vs,fs,type) {
@@ -25,8 +25,8 @@ function createPaint(surface,vs,fs,type) {
 	data.context.canvas.className = type;
 	data.surface.prepend(data.context.canvas);
 	data.rect = data.context.getUniformLocation(data.program, "rect");
-	data.monitor = data.context.getUniformLocation(data.program, "monitor");
-	data.background = data.context.getUniformLocation(data.program, "background");
+	data.monitor = data.context.getUniformLocation(data.program, "background");
+	data.background = data.context.getUniformLocation(data.program, "global_scale");
 	const vPosition = data.context.getAttribLocation(data.program, 'vPosition');
 	data.context.bindBuffer(data.context.ARRAY_BUFFER, data.context.createBuffer());
 	data.context.bufferData(data.context.ARRAY_BUFFER, new Float32Array([-1.0,1.0, -1.0,-1.0, 1.0,1.0, 1.0,-1.0]), data.context.STATIC_DRAW);
