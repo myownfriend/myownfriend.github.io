@@ -9,7 +9,7 @@ onmessage = (e) => {
 				Math.max(1.0, e.data.height / e.data.width)
 			])
 		},
-		canvas  = new OffscreenCanvas(192 / 4, 128 / 4),
+		canvas  = new OffscreenCanvas(192 / 2, 128 / 2),
 		gl = canvas.getContext('webgl2', {
 			depth     : false,
 			alpha     : false,
