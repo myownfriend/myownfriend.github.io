@@ -70,7 +70,7 @@ scene.analyst.onmessage = (e) => {
 			obj.context.uniform1i(obj.light_length, e.data.light_length);
 			obj.context.bufferData(obj.context.UNIFORM_BUFFER, e.data.lights, obj.context.STATIC_DRAW);
 		} else
-			obj.context.texImage2D(obj.context.TEXTURE_2D, 0, obj.context.RGB, scene.wallpaper.width, scene.wallpaper.height, 0, obj.context.RGB, obj.context.UNSIGNED_BYTE, scene.background);
+			obj.context.texImage2D(obj.context.TEXTURE_2D, 0, obj.context.RGB, scene.background.width, scene.background.height, 0, obj.context.RGB, obj.context.UNSIGNED_BYTE, scene.background);
 	}
 	update(250);
 };
