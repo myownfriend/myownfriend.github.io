@@ -9,7 +9,8 @@
 	--search-color: rgba(255 255 255 / 0.05);
 	--search-hover: rgba(255 255 255 / 0.2);
 	--search-place: rgba(255 255 255 / 0.9);
-	--dropdown-color: rgb(48,48,48);
+	--dropdown-color: rgb(48 48 48);
+	--dropdown-color: rgb(61 61 61)
 	--stage-color: rgb(36 36 36);
 	--track-color: rgba(255 255 255 / 0.450980392);
 	--thumb-color: #eee;
