@@ -304,3 +304,42 @@ function get_top_bar_brightness(brightness) {
 
 	return `#dark-mode  body.desktop {background-color: rgb(${dark} ${dark} ${dark})} #light-mode body.desktop {background-color: rgb(${light} ${light} ${light})}`;
 }
+
+
+function coalesc_leaf() {
+
+/* 	Child
+    [0][1]
+    [2][3]
+ */
+	brightness = (l[0] + l[1] + l[2] + l[3]) / pixel_count;
+
+	a_top   = a[0] + a[1];
+	a_bot   = a[2] + a[3];
+	b_top   = b[0] + b[1];
+	b_bot   = b[2] + b[3];
+
+	a_left  = (a[0] + a[2]);
+	a_right = (a[1] + a[3]);
+	b_left  = (b[0] + b[2]);
+	b_right = (b[1] + b[3]);
+
+	/*
+		[atop  , aleft , btop  , bleft ]
+	  - [abot  , aright, bbot  , bright]
+	  __________________________________
+	abs([avgrad, ahgrad, bvgrad, bhgrad]) = [avcon, ahcon, bvcon, bhcon]
+	*/
+	a_vgrad = atop  - abot;
+	b_vgrad = btop  - bbot;
+	a_hgrad = aleft - aright;
+	b_hgrad = bleft - bright;
+
+	a_avg   = (atop + abot) / 4;
+	b_avg   = (btop + bbot) / 4;
+
+	a_hcon  = Math.abs(ahgrad);
+	b_hcon  = Math.abs(bhgrad);
+	a_vcon  = Math.abs(avgrad);
+	b_vcon  = Math.abs(bvgrad);
+}

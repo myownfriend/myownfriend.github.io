@@ -109,9 +109,9 @@ createLights(dash);
 const workarea = document.createElement('section');
 workarea.id = 'workarea';
 workarea.appendChild(search);
+workarea.appendChild(dash);
 workarea.appendChild(workspaces);
 workarea.appendChild(app_grid);
-workarea.appendChild(dash);
 workarea.appendChild(quick_settings);
 
 document.body.appendChild(panel);
