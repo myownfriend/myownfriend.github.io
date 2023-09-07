@@ -1,96 +1,163 @@
 "use strict";
-import {scene, update} from './scene.js';
+import {setBackground, createWorkSpace, createLights} from './scene.js';
 
-document.adoptedStyleSheets = [scene.css];
+const panel = document.createElement('div');
+panel.id = 'panel';
 
-window.addEventListener('load', () => {
-	updateMonitorRect();
-	scene.background.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
-	scene.background.addEventListener('load', () => {
-		createImageBitmap(scene.background).then((image) => {
-			scene.analyst.postMessage(image, [image]);
-		});
-		URL.revokeObjectURL(scene.background.src);
-	});
-	setToPreferredTheme();
-});
-for(const workspace of document.getElementsByClassName('workspace')) {
+const activities_toggle = addButton('activities', panel);
+activities_toggle.innerHTML = 'Activities';
+activities_toggle.addEventListener('click', changeView);
+
+const clock = addButton('clock', panel);
+clock.innerHTML = 'Thu Nov 25  2:15 AM';
+
+const system_status_area = addButton('system-status-area', panel);
+for (const icon of [
+		'night-light',
+		'network-wireless-signal-excellent',
+		'network-vpn',
+		'microphone-sensitivity-high',
+		'battery-charging'
+	])
+	system_status_area.innerHTML += `<svg><use href="img/icons.svg#${icon}"></use></svg>`;
+
+const search = document.createElement('input');
+search.id = "search";
+search.setAttribute('type', 'text');
+search.setAttribute('placeholder', 'Type to search');
+
+const workspaces = document.createElement('div');
+workspaces.id = 'workspaces';
+for(let i = 0; i < 2; i++) {
+	const workspace = createWorkSpace(workspaces);
 	workspace.addEventListener('dragover', (ev) => {
 		ev.preventDefault();
 	});
 	workspace.addEventListener('drop', (ev) => {
 		ev.preventDefault();
-		uploadFile(ev.dataTransfer.items[0].getAsFile());
+		setBackground(ev.dataTransfer.items[0].getAsFile());
 	});
-	workspace.addEventListener('click', () => {
-		document.body.classList.remove('overview','app-grid');
-		document.body.classList.add('desktop');
-		update(300);
-	});
+	workspace.addEventListener('click', changeView);
 }
-document.getElementById("fileUpload").addEventListener('change', (ev) => {
-	uploadFile(ev.target.files[0]);
-});
-document.getElementById('activities').addEventListener('click', () => {
-	if(document.body.classList.contains('app-grid')) {
-		document.body.classList.remove('overview', 'app-grid');
-		document.body.classList.add('desktop');
-	} else {
-		document.body.classList.toggle('overview');
-		document.body.classList.toggle('desktop');
-		document.body.classList.remove('app-grid');
-	}
-	update(300);
-});
-document.getElementById('app-grid-toggle').addEventListener('click', () => {
+
+const app_grid  = addAppList([
+	['Weather','Weather', false],
+	['Maps', 'Maps', false],
+	['Text Editor', 'TextEditor', false],
+	['Cheese', 'Cheese', false],
+	['Calculator', 'Calculator', false],
+	['Boxes', 'Boxes', false],
+	['Contacts', 'Contacts', false],
+	['Disk Usage Analyzer', 'baobab', false],
+	['Photos', 'Photos', false],
+	['Tour', 'Tour', false]
+]);
+app_grid.id = 'app-grid';
+
+const dash = document.createElement('div');
+dash.id = 'dash';
+dash.className = 'hidden';
+dash.appendChild(addAppList( [
+	['Files','Nautilus', true],
+	['Software','Software', false],
+	['Settings','Settings', false]
+], true));
+dash.innerHTML += `<p class="app"><svg viewbox="-2 -2 20 20"><use href="img/icons.svg#show-apps"></use></svg><label>Show Apps</label></p>`;
+dash.lastChild.addEventListener('click', () => {
 	document.body.classList.toggle('app-grid');
 	document.body.classList.toggle('overview');
 });
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', setToPreferredTheme);
-document.getElementById('dark-mode-check').addEventListener('change', (e) => {
-	scene.theme = e.target.checked ? 'dark' : 'light';
-	document.documentElement.id = scene.theme + "-mode";
-	update(300);
+
+const toggles = document.createElement('div');
+toggles.id = 'toggles';
+
+const settings = {
+	wired        : addToggle('Wired', toggles),
+	wifi         : addToggle('Wi-Fi', toggles),
+	bluetooth    : addToggle('Bluetooth', toggles),
+	power        : addToggle('Power Saver', toggles),
+	dark_mode    : addToggle('Dark Mode', toggles).firstChild,
+	file_upload  : addToggle('Upload Image', toggles, 'file'),
+}
+settings.dark_mode.addEventListener('click', (e) => {
+	setTheme(e.target.checked);
 });
-window.addEventListener('resize', updateMonitorRect);
+settings.file_upload.addEventListener('change', (e) => {
+	setBackground(e.target.files[0]);
+});
 
-function setToPreferredTheme() {
-	const darkModeCheck = document.getElementById('dark-mode-check');
-	darkModeCheck.checked = window.matchMedia('(prefers-color-scheme: dark)').matches;
-	darkModeCheck.dispatchEvent(new Event("change"));
+const over_lights = document.createElement('div');
+over_lights.className = 'over-lights';
+over_lights.innerHTML = `
+	<ul id="user-area"><li></li><li></li><li></li><li></li></ul>
+	<div id="audio-main">
+		<div class="volume-slider">
+			<input type="range" min="1" max="100" value="40"/>
+		</div>
+	</div>`;
+over_lights.appendChild(toggles);
+
+const quick_settings = document.createElement('form');
+quick_settings.id = 'quick-settings';
+quick_settings.className = 'dropdown';
+quick_settings.appendChild(over_lights);
+
+createLights(document.body);
+createLights(quick_settings);
+createLights(dash);
+
+const workarea = document.createElement('section');
+workarea.id = 'workarea';
+workarea.appendChild(search);
+workarea.appendChild(workspaces);
+workarea.appendChild(app_grid);
+workarea.appendChild(dash);
+workarea.appendChild(quick_settings);
+
+document.body.appendChild(panel);
+document.body.appendChild(workarea);
+
+setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)=> {
+	setTheme(e.target.matches);
+});
+
+function setTheme(dark) {
+	settings.dark_mode.checked = dark;
+	document.body.id = (dark ? 'dark' : 'light') + "-mode";
+	document.body.dispatchEvent(new Event("change"));
 }
 
-export function updateMonitorRect() {
-	const
-		width  = document.documentElement.clientWidth,
-		height = document.documentElement.clientHeight,
-		center = {x :width  / 2.0, y : height / 2.0},
-		diff   = {
-			x : scene.aspect.width  / Math.max(1.0, width / height),
-			y : scene.aspect.height / Math.max(1.0, height / width)
-		},
-		min    = 1.0 / Math.min(diff.x, diff.y),
-		scale  = new Float32Array([diff.x * min, diff.y * min]);
-	for(let i = 0; i < scene.paintObjects.length; i++) {
-		const
-			obj = scene.paintObjects[i],
-			gl  = obj.context;
-		gl.canvas.height = obj.surface.clientHeight;
-		gl.canvas.width  = obj.surface.clientWidth;
-		gl.uniform2fv(obj.scale, scale);
-		gl.uniform4fv(obj.rect, new Float32Array([
-			(obj.surface.offsetLeft + (obj.surface.offsetWidth  / 2.0) -  center.x) / width  * -2.0,
-			(obj.surface.offsetTop  + (obj.surface.offsetHeight / 2.0) -  center.y) / height *  2.0,
-			width  / obj.surface.offsetWidth,
-			height / obj.surface.offsetHeight
-		]));
-		gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+function changeView() {
+	if (document.body.classList.contains('app-grid')) {
+		document.body.classList.remove('overview', 'app-grid');
+	} else {
+		document.body.classList.toggle('overview');
+		document.body.classList.remove('app-grid');
 	}
-	update();
+	document.body.dispatchEvent(new Event("change"));
 }
 
-function uploadFile(file) {
-	const allowedFiletypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/svg+xml", "image/jxl"];
-	if (allowedFiletypes.includes(file.type))
-		scene.background.src = URL.createObjectURL(file);
+function addAppList(apps, hidden=false) {
+	const applist = document.createElement('ul');
+	applist.className = 'app-list';
+	if (hidden)
+		applist.classList.add('hidden');
+	for (let i = 0; i < apps.length; i++)
+		applist.innerHTML += `<li class="app${(apps[i][2] ? ` open` : ``)}" ><img src="apps/org.gnome.${apps[i][1]}.svg"/><label>${apps[i][0]}</label></li>`;
+	return applist;
+}
+
+function addToggle(name, parent, type="checkbox") {
+	const toggle = document.createElement('label');
+	toggle.innerHTML = `<input type="${type}"><span>${name}</span>`;
+	parent.appendChild(toggle);
+	return toggle;
+}
+
+function addButton(id, parent) {
+	const button = document.createElement('button');
+	button.id = id;
+	parent.appendChild(button);
+	return button;
 }

@@ -1,32 +1,101 @@
 "use strict";
 import { WebGL2, vs_clip, fs_drawLights, fs_drawWallpaper } from './shaders.js';
-import { updateMonitorRect } from './js.js';
 
-export const scene = {
-	paintObjects : [
-				createWorkSpaces(document.getElementById('workspaces')),
-				createWorkSpaces(document.getElementById('workspaces')),
-				createLights(document.body),
-				createLights(document.getElementById('quick-settings')),
-				createLights(document.getElementById('dash'))
-	            ],
-	background: new Image(),
-	aspect    : {width: 1.0, height : 1.0},
-	analyst   : new Worker('./js/median_cut.js'),
-	theme     : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
-	css       : new CSSStyleSheet()
+const objs = [];
+const background  = new Image();
+const analyst     = new Worker('./js/median_cut.js');
+const aspect      = {
+	width  : 1.0,
+	height : 1.0,
+};
+const css         = new CSSStyleSheet();
+
+document.adoptedStyleSheets = [css];
+document.body.addEventListener('change', () => {
+	update(300);
+});
+
+window.addEventListener('resize', () => {
+	const width  = document.documentElement.clientWidth;
+	const height = document.documentElement.clientHeight;
+	const center_x = width  / 2.0;
+	const center_y = height / 2.0;
+	const diff_x = aspect.width  / Math.max(1.0, width / height);
+	const diff_y = aspect.height / Math.max(1.0, height / width);
+	const min    = 1.0 / Math.min(diff_x, diff_y);
+	const scale  = new Float32Array([diff_x * min, diff_y * min]);
+	for(let i = 0; i < objs.length; i++) {
+		objs[i].context.canvas.height = objs[i].context.canvas.parentElement.clientHeight;
+		objs[i].context.canvas.width  = objs[i].context.canvas.parentElement.clientWidth;
+		objs[i].context.uniform2fv(objs[i].scale, scale);
+		objs[i].context.uniform4fv(objs[i].rect, new Float32Array([
+			(objs[i].context.canvas.parentElement.offsetLeft + (objs[i].context.canvas.parentElement.offsetWidth  / 2.0) -  center_x) / width  * -2.0,
+			(objs[i].context.canvas.parentElement.offsetTop  + (objs[i].context.canvas.parentElement.offsetHeight / 2.0) -  center_y) / height *  2.0,
+			width  / objs[i].context.canvas.parentElement.offsetWidth,
+			height / objs[i].context.canvas.parentElement.offsetHeight
+		]));
+		objs[i].context.viewport(0, 0, objs[i].context.canvas.width, objs[i].context.canvas.height);
+	}
+	update();
+});
+
+background.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==";
+background.addEventListener('load', () => {
+	createImageBitmap(background).then((image) => {
+		analyst.postMessage(image, [image]);
+	});
+	URL.revokeObjectURL(background.src);
+});
+
+analyst.onmessage = (e) => {
+	css.replaceSync(e.data.css);
+	aspect.width  = e.data.aspect[0];
+	aspect.height = e.data.aspect[1];
+	for(let i = 0; i < objs.length; i++) {
+		objs[i].context.uniform2fv(objs[i].background, e.data.aspect);
+		if (objs[i].context.canvas.classList.contains('light')) {
+			objs[i].context.uniform1i(objs[i].light_length, e.data.light_length);
+			objs[i].context.bufferData(objs[i].context.UNIFORM_BUFFER, e.data.lights, objs[i].context.STATIC_DRAW);
+		} else
+			objs[i].context.texImage2D(objs[i].context.TEXTURE_2D, 0, objs[i].context.RGB, background.width, background.height, 0, objs[i].context.RGB, objs[i].context.UNSIGNED_BYTE, background);
+	}
+	window.dispatchEvent(new Event("resize"));
+	update(250);
 };
 
-function createPaint(surface,vs,fs,type) {
-	const
-		setup = new WebGL2(vs, fs),
-		data = {
-			context : setup.context,
-			program : setup.program
-		};
-	data.surface = surface;
+const animation_state = {
+	active : false,
+	end    : window.performance.now()
+}
+function update(length = 0) {
+	const end = window.performance.now() + length;
+	if(end > animation_state.end)
+		animation_state.end = end;
+	if (animation_state.active)
+		return;
+	animation_state.active = true;
+	window.requestAnimationFrame(refresh);
+
+	function refresh(timestamp) {
+		for(let i = 0; i < objs.length; i++) {
+			if(objs[i].context.canvas.className === 'light')
+				objs[i].context.uniform1f(objs[i].surfaceColor, window.getComputedStyle(objs[i].context.canvas).getPropertyValue("background-color").split(', ')[1] | 0);
+			objs[i].context.drawArrays(objs[i].context.TRIANGLE_STRIP, 0, 4);
+		}
+		if(timestamp > animation_state.end)
+			return animation_state.active = false;
+		window.requestAnimationFrame(refresh);	
+	}
+}
+
+function createPaint(surface, vs, fs, type) {
+	const setup = new WebGL2(vs, fs);
+	const data = {
+		context : setup.context,
+		program : setup.program
+	};
+	surface.prepend(data.context.canvas);
 	data.context.canvas.className = type;
-	data.surface.prepend(data.context.canvas);
 	data.rect = data.context.getUniformLocation(data.program, "rect");
 	data.background = data.context.getUniformLocation(data.program, "background");
 	data.scale = data.context.getUniformLocation(data.program, "global_scale");
@@ -38,19 +107,18 @@ function createPaint(surface,vs,fs,type) {
 	return data;
 }
 
-function createLights(surface) {
+export function createLights(surface) {
 	const data = createPaint(surface, vs_clip, fs_drawLights, 'light');
-	data.lights = data.context.getUniformBlockIndex(data.program, 'lighting');
 	data.surfaceColor = data.context.getUniformLocation(data.program, "surfaceColor");
 	data.light_length = data.context.getUniformLocation(data.program, "length");
+	data.lights = data.context.getUniformBlockIndex(data.program, 'lighting');
 	data.context.bindBufferBase(data.context.UNIFORM_BUFFER, 0, data.context.createBuffer());
-	return data;
+	objs.push(data);
 }
 
-function createWorkSpaces(surface) {
-	const
-		data = createPaint(surface, vs_clip, fs_drawWallpaper, 'workspace'),
-		uv   = data.context.getAttribLocation(data.program, 'tuv');
+export function createWorkSpace(surface) {
+	const data = createPaint(surface, vs_clip, fs_drawWallpaper, 'workspace');
+	const uv   = data.context.getAttribLocation(data.program, 'tuv');
 	data.context.bindBuffer(data.context.ARRAY_BUFFER, data.context.createBuffer());
 	data.context.bufferData(data.context.ARRAY_BUFFER, new Float32Array([0.0,1.0, 0.0,0.0, 1.0,1.0, 1.0,0.0]), data.context.STATIC_DRAW);
 	data.context.enableVertexAttribArray(uv);
@@ -61,36 +129,12 @@ function createWorkSpaces(surface) {
 	data.context.activeTexture(data.context.TEXTURE0);
 	data.context.texParameteri(data.context.TEXTURE_2D, data.context.TEXTURE_MIN_FILTER, data.context.LINEAR);
 	data.context.texParameteri(data.context.TEXTURE_2D, data.context.TEXTURE_MAG_FILTER, data.context.LINEAR);
-	return data;
+	objs.push(data);
+	return data.context.canvas;
 }
 
-scene.analyst.onmessage = (e) => {
-	scene.css.replaceSync(e.data.css);
-	scene.aspect.width  = e.data.aspect[0];
-	scene.aspect.height = e.data.aspect[1];
-	for(let i = 0; i < scene.paintObjects.length; i++) {
-		const obj = scene.paintObjects[i];
-		obj.context.uniform2fv(obj.background, e.data.aspect);
-		if (obj.context.canvas.classList.contains('light')) {
-			obj.context.uniform1i(obj.light_length, e.data.light_length);
-			obj.context.bufferData(obj.context.UNIFORM_BUFFER, e.data.lights, obj.context.STATIC_DRAW);
-		} else
-			obj.context.texImage2D(obj.context.TEXTURE_2D, 0, obj.context.RGB, scene.background.width, scene.background.height, 0, obj.context.RGB, obj.context.UNSIGNED_BYTE, scene.background);
-	}
-	updateMonitorRect();
-	update(250);
-};
-
-export function update(length = 0) {
-	const end = window.performance.now() + length;
-	function refresh(timestamp) {
-		for(let i = 0; i < scene.paintObjects.length; i++) {
-			const obj = scene.paintObjects[i];
-			if(obj.context.canvas.className === 'light')
-				obj.context.uniform1f(obj.surfaceColor, window.getComputedStyle(obj.surface).getPropertyValue("background-color").split(', ')[1] | 0);
-			obj.context.drawArrays(obj.context.TRIANGLE_STRIP, 0, 4);
-		}
-		if(timestamp < end)
-			window.requestAnimationFrame(refresh);
-	}; window.requestAnimationFrame(refresh);
+export function setBackground(file) {
+	const allowedFiletypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/svg+xml", "image/jxl"];
+	if (allowedFiletypes.includes(file.type))
+		background.src = URL.createObjectURL(file);
 }

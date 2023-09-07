@@ -86,7 +86,7 @@ export const fs_drawLights = `#version 300 es
 		vec4 intensity;
 	};
 	layout(std140) uniform lighting {
-		light lights[8];
+		light lights[6];
 	};
     out vec4 color;
     ${OKLAB_to_SRGB}

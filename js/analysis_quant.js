@@ -1,21 +1,19 @@
 "use strict";
-const COLOR_MAX_DEPTH = 3;
-const SPACE_MAX_DEPTH = 3;
-const MAX_DEPTH       = COLOR_MAX_DEPTH + SPACE_MAX_DEPTH;
-const LAST_PARENT     = MAX_DEPTH - 1;
-const LEAF            = MAX_DEPTH | 0x80;
-const MAX_LIGHTS      = 6;
-const MAX_RANGES      = {
-    color : 0.2, // cuts off saturation
-    space : 1.0
-};
+const MAX_DEPTH   = 3;
+const LAST_PARENT = MAX_DEPTH - 1;
+const LEAF        = MAX_DEPTH | 0x80;
+const MAX_LIGHTS  = 8;
+const MAX_RANGES  = {
+      color : 0.2, // cuts off saturation
+      space : 1.0,
+  };
 const gl = new OffscreenCanvas(64, 64).getContext('webgl2', {
-     depth     : false,
-     alpha     : false,
-     stencil   : false,
-     antialias : false,
-     preserveDrawingBuffer: true,
-});
+      depth     : false,
+      alpha     : false,
+      stencil   : false,
+      antialias : false,
+      preserveDrawingBuffer: true,
+  });
 const program    = gl.createProgram();
 const vShader    = gl.createShader(gl.VERTEX_SHADER);
 const fShader    = gl.createShader(gl.FRAGMENT_SHADER);
@@ -84,130 +82,123 @@ gl.bindFramebuffer(gl.FRAMEBUFFER, rgbaBuffer);
 gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, thumbnail, 0);
 
 onmessage = (e) => {
-	const scene = {
-		lights       : new Float32Array(8 * MAX_LIGHTS),
-		aspect       : new Float32Array([Math.max(1.0, e.data.width  / e.data.height), Math.max(1.0, e.data.height / e.data.width)]),
-	};
-
-	const scale = Math.min(1, 32 / Math.min(e.data.width, e.data.height));
-	const start = performance.now();
-
-	gl.canvas.width  = e.data.width  * scale;
-	gl.canvas.height = e.data.height * scale;
-
-	gl.activeTexture(gl.TEXTURE1);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, gl.canvas.width, gl.canvas.height, 0, gl.RGBA, gl.FLOAT, null);
-	gl.activeTexture(gl.TEXTURE0);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, e.data.width, e.data.height, 0, gl.RGB, gl.UNSIGNED_BYTE, e.data);
-	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-	const pixels = new Float32Array(gl.canvas.width * gl.canvas.height * 4);
-	gl.readPixels(0, 0, gl.canvas.width, gl.canvas.height, gl.RGBA, gl.FLOAT, pixels);
-
-	const tree_start = performance.now();
-
-	const brightness = {
-      min : 1,
-      max : 0,
-      top : 0.5,
-      contrast: 0,
-      quad: [
-        { count:0, amount: 0},
-        { count:0, amount: 0},
-        { count:0, amount: 0},
-        { count:0, amount: 0}
-	]}; // How many dark pixels, how many bright, and average brightness
+    const scale = Math.min(1, 64 / Math.min(e.data.width, e.data.height));
+  
+    // const start = performance.now();
+  
+    gl.canvas.width  = e.data.width  * scale;
+    gl.canvas.height = e.data.height * scale;
+    gl.activeTexture(gl.TEXTURE1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, gl.canvas.width, gl.canvas.height, 0, gl.RGBA, gl.FLOAT, null);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, e.data.width, e.data.height, 0, gl.RGB, gl.UNSIGNED_BYTE, e.data);
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  
+    const pixels = new Float32Array(gl.canvas.width * gl.canvas.height * 4);
+  
+    gl.readPixels(0, 0, gl.canvas.width, gl.canvas.height, gl.RGBA, gl.FLOAT, pixels);
+    
+    // const tree_start = performance.now();
+    const scene = {
+        css          : '',
+        light_length : MAX_LIGHTS,
+        aspect       : new Float32Array([Math.max(1.0, e.data.width  / e.data.height), Math.max(1.0, e.data.height / e.data.width)]),
+        lights       : new Float32Array(8 * MAX_LIGHTS), // Light size * max light count
+    };
+    const brightness = {
+        min : 1,
+        max : 0,
+        top : 0.5,
+        contrast: 0,
+        quad: [
+        	{ count:0, amount: 0},
+        	{ count:0, amount: 0},
+        	{ count:0, amount: 0},
+        	{ count:0, amount: 0}]
+        }; // How many dark pixels, how many bright, and average brightness
     const inc   = { x : scene.aspect[0] / gl.canvas.width * 2, y : scene.aspect[1] / gl.canvas.height * 2 };
     const range = { x_start : scene.aspect[0] * -1, y_start : scene.aspect[1] };
-	const root  = { meta  : 0x0, a : 0.0, b : 0.0, x : 0.0, y : 0.0 };
+    const root  = { meta  : 0x0, a : 0.0, b : 0.0, x : 0.0, y : 0.0 };  
+    // we want to treat the wallpaper like it's always a square so that there's square splits
+    MAX_RANGES.space = scene.aspect[0] * scene.aspect[1];
 
-	// we want to treat the wallpaper like it's always a square so that there's square splits
-	MAX_RANGES.space = scene.aspect[0] * scene.aspect[1];
-
-	//console.clear();
+    console.clear();
 
     for (let ox = 0, y = range.y_start, len = pixels.length; ox < len; y -= inc.y)
-        for(let x = range.x_start, line_end = gl.canvas.width * 4 + ox; ox < line_end; ox += 4, x += inc.x) {
-			space_insert({ a : pixels[ox + 1] , b : pixels[ox + 2] , x : x , y : y }, root);
-			const bxy = (x > 0.5) << 1 | y > 0.5;
-			brightness.quad[bxy].amount += pixels[ox];
-			brightness.quad[bxy].count++;
-			if (pixels[ox] > brightness.max)
-				brightness.max = pixels[ox];
-			else if (pixels[ox] < brightness.min)
-				brightness.min = pixels[ox];
-		}
-
-	const gather_start = performance.now();
-
-	console.log(root);
-	
-	const lights = gather_lights(root, gl.canvas.width * gl.canvas.height / MAX_LIGHTS);
-
-/* 	console.log(root);
+      for(let x = range.x_start, line_end = gl.canvas.width * 4 + ox; ox < line_end; ox += 4, x += inc.x)
+        space_insert({ a : pixels[ox + 1] , b : pixels[ox + 2] , x : x , y : y }, root);
+  
+    const gather_start = performance.now();
+    const lights = gather_lights(root, gl.canvas.width * gl.canvas.height / MAX_LIGHTS);
+  
+    console.log(root);
     console.log(`It took ${tree_start - start}ms to create the thumbnail,
-	${gather_start - tree_start}ms to create the quadtrees,
-	${performance.now() - gather_start}ms to gather lights.`); */
-	
-	//color_to_console(lights);
-
-	scene.css = get_top_bar_brightness(brightness);
-	scene.light_length = Math.min(8, lights.length);
-	for (let i = 0, c = 0; c < scene.light_length; i += 8, c++) {
-		scene.lights[i + 0] = lights[c].x; // x
-		scene.lights[i + 1]	= lights[c].y; // y
-		scene.lights[i + 2]	= lights[c].b; // b
-		scene.lights[i + 3]	= lights[c].a; // a
-		scene.lights[i + 4]	= lights[c].i; // intensity
-		scene.lights[i + 5]	= 0; // padding
-		scene.lights[i + 6]	= 0; // padding
-		scene.lights[i + 7]	= 0; // padding
-	}
-	postMessage(scene);
+                ${gather_start - tree_start}ms to create the quadtrees,
+                ${performance.now() - gather_start}ms to gather lights.`);
+    
+    //color_to_console(lights);  
+    scene.css = get_top_bar_brightness(brightness);
+    scene.light_length = Math.max(1, Math.min(8, lights.length));
+    if (scene.light_length >= 1)
+      for (let i = 0, c = 0; c < scene.light_length; i += 8, c++) {
+        scene.lights[i    ] = lights[c].x; // x
+        scene.lights[i + 1] = lights[c].y; // y
+        scene.lights[i + 2] = lights[c].b; // b
+        scene.lights[i + 3] = lights[c].a; // a
+        scene.lights[i + 4] = lights[c].i; // intensity
+      }
+    postMessage(scene);
 }
 
 function color_to_console(colors) {
 	for (const color of colors)
         console.log(`%cx : ${color.x}, y : ${color.y}
-	a : ${color.a}, b : ${color.b}
-	intensity :  ${color.i}`, `display:block; text-align:center; width: ${100}%; background-color: oklab(50% ${color.a}  ${color.b})`);
+a : ${color.a}, b : ${color.b}
+intensity :  ${color.i}`, `display:block; text-align:center; width: ${100}%; background-color: oklab(50% ${color.a}  ${color.b})`);
 }
 
-function color_insert(pixel, node) {
-	if (node.meta < 0x80) {
-		const next_depth = 1 + node.meta;
-		const diff       = MAX_RANGES.color / (1 << next_depth);
-		const diff2      = diff * 2.0;
-		const offset     = {
-				a : node.a - diff,
-				b : node.b - diff
-			};
-		node.children = new Array(4);
-		node.meta |= 0x80;
-		for (let i = 0; i < 4; i++)
-			node.children[i] = {
-				meta : next_depth,
-				a    : offset.a + (i >>  1) * diff2,
-				b    : offset.b + (i & 0x1) * diff2,
-				x    : 0.0,
-				y    : 0.0
-			};
+function quadtree_insert(x1, y1, x2, y2, node) {
+	
+	const max = {l : 0, a : 0, b : 0};
+	const min = {l : 1, a : 1, b : 1};
+
+	for (let ox = 0, y = range.y_start, len = pixels.length; ox < len; y -= inc.y)
+		for(let x = range.x_start, line_end = gl.canvas.width * 4 + ox; ox < line_end; ox += 4, x += inc.x) {
+			const l = pixel[x];
+			if (l > max.l)
+				max.l = l;
+			else (l < min.l)
+				min.l = l;
+
+			const a = pixel[x + 1];
+			if (a > max.a)
+				max.a = a;
+			else (a < min.a)
+				min.a = a;
+	
+			const b = pixel[x + 2];
+			if (b > max.b)
+				max.b = b;
+			else (b < min.b)
+				min.b = b;
+		}
+
+	const error = ((max.a - min.a) + (max.b - min.b)) / 2;
+
+	if (node.meta < LEAF || error > 0.5) {
+
 	}
-	const next_child = node.children[((pixel.a > node.a) << 1) | (pixel.b > node.b)];
-	if ((next_child.meta & 0x7F) === COLOR_MAX_DEPTH)
-		return hex_insert(pixel, next_child);
-	color_insert(pixel, next_child);
-}
 
-function space_insert(pixel, node) {
-	if (node.meta < 0x80) {
-		const next_depth = 1 + node.meta;
-		const diff       = MAX_RANGES.space / (1 << next_depth);
-		const diff2      = diff * 2.0;
-		const offset     = {
-				x : node.x - diff,
-				y : node.y - diff
-			};
+	if (node.meta > 0x80) {// If parent
+		const next_depth = node.meta + 1;
+		const split      = MAX_RANGES.space / (1 << node.meta);
+		// 0.25 * (1 / 0.25 | 1)
+		// 1 | 3
+		// 0 | 2
+		// -0.5, 0.5 | 0.5, 0.5
+		// -0.5,-0.5 | 0.5,-0.5
+
 		node.children = new Array(4);
 		node.meta    |= 0x80;
 		for(let i = 0; i < 4; i++)
@@ -215,22 +206,30 @@ function space_insert(pixel, node) {
 				meta : next_depth,
 				a    : 0.0,
 				b    : 0.0,
-				x    : offset.x + (i >>  1) * diff2,
-				y    : offset.y + (i & 0x1) * diff2
+				x    : 0.0,
+				y    : 0.0
 			};
+		// If we're just creating a center point, splitting on it
+		// then restarting it then reading the pixels again
+		// then we don't need to pass pixels down the tree.
+		// We can have a node actively pull pixels from the array.
+		// If it splits, then pass bounds of the image to the children
+		// The children can then take over the work of restarting
+		// the process for their section of the image
+		// Each child could even spawn it's own thread  
+		for(let i = 0; i < node.pixels.length; i++)
+			quadtree_insert(node.pixels[i], node.children[(node.pixels[i].x > node.x) << 1 |
+			                                              (node.pixels[i].y > node.y)      ]);
 	}
-	const next_child = node.children[((pixel.x > node.x) << 1) | (pixel.y > node.y)];
-	if ((next_child.meta & 0x7F) !== MAX_DEPTH)
-		return space_insert(pixel, next_child);
-	next_child.a += pixel.a;
-	next_child.b += pixel.b;
-	next_child.meta += 0x80;
+	quadtree_insert(pixel, node.children[(pixel.x > node.x) << 1 | (pixel.y > node.y)]);
 }
 
 function gather_lights(node, threshold) {
 	const parents = [node];
 	const lights  = [];
 	const states  = new Int8Array(MAX_DEPTH);
+
+	let accumulator = 0;
 	let depth = 0;
 	let	light = {
 			a : 0,
@@ -238,7 +237,6 @@ function gather_lights(node, threshold) {
 			x : 0,
 			y : 0
 		};
-	let accumulator = 0;
 	do {
 		const parent   = parents[depth];
 		const children = parent.children;
