@@ -143,6 +143,8 @@ function addAppList(apps, hidden=false) {
 	applist.className = 'app-list';
 	if (hidden)
 		applist.classList.add('hidden');
+	else
+		applist.classList.add('show');
 	for (let i = 0; i < apps.length; i++)
 		applist.innerHTML += `<li class="app${(apps[i][2] ? ` open` : ``)}" ><img src="apps/org.gnome.${apps[i][1]}.svg"/><label>${apps[i][0]}</label></li>`;
 	return applist;
