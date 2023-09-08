@@ -57,11 +57,6 @@
 			--extreme-fg:  #000;
 			--symbol-color: rgb(4 4 4);
 		}
-		&.app-grid, &.overview {
-			#activities {
-				background: var(--hover-shade);
-			}
-		}
 		use {
 			fill: var(--symbol-color);
 			transition: fill var(--theme-transition);
@@ -144,50 +139,6 @@
 		aspect-ratio: 1;
 	}
 }
-#app-grid {	
-	width:clamp(1280px, 50%, 100%);
-	flex-wrap: wrap;
-	gap: 3em 2em;
-	transition: translate var(--nav-transition);
-
-	.app {
-		padding: 15px 30px;
-		max-width: calc(100% / 8);
-		border-radius: 20px;
-	}
-	.app-grid & {
-		translate: 0 -60vh;
-	}
-}
-#dash {
-	gap:4px;
-	display:flex;
-	position: fixed;
-	bottom:12px;
-	padding: 12px;
-	height: 106px;
-	border-radius: calc(12px + 16px);
-	background-color: var(--dash-color);
-	
-	> * {
-		height:100%;
-	}
-	&:hover {
-		z-index:9;
-	}
-	.app-list {
-		gap:inherit;
-
-		.app {
-			height:100%;
-			padding:10px;
-			border-radius: 16px;
-		}
-	}	
-	body.app-grid svg.app {
-		background-color: var(--hover-shade);
-	}
-}
 #panel {
 	height: 2.2em;
 	display: flex;
@@ -244,47 +195,106 @@
 		}
 	}
 	#workspaces {
-		gap: 2.8svw;
 		height: 100%;
-		width:  100%;
-		translate: 0;
+		width:  100vw;
 		display: flex;
-		transition:
-			translate var(--nav-transition),
-			gap       var(--nav-transition);
+		transition-property: translate, gap;
+		transition-duration: var(--nav-transition);
 
 		.workspace {
-			transition:
-				border-radius var(--nav-transition),
-				box-shadow    var(--nav-transition);
-	
-			+ & {
-				scale: 0.92;
-				transition:
-					border-radius var(--nav-transition),
-					scale var(--nav-transition);
-			}
+			width:  inherit;
+			height: inherit;
+			transition-property: scale, border-radius, box-shadow;
+			transition-duration: var(--nav-transition);
 		}
-		body.overview & {
-			translate:0 -2.5svh -0.2rem;
+	}
+	#app-grid {
+		width: clamp(50%, 1400px, 90%);
+		flex-wrap: wrap;
+		gap: 8% 2%;
+		transition: translate var(--nav-transition);
+		aspect-ratio: 8 / 3;
 	
-			& canvas {
+		.app {
+			padding: 15px 30px;
+			max-width: calc((100% - (7 * 2%)) / 8);
+			border-radius: 20px;
+		}
+	}
+	#dash {
+		gap:4px;
+		display:flex;
+		position: fixed;
+		bottom:12px;
+		padding: 12px;
+		height: 106px;
+		border-radius: calc(12px + 16px);
+		background-color: var(--dash-color);
+
+		> * {
+			height:100%;
+		}
+		.app-list {
+			gap:inherit;
+	
+			.app {
+				height:100%;
+				padding:10px;
+				border-radius: 16px;
+			}
+		}	
+	}
+}
+body { /*animations*/
+	#workspaces {
+		translate: 0;
+		gap: 2.8svw;
+	}
+	#dash {
+		z-index: 0;
+	}
+	&.overview, &.app-grid {
+		#activities {
+			background: var(--hover-shade);
+		}
+		#dash {
+			z-index:9;
+			transition: z-index 0ms calc(var(--nav-transition) / 2);
+		}
+	}
+	&.overview {
+		#workspaces {
+			translate:0 -2.5svh -0.2rem;
+
+			.workspace {
 				border-radius: 30px;
 				box-shadow: 0 16px 32px 8px rgba(0, 0, 0, 0.3);
+
+				+ & {
+					scale: 0.92;
+				}
 			}
 		}
-		body.app-grid & {
-			gap:16rem;
-			translate:calc(-50vw - 16rem) -150.5vh -4rem;
+	}
+	&.app-grid {
+		#app-grid {
+			translate: 0 -60vh;
+		}
+		#workspaces {
+			gap: 16rem;
+			translate: calc(-50vw - 16rem) -150.5vh -4rem;
 	
-			& canvas {
+			& .workspace {
 				border-radius: 75px;
 				box-shadow: 0 16px 64px 32px rgba(0, 0, 0, 0.2);
 	
-				& + & {
+				+ & {
 					scale: 1.0;
 				}
 			}
+		}
+		#dash p.app {
+			background-color: var(--hover-shade);
 		}
 	}
 }
