@@ -1,3 +1,4 @@
+"use strict";
 const gl = new OffscreenCanvas(100, 100).getContext('webgl2', {
 	depth     : false,
 	alpha     : false,
