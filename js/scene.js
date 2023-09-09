@@ -9,15 +9,11 @@ const css         = new CSSStyleSheet();
 const bg_stage    = document.createElementNS('http://www.w3.org/2000/svg', 'symbol');
 bg_stage.id = 'background';
 
-const svg = document.createElement('svg');
-svg.appendChild(bg_stage);
-document.body.appendChild(svg);
+document.body.appendChild(bg_stage);
 document.adoptedStyleSheets = [css];
 document.body.addEventListener('change', () => {
 	update(300);
 });
-
-setBackground();
 
 window.addEventListener('resize', () => {
 	const width    = document.documentElement.clientWidth;
@@ -29,16 +25,16 @@ window.addEventListener('resize', () => {
 	const min      = 1.0 / Math.min(diff_x, diff_y);
 	const scale    = new Float32Array([diff_x * min, diff_y * min]);
 	for(let i = 0; i < objs.length; i++) {
-		objs[i].context.canvas.height = objs[i].context.canvas.parentElement.clientHeight;
-		objs[i].context.canvas.width  = objs[i].context.canvas.parentElement.clientWidth;
-		objs[i].context.uniform2fv(objs[i].scale, scale);
-		objs[i].context.uniform4fv(objs[i].rect, new Float32Array([
-			(objs[i].context.canvas.parentElement.offsetLeft + (objs[i].context.canvas.parentElement.offsetWidth  / 2.0) -  center_x) / width  * -2.0,
-			(objs[i].context.canvas.parentElement.offsetTop  + (objs[i].context.canvas.parentElement.offsetHeight / 2.0) -  center_y) / height *  2.0,
-			width  / objs[i].context.canvas.parentElement.offsetWidth,
-			height / objs[i].context.canvas.parentElement.offsetHeight
+		objs[i].ctx.canvas.height = objs[i].ctx.canvas.parentElement.clientHeight;
+		objs[i].ctx.canvas.width  = objs[i].ctx.canvas.parentElement.clientWidth;
+		objs[i].ctx.uniform2fv(objs[i].scale, scale);
+		objs[i].ctx.uniform4fv(objs[i].rect, new Float32Array([
+			(objs[i].ctx.canvas.parentElement.offsetLeft + (objs[i].ctx.canvas.parentElement.offsetWidth  / 2.0) -  center_x) / width  * -2.0,
+			(objs[i].ctx.canvas.parentElement.offsetTop  + (objs[i].ctx.canvas.parentElement.offsetHeight / 2.0) -  center_y) / height *  2.0,
+			width  / objs[i].ctx.canvas.parentElement.offsetWidth,
+			height / objs[i].ctx.canvas.parentElement.offsetHeight
 		]));
-		objs[i].context.viewport(0, 0, objs[i].context.canvas.width, objs[i].context.canvas.height);
+		objs[i].ctx.viewport(0, 0, objs[i].ctx.canvas.width, objs[i].ctx.canvas.height);
 	}
 	update();
 });
@@ -48,9 +44,9 @@ analyst.onmessage = (e) => {
 	aspect.width  = e.data.aspect[0];
 	aspect.height = e.data.aspect[1];
 	for(let i = 0; i < objs.length; i++) {
-		objs[i].context.uniform2fv(objs[i].background, e.data.aspect);
-		objs[i].context.uniform1i(objs[i].light_length, e.data.light_length);
-		objs[i].context.bufferData(objs[i].context.UNIFORM_BUFFER, e.data.lights, objs[i].context.STATIC_READ);
+		objs[i].ctx.uniform2fv(objs[i].background, e.data.aspect);
+		objs[i].ctx.uniform1i(objs[i].light_length, e.data.light_length);
+		objs[i].ctx.bufferData(objs[i].ctx.UNIFORM_BUFFER, e.data.lights, objs[i].ctx.STATIC_READ);
 	}
 	bg_stage.lastChild.setAttribute('opacity', '1');
 	if (bg_stage.childNodes.length > 1) {
@@ -58,7 +54,7 @@ analyst.onmessage = (e) => {
 		bg_stage.firstChild.remove();
 	}
 	window.dispatchEvent(new Event("resize"));
-	update(250);
+	update();
 };
 
 const animation_state = {
@@ -76,8 +72,8 @@ function update(length = 0) {
 
 	function refresh(timestamp) {
 		for (let i = 0; i < objs.length; i++) {
-			objs[i].context.uniform1f(objs[i].surfaceColor, window.getComputedStyle(objs[i].context.canvas).getPropertyValue("background-color").split(', ')[1] | 0);
-			objs[i].context.drawArrays(objs[i].context.TRIANGLE_STRIP, 0, 4);
+			objs[i].ctx.uniform1f(objs[i].surfaceColor, window.getComputedStyle(objs[i].ctx.canvas).getPropertyValue("background-color").split(', ')[1] | 0);
+			objs[i].ctx.drawArrays(objs[i].ctx.TRIANGLE_STRIP, 0, 4);
 		}
 		if (timestamp > animation_state.end)
 			return animation_state.active = false;
@@ -89,7 +85,7 @@ export function createLights(surface) {
 	const canvas  = document.createElement('canvas');
 	surface.prepend(canvas);
 	const data = {
-		context : canvas.getContext('webgl2', {
+		ctx : canvas.getContext('webgl2', {
 			depth     : false,
 			alpha     : false,
 			stencil   : false,
@@ -97,10 +93,10 @@ export function createLights(surface) {
 			preserveDrawingBuffer: true,
 		}),
 	};
-	const program = data.context.createProgram();
-	const vShader = data.context.createShader(data.context.VERTEX_SHADER);
-	const fShader = data.context.createShader(data.context.FRAGMENT_SHADER);
-	data.context.shaderSource(vShader, `#version 300 es
+	const program = data.ctx.createProgram();
+	const vShader = data.ctx.createShader(data.ctx.VERTEX_SHADER);
+	const fShader = data.ctx.createShader(data.ctx.FRAGMENT_SHADER);
+	data.ctx.shaderSource(vShader, `#version 300 es
 		precision mediump float;
 		in      vec2  vPosition;
 		in      vec2  tuv;
@@ -128,7 +124,7 @@ export function createLights(surface) {
 			uv  = tuv;
 			gl_Position = vec4((vPosition + rect.xy) * (global_scale * rect.zw), 1.0, 1.0);
 		}`);
-	data.context.shaderSource(fShader, `#version 300 es
+	data.ctx.shaderSource(fShader, `#version 300 es
 		precision mediump float;
 		in vec2 luv;
 		in float brightness;
@@ -162,38 +158,36 @@ export function createLights(surface) {
 			}
 			color = vec4(OKLAB_to_SRGB(vec3(brightness, ab_acc / i_acc)),1.0);
 		}`);
-	data.context.attachShader(program, vShader);
-	data.context.attachShader(program, fShader);
-	data.context.compileShader(vShader);
-	data.context.compileShader(fShader);
-	data.context.linkProgram(program);
-	data.context.useProgram(program);
-	data.context.enable(data.context.DITHER);
-	data.rect = data.context.getUniformLocation(program, "rect");
-	data.background = data.context.getUniformLocation(program, "background");
-	data.scale = data.context.getUniformLocation(program, "global_scale");
-	data.surfaceColor = data.context.getUniformLocation(program, "surfaceColor");
-	data.light_length = data.context.getUniformLocation(program, "length");
-	const vPosition = data.context.getAttribLocation(program, 'vPosition');
-	data.context.bindBuffer(data.context.ARRAY_BUFFER, data.context.createBuffer());
-	data.context.bufferData(data.context.ARRAY_BUFFER, new Float32Array([-1.0,1.0, -1.0,-1.0, 1.0,1.0, 1.0,-1.0]), data.context.STATIC_DRAW);
-	data.context.enableVertexAttribArray(vPosition);
-	data.context.vertexAttribPointer(vPosition, 2, data.context.FLOAT, false, 0, 0);
-	data.context.canvas.className = 'light';
-	data.context.bindBufferBase(data.context.UNIFORM_BUFFER, data.context.getUniformBlockIndex(program, "lighting"), data.context.createBuffer());
+	data.ctx.attachShader(program, vShader);
+	data.ctx.attachShader(program, fShader);
+	data.ctx.compileShader(vShader);
+	data.ctx.compileShader(fShader);
+	data.ctx.linkProgram(program);
+	data.ctx.useProgram(program);
+	data.ctx.enable(data.ctx.DITHER);
+	data.rect = data.ctx.getUniformLocation(program, "rect");
+	data.background = data.ctx.getUniformLocation(program, "background");
+	data.scale = data.ctx.getUniformLocation(program, "global_scale");
+	data.surfaceColor = data.ctx.getUniformLocation(program, "surfaceColor");
+	data.light_length = data.ctx.getUniformLocation(program, "length");
+	const vPosition = data.ctx.getAttribLocation(program, 'vPosition');
+	data.ctx.bindBuffer(data.ctx.ARRAY_BUFFER, data.ctx.createBuffer());
+	data.ctx.bufferData(data.ctx.ARRAY_BUFFER, new Float32Array([-1.0,1.0, -1.0,-1.0, 1.0,1.0, 1.0,-1.0]), data.ctx.STATIC_DRAW);
+	data.ctx.enableVertexAttribArray(vPosition);
+	data.ctx.vertexAttribPointer(vPosition, 2, data.ctx.FLOAT, false, 0, 0);
+	data.ctx.canvas.className = 'light';
+	data.ctx.bindBufferBase(data.ctx.UNIFORM_BUFFER, data.ctx.getUniformBlockIndex(program, "lighting"), data.ctx.createBuffer());
 	objs.push(data);
 }
 
 export async function setBackground(file = null) {
 	const allowedFiletypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/svg+xml", "image/jxl"];
-
 	if (file === null) {
 		file = await fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==')
 		.then(res => res.blob())
 		.then(blob => blob);
 	} else if (!allowedFiletypes.includes(file.type))
 		return;
-
 	const new_background = document.createElementNS('http://www.w3.org/2000/svg', 'image');
 	new_background.setAttribute('preserveAspectRatio', 'xMidYMid slice');
 	new_background.setAttribute('height', '100%');

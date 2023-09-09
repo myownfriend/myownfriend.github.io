@@ -30,8 +30,9 @@
 			--dash-hover:   rgba(255 255 255 / 0.08);
 			--hover-shade:  rgba(255 255 255 / 0.125);
 			--toggle-color: rgba(255 255 255 / 0.13);
-			--search-color: rgba(255 255 255 / 0.14);
-			--search-hover: rgba(255 255 255 / 0.2);
+			--search-color: rgb(70 70 70);
+			--search-hover: rgba(255 255 255 / 0.1);
+			--search-icon: rgba(255 255 255 / 0.45);
 			--search-place: rgba(255 255 255 / 0.9);
 			--dropdown-color: rgb(53 53 53);
 			--stage-color: rgb(40 40 40);
@@ -47,8 +48,9 @@
 			--dash-hover:   rgba(0 0 0 / 0.08);
 			--hover-shade:  rgba(0 0 0 / 0.125);
 			--toggle-color: rgba(0 0 0 / 0.14);
-			--search-color: rgba(0 0 0 / 0.16);
+			--search-color: rgb(145 145 145);
 			--search-hover: rgba(0 0 0 / 0.2);
+			--search-icon: rgba(0 0 0 / 0.45);
 			--search-place: rgba(0 0 0 / 0.994);
 			--dropdown-color: rgb(190 190 190);
 			--stage-color:  rgb(172 172 172);
@@ -64,9 +66,6 @@
 		}
 	}
 }
-/* body > svg {
-	display: none;
-} */
 .light {
 	top: 0;
 	left: 0;
@@ -140,7 +139,20 @@
 	height: 2.2em;
 	display: flex;
 	justify-content: space-between;
-	width:100%;
+
+	& > * {
+		width:33vw;
+		display:flex;
+		justify-content: center;
+	}
+
+	> :first-child {
+		justify-content: flex-start;
+	}
+
+	> :last-child {
+		justify-content: flex-end;
+	}
 
 	& button {
 		all:unset;
@@ -177,19 +189,39 @@
 		top:12px;
 		width:350px;
 		position: fixed;
-		font-weight: 400;
 		border-radius: 20px;
-		color:var(--text-color);
-		padding:8px 20px 8px 40px;
-		border: 2px solid transparent;
 		background: var(--search-color);
 
-		&:hover {
+		& input {
+			background-color: transparent;
+			border:none;
+			outline: none;
+			font-size: 15px;
+			font-weight: 400;
+			color: var(--text-color);
+		}
+		& p {
+			border: 2px solid transparent;
+			padding: 8px 12px;
+			border-radius: inherit;
+			display: flex;
+			align-items: center;
+
+			& svg {
+				width: 16px;
+				height: 16px;
+				margin-right: 8px;
+
+				& use {
+					fill: var(--search-icon);
+				}
+			}
+		}
+		&:hover p {
 			background: var(--search-hover);
 		}
-		&:focus {
+		&:focus p {
 			border: 2px solid var(--accent-color);
-			outline: none;
 		}
 		&::placeholder {
 			color:var(--search-place);

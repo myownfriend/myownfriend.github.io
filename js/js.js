@@ -1,17 +1,20 @@
 "use strict";
 import {setBackground, createLights} from './scene.js';
 
-const panel = document.createElement('div');
+const panel = document.createElement('ul');
 panel.id = 'panel';
+const panel_left  = document.createElement('li');
+const panel_cent  = document.createElement('li');
+const panel_right = document.createElement('li');
 
-const activities_toggle = addButton('overview-toggle', panel);
+const activities_toggle = addButton('overview-toggle', panel_left);
 activities_toggle.innerHTML = 'Activities';
 activities_toggle.addEventListener('click', changeView);
 
-const clock = addButton('clock', panel);
+const clock = addButton('clock', panel_cent);
 clock.innerHTML = 'Thu Nov 25  2:15 AM';
 
-const system_status_area = addButton('system-status-area', panel);
+const system_status_area = addButton('system-status-area', panel_right);
 for (const icon of [
 		'night-light',
 		'network-wireless-signal-excellent',
@@ -19,12 +22,21 @@ for (const icon of [
 		'microphone-sensitivity-high',
 		'battery-charging'
 	])
-	system_status_area.innerHTML += `<svg><use href="img/icons.svg#${icon}"></use></svg>`;
+	system_status_area.innerHTML += `<svg><use href="img/icons.svg#${icon}"/></svg>`;
 
-const search = document.createElement('input');
+panel.appendChild(panel_left);
+panel.appendChild(panel_cent);
+panel.appendChild(panel_right);
+
+const search = document.createElement('label');
 search.id = "search";
-search.setAttribute('type', 'text');
-search.setAttribute('placeholder', 'Type to search');
+const search_bar = document.createElement('input');
+search_bar.setAttribute('type', 'text');
+search_bar.setAttribute('placeholder', 'Type to search');
+const search_decoration = document.createElement('p');
+search_decoration.innerHTML += '<svg><use href="img/icons.svg#search"/></svg>'
+search_decoration.appendChild(search_bar);
+search.appendChild(search_decoration);
 
 const workspaces = document.createElement('div');
 workspaces.id = 'workspaces';
@@ -101,10 +113,6 @@ quick_settings.id = 'quick-settings';
 quick_settings.className = 'dropdown';
 quick_settings.appendChild(over_lights);
 
-createLights(document.body);
-createLights(quick_settings);
-createLights(dash);
-
 const workarea = document.createElement('section');
 workarea.id = 'workarea';
 workarea.appendChild(search);
@@ -120,6 +128,12 @@ setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)=> {
 	setTheme(e.target.matches);
 });
+
+createLights(document.body);
+createLights(search);
+createLights(dash);
+createLights(quick_settings);
+setBackground();
 
 function setTheme(dark) {
 	settings.dark_mode.checked = dark;
