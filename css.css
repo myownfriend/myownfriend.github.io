@@ -9,19 +9,20 @@
 	padding: 0;
 	margin: 0;
 }
-:root {
+.html {
 	height: 100%;
 	cursor: default;
 	user-select: none;
 	--nav-transition: 250ms;
 	--theme-transition:  300ms;
 
-	body {
-		height: 100%;
+	& body {
+		height: inherit;
 		display: flex;
 		flex-direction: column;
 		background-color: var(--stage-color);
 		transition: background-color var(--theme-transition);
+		--accent-color : #3584e4;
 
 		&#dark-mode  {
 			--text-color:   rgb(229 229 229);
@@ -57,15 +58,15 @@
 			--extreme-fg:  #000;
 			--symbol-color: rgb(4 4 4);
 		}
-		use {
+		& use {
 			fill: var(--symbol-color);
 			transition: fill var(--theme-transition);
 		}
 	}
 }
-body > svg {
+/* body > svg {
 	display: none;
-}
+} */
 .light {
 	top: 0;
 	left: 0;
@@ -187,7 +188,7 @@ body > svg {
 			background: var(--search-hover);
 		}
 		&:focus {
-			border: 2px solid #3584e4;
+			border: 2px solid var(--accent-color);
 			outline: none;
 		}
 		&::placeholder {
@@ -450,7 +451,7 @@ body { /*animations*/
 					transition: transform var(--nav-transition), color var(--theme-transition);
 				}
 				&[type=checkbox]:checked ~ span{
-					background-color: #3584e4;
+					background-color: var(--accent-color)
 				}
 			}
 		}

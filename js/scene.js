@@ -8,13 +8,12 @@ const aspect     = {
 	height : 1.0,
 };
 const css         = new CSSStyleSheet();
+const bg_stage    = document.createElementNS('http://www.w3.org/2000/svg', 'symbol');
+bg_stage.id = 'background';
 
 const svg = document.createElement('svg');
-const symbol = document.createElementNS('http://www.w3.org/2000/svg', 'symbol');
-symbol.id = 'background';
-svg.appendChild(symbol);
+svg.appendChild(bg_stage);
 document.body.appendChild(svg);
-
 document.adoptedStyleSheets = [css];
 document.body.addEventListener('change', () => {
 	update(300);
@@ -51,14 +50,18 @@ analyst.onmessage = (e) => {
 	aspect.width  = e.data.aspect[0];
 	aspect.height = e.data.aspect[1];
 	for(let i = 0; i < objs.length; i++) {
+/* 		objs[i].context.uniform2fv(objs[i].background, e.data.aspect);
+		objs[i].context.uniform1i(objs[i].light_length, e.data.light_length);
+		objs[i].context.bufferData(objs[i].context.UNIFORM_BUFFER, e.data.lights, objs[i].context.STATIC_DRAW); */
+
 		objs[i].context.uniform2fv(objs[i].background, e.data.aspect);
 		objs[i].context.uniform1i(objs[i].light_length, e.data.light_length);
-		objs[i].context.bufferData(objs[i].context.UNIFORM_BUFFER, e.data.lights, objs[i].context.STATIC_DRAW);
+		objs[i].context.bufferData(objs[i].context.UNIFORM_BUFFER, e.data.lights, objs[i].context.STATIC_READ);
 	}
-	symbol.lastChild.setAttribute('opacity' , '1');
-	if (symbol.childNodes.length > 1) {
-		URL.revokeObjectURL(symbol.firstChild.getAttribute('href'));
-		symbol.firstChild.remove();
+	bg_stage.lastChild.setAttribute('opacity', '1');
+	if (bg_stage.childNodes.length > 1) {
+		URL.revokeObjectURL(bg_stage.firstChild.getAttribute('href'));
+		bg_stage.firstChild.remove();
 	}
 	window.dispatchEvent(new Event("resize"));
 	update(250);
@@ -106,8 +109,7 @@ export function createLights(surface) {
 	data.context.canvas.className = 'light';
 	data.surfaceColor = data.context.getUniformLocation(data.program, "surfaceColor");
 	data.light_length = data.context.getUniformLocation(data.program, "length");
-	data.lights = data.context.getUniformBlockIndex(data.program, 'lighting');
-	data.context.bindBufferBase(data.context.UNIFORM_BUFFER, 0, data.context.createBuffer());
+	data.context.bindBufferBase(data.context.UNIFORM_BUFFER, data.context.getUniformBlockIndex(data.program, "lighting"), data.context.createBuffer());
 	objs.push(data);
 }
 
@@ -126,11 +128,14 @@ export async function setBackground(file = null) {
 	new_background.setAttribute('height', '100%');
 	new_background.setAttribute('width' , '100%');
 	new_background.setAttribute('opacity' , '0');
-	new_background.setAttribute('href', URL.createObjectURL(file));
-	new_background.addEventListener('load', () => {
+
+	const temp = new Image();
+	temp.src = URL.createObjectURL(file);
+	temp.addEventListener('load', () => {
+		new_background.setAttribute('href', temp.src);
 		createImageBitmap(new_background).then((background) => {
 			analyst.postMessage(background, [background]);
 		});
-		symbol.appendChild(new_background);
-	});
+	})
+	bg_stage.appendChild(new_background);
 }

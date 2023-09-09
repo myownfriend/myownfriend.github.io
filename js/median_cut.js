@@ -1,42 +1,42 @@
-const
-	gl = new OffscreenCanvas(100, 100).getContext('webgl2', {
-		depth     : false,
-		alpha     : false,
-		stencil   : false,
-		antialias : false,
-		preserveDrawingBuffer: true,
-	}),
-	program    = gl.createProgram(),
-	vShader    = gl.createShader(gl.VERTEX_SHADER),
-	fShader    = gl.createShader(gl.FRAGMENT_SHADER),
-	thumbnail  = gl.createTexture(),
-	rgbaBuffer = gl.createFramebuffer();
+const gl = new OffscreenCanvas(100, 100).getContext('webgl2', {
+	depth     : false,
+	alpha     : false,
+	stencil   : false,
+	antialias : false,
+	preserveDrawingBuffer: true,
+});
+const program    = gl.createProgram();
+const vShader    = gl.createShader(gl.VERTEX_SHADER);
+const fShader    = gl.createShader(gl.FRAGMENT_SHADER);
+const thumbnail  = gl.createTexture();
+const rgbaBuffer = gl.createFramebuffer();
+
 gl.shaderSource(vShader, `#version 300 es
-	precision mediump float;
-	in      vec2  vPosition;
-	in      vec2  tuv;
-	out     vec2  uv;
-	void main() {
-		uv  = tuv;
-		gl_Position = vec4(vPosition, 0.0, 1.0);
-	}`);
+precision mediump float;
+in      vec2  vPosition;
+in      vec2  tuv;
+out     vec2  uv;
+void main() {
+	uv  = tuv;
+	gl_Position = vec4(vPosition, 0.0, 1.0);
+}`);
 gl.shaderSource(fShader, `#version 300 es
-	precision mediump float;
-	in vec2 uv;
-	uniform sampler2D wallpaper;
-	out vec4 color;
-	void main() {
-		vec3 tex = texture(wallpaper, uv).rgb;
-		vec3 RGB = mix(pow((tex + 0.055) / 1.055, vec3(2.4)), tex / 12.92, lessThanEqual(tex,vec3(0.04045)));	
-		vec3 LMS = mat3(0.4121656120, 0.2118591070, 0.0883097947,
-						0.5362752080, 0.6807189584, 0.2818474174,
-						0.0514575653, 0.1074065790, 0.6302613616) * RGB;
-		vec3 LAB = mat3(
-				0.2104542553,  1.9779984951, 0.0259040371,
-				0.7936177850, -2.4285922050, 0.7827717662,
-			   -0.0040720468,  0.4505937099,-0.8086757660) * pow(LMS, vec3( 1.0 / 3.0));
-		color = vec4(LAB, 1.0);
-	}`);
+precision mediump float;
+in vec2 uv;
+uniform sampler2D wallpaper;
+out vec4 color;
+void main() {
+	vec3 tex = texture(wallpaper, uv).rgb;
+	vec3 RGB = mix(pow((tex + 0.055) / 1.055, vec3(2.4)), tex / 12.92, lessThanEqual(tex,vec3(0.04045)));
+	vec3 LMS = mat3(0.4121656120, 0.2118591070, 0.0883097947,
+					0.5362752080, 0.6807189584, 0.2818474174,
+					0.0514575653, 0.1074065790, 0.6302613616) * RGB;
+	vec3 LAB = mat3(
+			0.2104542553,  1.9779984951, 0.0259040371,
+			0.7936177850, -2.4285922050, 0.7827717662,
+		-0.0040720468,  0.4505937099,-0.8086757660) * pow(LMS, vec3( 1.0 / 3.0));
+	color = vec4(LAB, 1.0);
+}`);
 gl.attachShader(program, vShader);
 gl.attachShader(program, fShader);
 gl.compileShader(vShader);
@@ -46,9 +46,8 @@ gl.useProgram(program);
 
 gl.getExtension("EXT_color_buffer_float");
 
-const 
-	uv         = gl.getAttribLocation(program, 'tuv'),
-	vPosition  = gl.getAttribLocation(program, 'vPosition');
+const uv         = gl.getAttribLocation(program, 'tuv');
+const vPosition  = gl.getAttribLocation(program, 'vPosition');
 gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1.0,1.0, -1.0,-1.0, 1.0,1.0, 1.0,-1.0]), gl.STATIC_DRAW);
 gl.enableVertexAttribArray(vPosition);
@@ -86,7 +85,7 @@ onmessage = (e) => {
 	      Math.max(1.0, e.data.width  / e.data.height),
 	      Math.max(1.0, e.data.height / e.data.width )
 	  ]),
-	  lights : new Float32Array(8 * 8),
+	  lights : new Float32Array(8 * 6),
 	  light_length : 6,
 	};
     const slice_w_   = 3;
@@ -132,8 +131,8 @@ onmessage = (e) => {
 				rgbMin = [Math.min(rgbMin[0], pixel[0]), Math.min(rgbMin[1], pixel[1]), Math.min(rgbMin[2], pixel[2])];
 				rgbMax = [Math.max(rgbMax[0], pixel[0]), Math.max(rgbMax[1], pixel[1]), Math.max(rgbMax[2], pixel[2])];
 			}
-			const diffs = [rgbMax[0] - rgbMin[0], rgbMax[1] - rgbMin[1], rgbMax[2] - rgbMin[2]],
-				  maxDiff = Math.max(...diffs);
+			const diffs = [rgbMax[0] - rgbMin[0], rgbMax[1] - rgbMin[1], rgbMax[2] - rgbMin[2]];
+			const maxDiff = Math.max(...diffs);
 			if (maxDiff <= 16 || diffs[champions[i]] == maxDiff) {
 				winner = champions[i];
 			} else {
@@ -173,8 +172,7 @@ onmessage = (e) => {
 				color: [c.color[0], c.color[1], c.color[2]],
 				weight: c.slices[b]});
 		}
-  
-	const lights = [];
+
 	for(let i in slices) {
 		// Get average color in bin
 		const color = [0,0,0];
@@ -188,20 +186,16 @@ onmessage = (e) => {
 		color[0] /= amount;
 		color[1] /= amount;
 		color[2] /= amount;
-		lights.push(
-			2 * ((i % slice_w_) / (slice_w_ - 1) + 0.00000001 * scene.aspect[0]) - 1,  // x
-			2 * ((1-Math.trunc(i / slice_w_) / (slice_h_ - 1)) + 0.00000001 * scene.aspect[1]) - 1, // y
-			color[2], // b
-			color[1], // a
-			Math.random() + 1, // intensity
-			0.0, // lightness
-			0.0, 0.0 // padding
-		);
+		const offset = i * 8;
+		scene.lights[offset + 0] = 2 * ((i % slice_w_) / (slice_w_ - 1) + 0.00000001 * scene.aspect[0]) - 1;  // x
+		scene.lights[offset + 1] = 2 * ((1-Math.trunc(i / slice_w_) / (slice_h_ - 1)) + 0.00000001 * scene.aspect[1]) - 1; // y
+		scene.lights[offset + 2] = color[2]; // b
+		scene.lights[offset + 3] = color[1]; // a
+		scene.lights[offset + 4] = Math.random() + 1; // intensity;
 	}
 
-	for (let i = 0; i < lights.length; i++) 
-		scene.lights[i] = lights[i];
-	
+	// console.log(scene.lights);
+
 	const area  = gl.canvas.width * gl.canvas.height;
 	const dark  = okLtoR(Math.min(average[3], 0.25615)) * 255;
 	const light = okLtoR(Math.max(1.0 - (average[0]), 1 - 0.25615)) * 255;
@@ -210,8 +204,6 @@ onmessage = (e) => {
 	average[1] /= area;
 	average[2] /= area;
 	scene.css = `#dark-mode  body {background-color: rgb(${dark} ${dark} ${dark})} #light-mode body {background-color: rgb(${light} ${light} ${light})}`;
-
-	console.log(`Scene took ${performance.now() - start}ms to build.`);
 
 	postMessage(scene);
 }

@@ -23,6 +23,7 @@ export class WebGL2 {
         this.context.compileShader(fShader);
         this.context.linkProgram(this.program);
         this.context.useProgram(this.program);
+		this.context.enable(this.context.DITHER);
     }
 }
 
