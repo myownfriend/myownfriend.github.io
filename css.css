@@ -199,6 +199,10 @@
 			font-size: 15px;
 			font-weight: 400;
 			color: var(--text-color);
+
+			&::placeholder {
+				color:var(--search-place);
+			}
 		}
 		& p {
 			border: 2px solid transparent;
@@ -223,9 +227,7 @@
 		&:focus p {
 			border: 2px solid var(--accent-color);
 		}
-		&::placeholder {
-			color:var(--search-place);
-		}
+
 	}
 	#workspaces {
 		height: 100%;
