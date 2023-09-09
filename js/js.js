@@ -1,10 +1,10 @@
 "use strict";
-import {setBackground, createWorkSpace, createLights} from './scene.js';
+import {setBackground, createLights} from './scene.js';
 
 const panel = document.createElement('div');
 panel.id = 'panel';
 
-const activities_toggle = addButton('activities', panel);
+const activities_toggle = addButton('overview-toggle', panel);
 activities_toggle.innerHTML = 'Activities';
 activities_toggle.addEventListener('click', changeView);
 
@@ -29,16 +29,16 @@ search.setAttribute('placeholder', 'Type to search');
 const workspaces = document.createElement('div');
 workspaces.id = 'workspaces';
 for(let i = 0; i < 2; i++) {
-	const workspace = createWorkSpace(workspaces);
-	workspace.addEventListener('dragover', (ev) => {
-		ev.preventDefault();
-	});
-	workspace.addEventListener('drop', (ev) => {
-		ev.preventDefault();
-		setBackground(ev.dataTransfer.items[0].getAsFile());
-	});
-	workspace.addEventListener('click', changeView);
+	workspaces.innerHTML += '<svg class="workspace"><use href="#background"/></svg>';
 }
+workspaces.addEventListener('dragover', (ev) => {
+	ev.preventDefault();
+});
+workspaces.addEventListener('drop', (ev) => {
+	ev.preventDefault();
+	setBackground(ev.dataTransfer.items[0].getAsFile());
+});
+workspaces.addEventListener('click', changeView);
 
 const app_grid  = addAppList([
 	['Weather','Weather', false],
@@ -62,10 +62,9 @@ dash.appendChild(addAppList( [
 	['Software','Software', false],
 	['Settings','Settings', false]
 ], true));
-dash.innerHTML += `<p class="app"><svg viewbox="-2 -2 20 20"><use href="img/icons.svg#show-apps"></use></svg><label>Show Apps</label></p>`;
+dash.innerHTML += `<div id="show-apps-toggle" class="app"><svg viewbox="0 0 16 16"><use href="img/icons.svg#show-apps"/></svg><p class="name">Show Apps</p></div>`;
 dash.lastChild.addEventListener('click', () => {
 	document.body.classList.toggle('app-grid');
-	document.body.classList.toggle('overview');
 });
 
 const toggles = document.createElement('div');
@@ -109,13 +108,13 @@ createLights(dash);
 const workarea = document.createElement('section');
 workarea.id = 'workarea';
 workarea.appendChild(search);
+workarea.appendChild(app_grid);
 workarea.appendChild(dash);
 workarea.appendChild(workspaces);
-workarea.appendChild(app_grid);
-workarea.appendChild(quick_settings);
 
 document.body.appendChild(panel);
 document.body.appendChild(workarea);
+document.body.appendChild(quick_settings);
 
 setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)=> {
@@ -143,10 +142,8 @@ function addAppList(apps, hidden=false) {
 	applist.className = 'app-list';
 	if (hidden)
 		applist.classList.add('hidden');
-	else
-		applist.classList.add('show');
 	for (let i = 0; i < apps.length; i++)
-		applist.innerHTML += `<li class="app${(apps[i][2] ? ` open` : ``)}" ><img src="apps/org.gnome.${apps[i][1]}.svg"/><label>${apps[i][0]}</label></li>`;
+		applist.innerHTML += `<li class="app${(apps[i][2] ? ` open` : ``)}" ><img src="apps/org.gnome.${apps[i][1]}.svg"/><p class="name">${apps[i][0]}</p></li>`;
 	return applist;
 }
 
