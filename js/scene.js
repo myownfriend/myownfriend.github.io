@@ -32,8 +32,6 @@ window.addEventListener('resize', updateSurfaces);
 
 analyst.onmessage = (e) => {
 	css.replaceSync(e.data.css);
-	background.aw = e.data.aspect[0];
-	background.ah = e.data.aspect[1];
 	for(let i = 0; i < surfaces.length; i++) {
 		surfaces[i].ctx.uniform1i(surfaces[i].light_length, e.data.light_length);
 		surfaces[i].ctx.bufferData(surfaces[i].ctx.UNIFORM_BUFFER, e.data.lights, surfaces[i].ctx.STATIC_READ);
@@ -43,6 +41,10 @@ analyst.onmessage = (e) => {
 		URL.revokeObjectURL(background.stage.firstChild.getAttribute('href'));
 		background.stage.firstChild.remove();
 	}
+	if (background.aw == e.data.aspect[0] && background.ah == e.data.aspect[1])
+		return update();
+	background.aw = e.data.aspect[0];
+	background.ah = e.data.aspect[1];
 	updateSurfaces();
 };
 
