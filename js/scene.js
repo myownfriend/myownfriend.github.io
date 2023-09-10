@@ -5,6 +5,7 @@ const animation_state = {
 	end    : window.performance.now()
 }
 const analyst     = new Worker('./js/median_cut.js');
+const css         = new CSSStyleSheet();
 const background = {
 	stage :  document.createElementNS('http://www.w3.org/2000/svg', 'symbol'),
 	aw    :  1.0,
@@ -13,7 +14,10 @@ const background = {
 	nh    : -1.0,
 }
 background.stage.id = 'background';
-const css         = new CSSStyleSheet();
+
+const default_background = document.createElement('image');
+default_background.setAttribute('href','data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==');
+background.stage.appendChild(default_background);
 
 document.body.appendChild(background.stage);
 document.adoptedStyleSheets = [css];
@@ -33,10 +37,8 @@ analyst.onmessage = (e) => {
 		surfaces[i].ctx.bufferData(surfaces[i].ctx.UNIFORM_BUFFER, e.data.lights, surfaces[i].ctx.STATIC_READ);
 	}
 	background.stage.lastChild.setAttribute('opacity', '1');
-	if (background.stage.childNodes.length > 1) {
-		URL.revokeObjectURL(background.stage.firstChild.getAttribute('href'));
-		background.stage.firstChild.remove();
-	}
+	URL.revokeObjectURL(background.stage.firstChild.getAttribute('href'));
+	background.stage.firstChild.remove();
 	if (background.aw != e.data.aspect[0] && background.ah != e.data.aspect[1]) {
 		background.aw = e.data.aspect[0];
 		background.ah = e.data.aspect[1];
@@ -195,7 +197,7 @@ export function createLights(surface) {
 export async function setBackground(file = null) {
 	const allowedFiletypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/svg+xml", "image/jxl"];
 	if (file === null) {
-		file = await fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==')
+		file = await fetch(default_background.getAttribute('href'))
 		.then(res => res.blob())
 		.then(blob => blob);
 		updateSurfaces();
