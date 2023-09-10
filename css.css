@@ -66,7 +66,7 @@
 		}
 	}
 }
-.light {
+canvas {
 	top: 0;
 	left: 0;
 	width: 100%;
@@ -145,15 +145,12 @@
 		display:flex;
 		justify-content: center;
 	}
-
 	> :first-child {
 		justify-content: flex-start;
 	}
-
 	> :last-child {
 		justify-content: flex-end;
 	}
-
 	& button {
 		all:unset;
 		border-radius: 20px;
@@ -227,7 +224,6 @@
 		&:focus p {
 			border: 2px solid var(--accent-color);
 		}
-
 	}
 	#workspaces {
 		height: 100%;
