@@ -1,87 +1,52 @@
 "use strict";
-const objs        = [];
+const surfaces        = [];
 const animation_state = {
 	active : false,
 	end    : window.performance.now()
 }
 const analyst     = new Worker('./js/median_cut.js');
-const mon_aspect  = {
+const monitor = {
 	width  : 1.0,
 	height : 1.0,
+	cx     : 0.5,
+	cy     : 0.5,
+	aw     : 1.0,
+	ah     : 1.0,
 }
-const bg_aspect   = {
-	width  : 1.0,
-	height : 1.0,
-};
+const background = {
+	stage : document.createElementNS('http://www.w3.org/2000/svg', 'symbol'),
+	aw    : 1.0,
+	ah    : 1.0,
+}
+background.stage.id = 'background';
 const scale       = new Float32Array(2);
 const css         = new CSSStyleSheet();
-const bg_stage    = document.createElementNS('http://www.w3.org/2000/svg', 'symbol');
-bg_stage.id = 'background';
 
-document.body.appendChild(bg_stage);
+document.body.appendChild(background.stage);
 document.adoptedStyleSheets = [css];
 document.body.addEventListener('change', () => {
-	update(300);
+	update(300, true);
 });
 
-window.addEventListener('resize', () => {
-	const width       = document.documentElement.clientWidth;
-	const height      = document.documentElement.clientHeight;
-	mon_aspect.width  = Math.max(1.0, width  / height);
-	mon_aspect.height = Math.max(1.0, height / width);
-	aspectRatioChanged();
-	const center_x = width  / 2.0;
-	const center_y = height / 2.0;
-	// This doesn't need to happen for most canvases on resize
-	// For the most part, only the stage canvas changes shape on resize
-	// So lets just do this for the stage for now
-	objs[0].ctx.canvas.height = objs[0].ctx.canvas.parentElement.clientHeight;
-	objs[0].ctx.canvas.width  = objs[0].ctx.canvas.parentElement.clientWidth;
-	objs[0].ctx.viewport(0, 0, objs[0].ctx.canvas.width, objs[0].ctx.canvas.height);
-	// On resize, all elements change their and x and y offsets and there size changes in
-	// relation to the rest of the screen so we need to do this per-item
-	for(let i = 0; i < objs.length; i++) {
-		objs[i].ctx.uniform4fv(objs[i].rect, [
-			(objs[i].ctx.canvas.parentElement.offsetLeft + (objs[i].ctx.canvas.parentElement.offsetWidth  / 2.0) -  center_x) / width  * -2.0,
-			(objs[i].ctx.canvas.parentElement.offsetTop  + (objs[i].ctx.canvas.parentElement.offsetHeight / 2.0) -  center_y) / height *  2.0,
-			width  / objs[i].ctx.canvas.parentElement.offsetWidth,
-			height / objs[i].ctx.canvas.parentElement.offsetHeight
-		]);
-	}
-	update();
-});
+window.addEventListener('resize', updateSurfaces);
 
 analyst.onmessage = (e) => {
 	css.replaceSync(e.data.css);
-	bg_aspect.width  = e.data.aspect[0];
-	bg_aspect.height = e.data.aspect[1];
-	for(let i = 0; i < objs.length; i++) {
-		objs[i].ctx.uniform2fv(objs[i].background, e.data.aspect);
-		objs[i].ctx.uniform1i(objs[i].light_length, e.data.light_length);
-		objs[i].ctx.bufferData(objs[i].ctx.UNIFORM_BUFFER, e.data.lights, objs[i].ctx.STATIC_READ);
+	background.aw = e.data.aspect[0];
+	background.ah = e.data.aspect[1];
+	for(let i = 0; i < surfaces.length; i++) {
+		surfaces[i].ctx.uniform1i(surfaces[i].light_length, e.data.light_length);
+		surfaces[i].ctx.bufferData(surfaces[i].ctx.UNIFORM_BUFFER, e.data.lights, surfaces[i].ctx.STATIC_READ);
 	}
-	bg_stage.lastChild.setAttribute('opacity', '1');
-	if (bg_stage.childNodes.length > 1) {
-		URL.revokeObjectURL(bg_stage.firstChild.getAttribute('href'));
-		bg_stage.firstChild.remove();
+	background.stage.lastChild.setAttribute('opacity', '1');
+	if (background.stage.childNodes.length > 1) {
+		URL.revokeObjectURL(background.stage.firstChild.getAttribute('href'));
+		background.stage.firstChild.remove();
 	}
-	aspectRatioChanged();
-	update();
+	updateSurfaces();
 };
 
-function aspectRatioChanged() {
-	const diff_x   = bg_aspect.width  / mon_aspect.width;
-	const diff_y   = bg_aspect.height / mon_aspect.height;
-	const min      = 1.0 / Math.min(diff_x, diff_y);
-	scale[0]       = diff_x * min;
-	scale[1]       = diff_y * min;
-	// This would be global if we could do global uniforms
-	// We can't so we update each surface indifidually
-	for(let i = 0; i < objs.length; i++)
-		objs[i].ctx.uniform2fv(objs[i].scale, scale);
-}
-
-function update(length = 0) {
+function update(length, modeChange = false) {
 	const end = window.performance.now() + length;
 	if (end > animation_state.end)
 		animation_state.end = end;
@@ -91,16 +56,57 @@ function update(length = 0) {
 	window.requestAnimationFrame(refresh);
 
 	function refresh(timestamp) {
-		for (let i = 0; i < objs.length; i++) {
-			const val = (window.getComputedStyle(objs[i].ctx.canvas).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
-			const abs = Math.abs(val);
-			objs[i].ctx.uniform1f(objs[i].brightness, Math.cbrt((abs >= 0.04045) ? (val < 0 ? -1 : 1) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92));
-			objs[i].ctx.drawArrays(objs[i].ctx.TRIANGLE_STRIP, 0, 4);
+		for (let i = 0; i < surfaces.length; i++) {
+			if (modeChange) {
+				const val = (window.getComputedStyle(surfaces[i].ctx.canvas).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
+				const abs = Math.abs(val);
+				surfaces[i].ctx.uniform1f(surfaces[i].brightness, Math.cbrt((abs >= 0.04045) ? (val < 0 ? -1 : 1) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92));
+			}
+			surfaces[i].ctx.drawArrays(surfaces[i].ctx.TRIANGLE_STRIP, 0, 4);
 		}
 		if (timestamp > animation_state.end)
 			return animation_state.active = false;
 		window.requestAnimationFrame(refresh);
 	}
+}
+
+function updateSurfaces() {
+	monitor.width  = document.documentElement.clientWidth;
+	monitor.height = document.documentElement.clientHeight;
+	monitor.aw     = Math.max(1.0, monitor.width  / monitor.height);
+	monitor.ah     = Math.max(1.0, monitor.height / monitor.width);
+
+	const diff_x   = background.aw  / monitor.aw;
+	const diff_y   = background.ah  / monitor.ah;
+	const min      = 1.0 / Math.min(diff_x, diff_y);
+	scale[0]       = diff_x * min;
+	scale[1]       = diff_y * min;
+
+	monitor.cx = monitor.width  / 2.0;
+	monitor.cy = monitor.height / 2.0;
+
+	surfaces[0].ctx.canvas.height = surfaces[0].ctx.canvas.parentElement.clientHeight;
+	surfaces[0].ctx.canvas.width  = surfaces[0].ctx.canvas.parentElement.clientWidth;
+	surfaces[0].ctx.viewport(0, 0, surfaces[0].ctx.canvas.width, surfaces[0].ctx.canvas.height);
+
+	for(let i = 0; i < surfaces.length; i++)
+		updateRect(surfaces[i]);
+	update(0);
+}
+
+function updateRect(surface) {
+	const rect = {
+		x : (surface.ctx.canvas.parentElement.offsetLeft + (surface.ctx.canvas.parentElement.offsetWidth  / 2.0) -  monitor.cx) / monitor.width  * -2.0,
+		y : (surface.ctx.canvas.parentElement.offsetTop  + (surface.ctx.canvas.parentElement.offsetHeight / 2.0) -  monitor.cy) / monitor.height *  2.0,
+		w : monitor.width  / surface.ctx.canvas.parentElement.offsetWidth  * scale[0],
+		h : monitor.height / surface.ctx.canvas.parentElement.offsetHeight * scale[1],
+	};
+	surface.ctx.bufferData(surface.ctx.ARRAY_BUFFER, new Float32Array([
+		(-1.0 + rect.x) * rect.w, ( 1.0 + rect.y) * rect.h, -1.0 * background.aw,  1.0 * background.ah,
+		(-1.0 + rect.x) * rect.w, (-1.0 + rect.y) * rect.h, -1.0 * background.aw, -1.0 * background.ah,
+		( 1.0 + rect.x) * rect.w, ( 1.0 + rect.y) * rect.h,  1.0 * background.aw,  1.0 * background.ah,
+		( 1.0 + rect.x) * rect.w, (-1.0 + rect.y) * rect.h,  1.0 * background.aw, -1.0 * background.ah
+	]), surface.ctx.STATIC_DRAW);
 }
 
 export function createLights(surface) {
@@ -122,14 +128,11 @@ export function createLights(surface) {
 	const fShader = data.ctx.createShader(data.ctx.FRAGMENT_SHADER);
 	data.ctx.shaderSource(vShader, `#version 300 es
 		precision mediump float;
-		in      mediump vec2  vPosition;
-		uniform mediump vec4  rect;
-		uniform mediump vec2  global_scale;
-		uniform mediump vec2  background;
-		out     mediump vec2  lxy;
+		in   vec4 vPosition;
+		out  vec2 lxy;
 		void main() {
-			lxy = vPosition * background;
-			gl_Position = vec4((vPosition + rect.xy) * (global_scale * rect.zw), 1.0, 1.0);
+			lxy = vPosition.zw;
+			gl_Position = vec4(vPosition.xy, 1.0, 1.0);
 		}`);
 	data.ctx.shaderSource(fShader, `#version 300 es
 		precision mediump float;
@@ -175,17 +178,14 @@ export function createLights(surface) {
 	data.ctx.enable(data.ctx.DITHER);
 	data.ctx.depthFunc(data.ctx.NEVER);
 	const vPosition = data.ctx.getAttribLocation(program, 'vPosition');
-	data.ctx.bindBuffer(data.ctx.ARRAY_BUFFER, data.ctx.createBuffer());
-	data.ctx.bufferData(data.ctx.ARRAY_BUFFER, new Float32Array([-1.0,1.0, -1.0,-1.0, 1.0,1.0, 1.0,-1.0]), data.ctx.STATIC_DRAW);
 	data.ctx.enableVertexAttribArray(vPosition);
-	data.ctx.vertexAttribPointer(vPosition, 2, data.ctx.FLOAT, false, 0, 0);
-	data.ctx.bindBufferBase(data.ctx.UNIFORM_BUFFER, data.ctx.getUniformBlockIndex(program, "lighting"), data.ctx.createBuffer());
-	data.background   = data.ctx.getUniformLocation(program, "background");
-	data.scale        = data.ctx.getUniformLocation(program, "global_scale");
+	data.ctx.bindBuffer(data.ctx.ARRAY_BUFFER, data.ctx.createBuffer());
+	data.ctx.vertexAttribPointer(vPosition, 4, data.ctx.FLOAT, false, 0, 0);
+
 	data.light_length = data.ctx.getUniformLocation(program, "length");
 	data.brightness   = data.ctx.getUniformLocation(program, "brightness");
-	data.rect         = data.ctx.getUniformLocation(program, "rect");
-	objs.push(data);
+	data.ctx.bindBufferBase(data.ctx.UNIFORM_BUFFER, data.ctx.getUniformBlockIndex(program, "lighting"), data.ctx.createBuffer());
+	surfaces.push(data);
 }
 
 export async function setBackground(file = null) {
@@ -194,7 +194,7 @@ export async function setBackground(file = null) {
 		file = await fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==')
 		.then(res => res.blob())
 		.then(blob => blob);
-		window.dispatchEvent(new Event("resize"));
+		updateSurfaces();
 	} else if (!allowedFiletypes.includes(file.type))
 		return;
 	const new_background = document.createElementNS('http://www.w3.org/2000/svg', 'image');
@@ -211,5 +211,5 @@ export async function setBackground(file = null) {
 			analyst.postMessage(background, [background]);
 		});
 	})
-	bg_stage.appendChild(new_background);
+	background.stage.appendChild(new_background);
 }
