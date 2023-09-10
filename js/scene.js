@@ -14,9 +14,11 @@ const monitor = {
 	ah     : 1.0,
 }
 const background = {
-	stage : document.createElementNS('http://www.w3.org/2000/svg', 'symbol'),
-	aw    : 1.0,
-	ah    : 1.0,
+	stage :  document.createElementNS('http://www.w3.org/2000/svg', 'symbol'),
+	aw    :  1.0,
+	ah    :  1.0,
+	nw    : -1.0,
+	nh    : -1.0,
 }
 background.stage.id = 'background';
 const scale       = new Float32Array(2);
@@ -28,7 +30,10 @@ document.body.addEventListener('change', () => {
 	update(300, true);
 });
 
-window.addEventListener('resize', updateSurfaces);
+window.addEventListener('resize', () => {
+	updateSurfaces();
+	update();
+});
 
 analyst.onmessage = (e) => {
 	css.replaceSync(e.data.css);
@@ -41,11 +46,14 @@ analyst.onmessage = (e) => {
 		URL.revokeObjectURL(background.stage.firstChild.getAttribute('href'));
 		background.stage.firstChild.remove();
 	}
-	if (background.aw == e.data.aspect[0] && background.ah == e.data.aspect[1])
-		return update();
-	background.aw = e.data.aspect[0];
-	background.ah = e.data.aspect[1];
-	updateSurfaces();
+	if (background.aw != e.data.aspect[0] && background.ah != e.data.aspect[1]) {
+		background.aw = e.data.aspect[0];
+		background.ah = e.data.aspect[1];
+		background.nw = e.data.aspect[0] * -1.0;
+		background.nh = e.data.aspect[1] * -1.0;
+		updateSurfaces();
+	}
+	update();
 };
 
 function update(length, modeChange = false) {
@@ -93,7 +101,6 @@ function updateSurfaces() {
 
 	for(let i = 0; i < surfaces.length; i++)
 		updateRect(surfaces[i]);
-	update(0);
 }
 
 function updateRect(surface) {
@@ -103,11 +110,17 @@ function updateRect(surface) {
 		w : monitor.width  / surface.ctx.canvas.parentElement.offsetWidth  * scale[0],
 		h : monitor.height / surface.ctx.canvas.parentElement.offsetHeight * scale[1],
 	};
+	const transform = {
+		px : ( 1.0 + rect.x) * rect.w,
+		py : ( 1.0 + rect.y) * rect.h,
+		nx : (-1.0 + rect.x) * rect.w,
+		ny : (-1.0 + rect.y) * rect.h,
+	}
 	surface.ctx.bufferData(surface.ctx.ARRAY_BUFFER, new Float32Array([
-		(-1.0 + rect.x) * rect.w, ( 1.0 + rect.y) * rect.h, -1.0 * background.aw,  1.0 * background.ah,
-		(-1.0 + rect.x) * rect.w, (-1.0 + rect.y) * rect.h, -1.0 * background.aw, -1.0 * background.ah,
-		( 1.0 + rect.x) * rect.w, ( 1.0 + rect.y) * rect.h,  1.0 * background.aw,  1.0 * background.ah,
-		( 1.0 + rect.x) * rect.w, (-1.0 + rect.y) * rect.h,  1.0 * background.aw, -1.0 * background.ah
+		transform.nx, transform.py, background.nw, background.aw,
+		transform.nx, transform.ny, background.nw, background.nw,
+		transform.px, transform.py, background.aw, background.aw,
+		transform.px, transform.ny, background.aw, background.nw
 	]), surface.ctx.STATIC_DRAW);
 }
 
@@ -162,14 +175,14 @@ export function createLights(surface) {
 			return mix(1.055 * pow(RGB, vec3(1.0/2.2)) - 0.055, RGB * 12.92, lessThanEqual(RGB, vec3(0.0031308)));
 		}
 		void main() {
-			float i_acc  = 0.0;
+			float in_acc = 0.0;
 			vec2  ab_acc = vec2(0.0, 0.0);
 			for (int i = 0; i < length; i++) {
 				float intensity = lights[i].intensity.x / pow(distance(lxy, lights[i].pos_color.xy), 2.0);
-				i_acc  += intensity;
+				in_acc += intensity;
 				ab_acc += intensity * lights[i].pos_color.ab;
 			}
-			color = vec4(OKLAB_to_SRGB(vec3(brightness, ab_acc / i_acc)),1.0);
+			color = vec4(OKLAB_to_SRGB(vec3(brightness, ab_acc / in_acc)),1.0);
 		}`);
 	data.ctx.attachShader(program, vShader);
 	data.ctx.attachShader(program, fShader);
@@ -183,7 +196,6 @@ export function createLights(surface) {
 	data.ctx.enableVertexAttribArray(vPosition);
 	data.ctx.bindBuffer(data.ctx.ARRAY_BUFFER, data.ctx.createBuffer());
 	data.ctx.vertexAttribPointer(vPosition, 4, data.ctx.FLOAT, false, 0, 0);
-
 	data.light_length = data.ctx.getUniformLocation(program, "length");
 	data.brightness   = data.ctx.getUniformLocation(program, "brightness");
 	data.ctx.bindBufferBase(data.ctx.UNIFORM_BUFFER, data.ctx.getUniformBlockIndex(program, "lighting"), data.ctx.createBuffer());
