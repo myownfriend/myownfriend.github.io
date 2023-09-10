@@ -13,31 +13,32 @@ const thumbnail  = gl.createTexture();
 const rgbaBuffer = gl.createFramebuffer();
 
 gl.shaderSource(vShader, `#version 300 es
-precision mediump float;
-in      vec2  vPosition;
-in      vec2  tuv;
-out     vec2  uv;
-void main() {
-	uv  = tuv;
-	gl_Position = vec4(vPosition, 0.0, 1.0);
-}`);
+	precision mediump float;
+	in      vec2  vPosition;
+	in      vec2  tuv;
+	out     vec2  uv;
+	void main() {
+		uv  = tuv;
+		gl_Position = vec4(vPosition, 0.0, 1.0);
+	}`);
 gl.shaderSource(fShader, `#version 300 es
-precision mediump float;
-in vec2 uv;
-uniform sampler2D wallpaper;
-out vec4 color;
-void main() {
-	vec3 tex = texture(wallpaper, uv).rgb;
-	vec3 RGB = mix(pow((tex + 0.055) / 1.055, vec3(2.4)), tex / 12.92, lessThanEqual(tex,vec3(0.04045)));
-	vec3 LMS = mat3(0.4121656120, 0.2118591070, 0.0883097947,
-					0.5362752080, 0.6807189584, 0.2818474174,
-					0.0514575653, 0.1074065790, 0.6302613616) * RGB;
-	vec3 LAB = mat3(
-			0.2104542553,  1.9779984951, 0.0259040371,
-			0.7936177850, -2.4285922050, 0.7827717662,
-		-0.0040720468,  0.4505937099,-0.8086757660) * pow(LMS, vec3( 1.0 / 3.0));
-	color = vec4(LAB, 1.0);
-}`);
+	precision mediump float;
+	precision lowp int;
+	in vec2 uv;
+	uniform sampler2D wallpaper;
+	out vec4 color;
+	void main() {
+		vec3 tex = texture(wallpaper, uv).rgb;
+		vec3 RGB = mix(pow((tex + 0.055) / 1.055, vec3(2.4)), tex / 12.92, lessThanEqual(tex,vec3(0.04045)));
+		vec3 LMS = mat3(0.4121656120, 0.2118591070, 0.0883097947,
+						0.5362752080, 0.6807189584, 0.2818474174,
+						0.0514575653, 0.1074065790, 0.6302613616) * RGB;
+		vec3 LAB = mat3(
+				0.2104542553,  1.9779984951, 0.0259040371,
+				0.7936177850, -2.4285922050, 0.7827717662,
+			-0.0040720468,  0.4505937099,-0.8086757660) * pow(LMS, vec3( 1.0 / 3.0));
+		color = vec4(LAB, 1.0);
+	}`);
 gl.attachShader(program, vShader);
 gl.attachShader(program, fShader);
 gl.compileShader(vShader);

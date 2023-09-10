@@ -1,10 +1,19 @@
 "use strict";
-const objs = [];
-const analyst    = new Worker('./js/median_cut.js');
-const aspect     = {
+const objs        = [];
+const animation_state = {
+	active : false,
+	end    : window.performance.now()
+}
+const analyst     = new Worker('./js/median_cut.js');
+const mon_aspect  = {
+	width  : 1.0,
+	height : 1.0,
+}
+const bg_aspect   = {
 	width  : 1.0,
 	height : 1.0,
 };
+const scale       = new Float32Array(2);
 const css         = new CSSStyleSheet();
 const bg_stage    = document.createElementNS('http://www.w3.org/2000/svg', 'symbol');
 bg_stage.id = 'background';
@@ -16,33 +25,36 @@ document.body.addEventListener('change', () => {
 });
 
 window.addEventListener('resize', () => {
-	const width    = document.documentElement.clientWidth;
-	const height   = document.documentElement.clientHeight;
+	const width       = document.documentElement.clientWidth;
+	const height      = document.documentElement.clientHeight;
+	mon_aspect.width  = Math.max(1.0, width  / height);
+	mon_aspect.height = Math.max(1.0, height / width);
+	aspectRatioChanged();
 	const center_x = width  / 2.0;
 	const center_y = height / 2.0;
-	const diff_x   = aspect.width  / Math.max(1.0, width / height);
-	const diff_y   = aspect.height / Math.max(1.0, height / width);
-	const min      = 1.0 / Math.min(diff_x, diff_y);
-	const scale    = new Float32Array([diff_x * min, diff_y * min]);
+	// This doesn't need to happen for most canvases on resize
+	// For the most part, only the stage canvas changes shape on resize
+	// So lets just do this for the stage for now
+	objs[0].ctx.canvas.height = objs[0].ctx.canvas.parentElement.clientHeight;
+	objs[0].ctx.canvas.width  = objs[0].ctx.canvas.parentElement.clientWidth;
+	objs[0].ctx.viewport(0, 0, objs[0].ctx.canvas.width, objs[0].ctx.canvas.height);
+	// On resize, all elements change their and x and y offsets and there size changes in
+	// relation to the rest of the screen so we need to do this per-item
 	for(let i = 0; i < objs.length; i++) {
-		objs[i].ctx.canvas.height = objs[i].ctx.canvas.parentElement.clientHeight;
-		objs[i].ctx.canvas.width  = objs[i].ctx.canvas.parentElement.clientWidth;
-		objs[i].ctx.uniform2fv(objs[i].scale, scale);
 		objs[i].ctx.uniform4fv(objs[i].rect, [
 			(objs[i].ctx.canvas.parentElement.offsetLeft + (objs[i].ctx.canvas.parentElement.offsetWidth  / 2.0) -  center_x) / width  * -2.0,
 			(objs[i].ctx.canvas.parentElement.offsetTop  + (objs[i].ctx.canvas.parentElement.offsetHeight / 2.0) -  center_y) / height *  2.0,
 			width  / objs[i].ctx.canvas.parentElement.offsetWidth,
 			height / objs[i].ctx.canvas.parentElement.offsetHeight
 		]);
-		objs[i].ctx.viewport(0, 0, objs[i].ctx.canvas.width, objs[i].ctx.canvas.height);
 	}
 	update();
 });
 
 analyst.onmessage = (e) => {
 	css.replaceSync(e.data.css);
-	aspect.width  = e.data.aspect[0];
-	aspect.height = e.data.aspect[1];
+	bg_aspect.width  = e.data.aspect[0];
+	bg_aspect.height = e.data.aspect[1];
 	for(let i = 0; i < objs.length; i++) {
 		objs[i].ctx.uniform2fv(objs[i].background, e.data.aspect);
 		objs[i].ctx.uniform1i(objs[i].light_length, e.data.light_length);
@@ -53,14 +65,22 @@ analyst.onmessage = (e) => {
 		URL.revokeObjectURL(bg_stage.firstChild.getAttribute('href'));
 		bg_stage.firstChild.remove();
 	}
-	window.dispatchEvent(new Event("resize"));
+	aspectRatioChanged();
 	update();
 };
 
-const animation_state = {
-	active : false,
-	end    : window.performance.now()
+function aspectRatioChanged() {
+	const diff_x   = bg_aspect.width  / mon_aspect.width;
+	const diff_y   = bg_aspect.height / mon_aspect.height;
+	const min      = 1.0 / Math.min(diff_x, diff_y);
+	scale[0]       = diff_x * min;
+	scale[1]       = diff_y * min;
+	// This would be global if we could do global uniforms
+	// We can't so we update each surface indifidually
+	for(let i = 0; i < objs.length; i++)
+		objs[i].ctx.uniform2fv(objs[i].scale, scale);
 }
+
 function update(length = 0) {
 	const end = window.performance.now() + length;
 	if (end > animation_state.end)
@@ -72,19 +92,15 @@ function update(length = 0) {
 
 	function refresh(timestamp) {
 		for (let i = 0; i < objs.length; i++) {
-			objs[i].ctx.uniform1f(objs[i].brightness, getSurfaceBrightness(objs[i].ctx.canvas));
+			const val = (window.getComputedStyle(objs[i].ctx.canvas).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
+			const abs = Math.abs(val);
+			objs[i].ctx.uniform1f(objs[i].brightness, Math.cbrt((abs >= 0.04045) ? (val < 0 ? -1 : 1) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92));
 			objs[i].ctx.drawArrays(objs[i].ctx.TRIANGLE_STRIP, 0, 4);
 		}
 		if (timestamp > animation_state.end)
 			return animation_state.active = false;
 		window.requestAnimationFrame(refresh);
 	}
-
-	function getSurfaceBrightness(surface) {
-		const val = (window.getComputedStyle(surface).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
-		const abs = Math.abs(val);
-		return Math.cbrt((abs >= 0.04045) ? (val < 0 ? -1 : 1) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92);
-   }
 }
 
 export function createLights(surface) {
@@ -158,17 +174,17 @@ export function createLights(surface) {
 	data.ctx.useProgram(program);
 	data.ctx.enable(data.ctx.DITHER);
 	data.ctx.depthFunc(data.ctx.NEVER);
-	data.rect = data.ctx.getUniformLocation(program, "rect");
-	data.background = data.ctx.getUniformLocation(program, "background");
-	data.scale = data.ctx.getUniformLocation(program, "global_scale");
-	data.brightness = data.ctx.getUniformLocation(program, "brightness");
-	data.light_length = data.ctx.getUniformLocation(program, "length");
 	const vPosition = data.ctx.getAttribLocation(program, 'vPosition');
 	data.ctx.bindBuffer(data.ctx.ARRAY_BUFFER, data.ctx.createBuffer());
 	data.ctx.bufferData(data.ctx.ARRAY_BUFFER, new Float32Array([-1.0,1.0, -1.0,-1.0, 1.0,1.0, 1.0,-1.0]), data.ctx.STATIC_DRAW);
 	data.ctx.enableVertexAttribArray(vPosition);
 	data.ctx.vertexAttribPointer(vPosition, 2, data.ctx.FLOAT, false, 0, 0);
 	data.ctx.bindBufferBase(data.ctx.UNIFORM_BUFFER, data.ctx.getUniformBlockIndex(program, "lighting"), data.ctx.createBuffer());
+	data.background   = data.ctx.getUniformLocation(program, "background");
+	data.scale        = data.ctx.getUniformLocation(program, "global_scale");
+	data.light_length = data.ctx.getUniformLocation(program, "length");
+	data.brightness   = data.ctx.getUniformLocation(program, "brightness");
+	data.rect         = data.ctx.getUniformLocation(program, "rect");
 	objs.push(data);
 }
 
@@ -178,6 +194,7 @@ export async function setBackground(file = null) {
 		file = await fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==')
 		.then(res => res.blob())
 		.then(blob => blob);
+		window.dispatchEvent(new Event("resize"));
 	} else if (!allowedFiletypes.includes(file.type))
 		return;
 	const new_background = document.createElementNS('http://www.w3.org/2000/svg', 'image');
