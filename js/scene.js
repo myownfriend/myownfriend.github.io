@@ -5,14 +5,6 @@ const animation_state = {
 	end    : window.performance.now()
 }
 const analyst     = new Worker('./js/median_cut.js');
-const monitor = {
-	width  : 1.0,
-	height : 1.0,
-	cx     : 0.5,
-	cy     : 0.5,
-	aw     : 1.0,
-	ah     : 1.0,
-}
 const background = {
 	stage :  document.createElementNS('http://www.w3.org/2000/svg', 'symbol'),
 	aw    :  1.0,
@@ -21,7 +13,6 @@ const background = {
 	nh    : -1.0,
 }
 background.stage.id = 'background';
-const scale       = new Float32Array(2);
 const css         = new CSSStyleSheet();
 
 document.body.appendChild(background.stage);
@@ -81,47 +72,46 @@ function update(length, modeChange = false) {
 }
 
 function updateSurfaces() {
-	monitor.width  = document.documentElement.clientWidth;
-	monitor.height = document.documentElement.clientHeight;
-	monitor.aw     = Math.max(1.0, monitor.width  / monitor.height);
-	monitor.ah     = Math.max(1.0, monitor.height / monitor.width);
-
-	const diff_x   = background.aw  / monitor.aw;
-	const diff_y   = background.ah  / monitor.ah;
-	const min      = 1.0 / Math.min(diff_x, diff_y);
-	scale[0]       = diff_x * min;
-	scale[1]       = diff_y * min;
-
-	monitor.cx = monitor.width  / 2.0;
-	monitor.cy = monitor.height / 2.0;
-
 	surfaces[0].ctx.canvas.height = surfaces[0].ctx.canvas.parentElement.clientHeight;
 	surfaces[0].ctx.canvas.width  = surfaces[0].ctx.canvas.parentElement.clientWidth;
 	surfaces[0].ctx.viewport(0, 0, surfaces[0].ctx.canvas.width, surfaces[0].ctx.canvas.height);
-
-	for(let i = 0; i < surfaces.length; i++)
-		updateRect(surfaces[i]);
-}
-
-function updateRect(surface) {
-	const rect = {
-		x : (surface.ctx.canvas.parentElement.offsetLeft + (surface.ctx.canvas.parentElement.offsetWidth  / 2.0) -  monitor.cx) / monitor.width  * -2.0,
-		y : (surface.ctx.canvas.parentElement.offsetTop  + (surface.ctx.canvas.parentElement.offsetHeight / 2.0) -  monitor.cy) / monitor.height *  2.0,
-		w : monitor.width  / surface.ctx.canvas.parentElement.offsetWidth  * scale[0],
-		h : monitor.height / surface.ctx.canvas.parentElement.offsetHeight * scale[1],
-	};
-	const transform = {
-		px : ( 1.0 + rect.x) * rect.w,
-		py : ( 1.0 + rect.y) * rect.h,
-		nx : (-1.0 + rect.x) * rect.w,
-		ny : (-1.0 + rect.y) * rect.h,
+	const monitor = {
+		width  : document.documentElement.clientWidth,
+		height : document.documentElement.clientHeight,
 	}
-	surface.ctx.bufferData(surface.ctx.ARRAY_BUFFER, new Float32Array([
-		transform.nx, transform.py, background.nw, background.aw,
-		transform.nx, transform.ny, background.nw, background.nw,
-		transform.px, transform.py, background.aw, background.aw,
-		transform.px, transform.ny, background.aw, background.nw
-	]), surface.ctx.STATIC_DRAW);
+	monitor.aw = Math.max(1.0, monitor.width  / monitor.height);
+	monitor.ah = Math.max(1.0, monitor.height / monitor.width);
+	monitor.cx = monitor.width  / 2.0;
+	monitor.cy = monitor.height / 2.0;
+	const diff_x = background.aw  / monitor.aw;
+	const diff_y = background.ah  / monitor.ah;
+	const min    = 1.0 / Math.min(diff_x, diff_y);
+	const scaled = {
+		x : monitor.width  * -2.0,
+		y : monitor.height *  2.0,
+		w : monitor.width  * diff_x * min,
+		h : monitor.height * diff_y * min,
+	}
+	for(let i = 0; i < surfaces.length; i++) {
+		const rect = {
+			x : (surfaces[i].ctx.canvas.parentElement.offsetLeft + (surfaces[i].ctx.canvas.parentElement.offsetWidth  / 2.0) -  monitor.cx) / scaled.x,
+			y : (surfaces[i].ctx.canvas.parentElement.offsetTop  + (surfaces[i].ctx.canvas.parentElement.offsetHeight / 2.0) -  monitor.cy) / scaled.y,
+			w : scaled.w / surfaces[i].ctx.canvas.parentElement.offsetWidth ,
+			h : scaled.h / surfaces[i].ctx.canvas.parentElement.offsetHeight,
+		};
+		const transform = {
+			px : ( 1.0 + rect.x) * rect.w,
+			py : ( 1.0 + rect.y) * rect.h,
+			nx : (-1.0 + rect.x) * rect.w,
+			ny : (-1.0 + rect.y) * rect.h,
+		}
+		surfaces[i].ctx.bufferData(surfaces[i].ctx.ARRAY_BUFFER, new Float32Array([
+			transform.nx, transform.py, background.nw, background.aw,
+			transform.nx, transform.ny, background.nw, background.nw,
+			transform.px, transform.py, background.aw, background.aw,
+			transform.px, transform.ny, background.aw, background.nw
+		]), surfaces[i].ctx.STATIC_DRAW);
+	}
 }
 
 export function createLights(surface) {
