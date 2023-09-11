@@ -234,7 +234,8 @@ export async function setBackground(file = null) {
 	temp.src = URL.createObjectURL(file);
 	temp.addEventListener('load', () => {
 		new_background.setAttribute('href', temp.src);
-		createImageBitmap(new_background).then((background) => {
+		const temp_scale = Math.min(1, 64 / Math.min(temp.width, temp.height));
+		createImageBitmap(new_background, {resizeWidth: temp.width  * temp_scale, resizeHeight: temp.height * temp_scale}).then((background) => {
 			analyst.postMessage(background, [background]);
 		});
 	})
