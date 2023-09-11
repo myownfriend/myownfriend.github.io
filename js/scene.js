@@ -1,4 +1,5 @@
 "use strict";
+const filetypes  = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/svg+xml" , "image/jxl"];
 const surfaces   = [];
 const analyst    = new Worker('./js/median_cut.js');
 const css        = new CSSStyleSheet();
@@ -21,6 +22,9 @@ document.adoptedStyleSheets = [css];
 document.body.addEventListener('change', () => {addAnimationJob(300, 'theme')});
 
 window.addEventListener('resize', () => {
+	surfaces[0].ctx.canvas.height = surfaces[0].ctx.canvas.parentElement.clientHeight;
+	surfaces[0].ctx.canvas.width  = surfaces[0].ctx.canvas.parentElement.clientWidth;
+	surfaces[0].ctx.viewport(0, 0, surfaces[0].ctx.canvas.width, surfaces[0].ctx.canvas.height);
 	updateSurfaces();
 	addAnimationJob(0, 'redraw');
 });
@@ -67,12 +71,13 @@ function addAnimationJob(length, task) {
 					redraw = true;
 					break;
 				case 'background':
-					/* This will eventually be where the transition between lights will live */
 					const opacity = Math.min(1, (timestamp - job.start) / job.time);
 					background.stage.lastChild.setAttribute('opacity', opacity);
 					if (opacity >= 1) {
-						URL.revokeObjectURL(background.stage.firstChild.getAttribute('href'));
-						background.stage.firstChild.remove();
+						while (background.stage.children.length > 1) {
+							URL.revokeObjectURL(background.stage.firstChild.getAttribute('href'));
+							background.stage.firstChild.remove();
+						}
 						redraw = true;
 					} else if (timestamp + 17 > job.end)
 						job.end += 17;
@@ -82,8 +87,7 @@ function addAnimationJob(length, task) {
 			}
 			if (job.end < window.performance.now()) {
 				animations.queue.splice(i, 1);
-				i--; // Taking an item out of the queue while looping through it can result in jobs being skipped
-				     // Decrementing i will allow this "i" to be re-evaluated.
+				i--;
 			}
 		}
 		if (redraw)
@@ -96,9 +100,6 @@ function addAnimationJob(length, task) {
 }
 
 function updateSurfaces() {
-	surfaces[0].ctx.canvas.height = surfaces[0].ctx.canvas.parentElement.clientHeight;
-	surfaces[0].ctx.canvas.width  = surfaces[0].ctx.canvas.parentElement.clientWidth;
-	surfaces[0].ctx.viewport(0, 0, surfaces[0].ctx.canvas.width, surfaces[0].ctx.canvas.height);
 	const monitor = {
 		width  : document.documentElement.clientWidth,
 		height : document.documentElement.clientHeight,
@@ -215,19 +216,17 @@ export function createLights(surface) {
 }
 
 export async function setBackground(file = null) {
-	const allowedFiletypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/svg+xml", "image/jxl"];
 	if (file === null) {
 		file = await fetch('data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQvOY1r/+BiOh/AAA=')
 		.then(res => res.blob())
 		.then(blob => blob);
 		updateSurfaces();
-	} else if (!allowedFiletypes.includes(file.type) || file.name === background.stage.firstChild.getAttribute('name'))
+	} else if (!filetypes.includes(file.type) || file.name === background.stage.firstChild.getAttribute('name'))
 		return;
 	const new_background = document.createElementNS('http://www.w3.org/2000/svg', 'image');
 	new_background.setAttribute('name',file.name)
 	new_background.setAttribute('preserveAspectRatio', 'xMidYMid slice');
 	new_background.setAttribute('opacity' , '0');
-
 	const temp = new Image();
 	temp.src = URL.createObjectURL(file);
 	temp.addEventListener('load', () => {
