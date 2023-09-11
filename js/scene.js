@@ -1,11 +1,11 @@
 "use strict";
-const surfaces        = [];
-const animation_state = {
+const surfaces   = [];
+const analyst    = new Worker('./js/median_cut.js');
+const css        = new CSSStyleSheet();
+const animations = {
+	queue  : new Array(),
 	active : false,
-	end    : window.performance.now()
 }
-const analyst     = new Worker('./js/median_cut.js');
-const css         = new CSSStyleSheet();
 const background = {
 	stage :  document.createElementNS('http://www.w3.org/2000/svg', 'symbol'),
 	aw    :  1.0,
@@ -14,20 +14,15 @@ const background = {
 	nh    : -1.0,
 }
 background.stage.id = 'background';
-
-const default_background = document.createElement('image');
-default_background.setAttribute('href','data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACXBIWXMAAAsTAAALEwEAmpwYAAAACklEQVQIHWOoBAAAewB6N1xddAAAAABJRU5ErkJggg==');
-background.stage.appendChild(default_background);
+background.stage.appendChild(document.createElement('image'));
 
 document.body.appendChild(background.stage);
 document.adoptedStyleSheets = [css];
-document.body.addEventListener('change', () => {
-	update(300, true);
-});
+document.body.addEventListener('change', () => {addAnimationJob(300, 'theme')});
 
 window.addEventListener('resize', () => {
 	updateSurfaces();
-	update();
+	addAnimationJob(0, 'redraw');
 });
 
 analyst.onmessage = (e) => {
@@ -36,9 +31,6 @@ analyst.onmessage = (e) => {
 		surfaces[i].ctx.uniform1i(surfaces[i].light_length, e.data.light_length);
 		surfaces[i].ctx.bufferData(surfaces[i].ctx.UNIFORM_BUFFER, e.data.lights, surfaces[i].ctx.STATIC_READ);
 	}
-	background.stage.lastChild.setAttribute('opacity', '1');
-	URL.revokeObjectURL(background.stage.firstChild.getAttribute('href'));
-	background.stage.firstChild.remove();
 	if (background.aw != e.data.aspect[0] && background.ah != e.data.aspect[1]) {
 		background.aw = e.data.aspect[0];
 		background.ah = e.data.aspect[1];
@@ -46,29 +38,59 @@ analyst.onmessage = (e) => {
 		background.nh = e.data.aspect[1] * -1.0;
 		updateSurfaces();
 	}
-	update();
+	addAnimationJob(300, 'background');
 };
 
-function update(length, modeChange = false) {
-	const end = window.performance.now() + length;
-	if (end > animation_state.end)
-		animation_state.end = end;
-	if (animation_state.active)
+function addAnimationJob(length, task) {
+	animations.queue.push({
+	   start : performance.now(),
+	   type  : task,
+	   time  : length,
+	   end   : performance.now() + length,
+	});
+	if (animations.active)
 		return;
-	animation_state.active = true;
+	animations.active = true;
 	window.requestAnimationFrame(refresh);
 
 	function refresh(timestamp) {
-		for (let i = 0; i < surfaces.length; i++) {
-			if (modeChange) {
-				const val = (window.getComputedStyle(surfaces[i].ctx.canvas).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
-				const abs = Math.abs(val);
-				surfaces[i].ctx.uniform1f(surfaces[i].brightness, Math.cbrt((abs >= 0.04045) ? (val < 0 ? -1 : 1) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92));
+		let redraw = false;
+		for (let i = 0; i < animations.queue.length; i++) {
+			const job = animations.queue[i];
+			switch (job.type) {
+				case 'theme' :
+					for (let i = 0; i < surfaces.length; i++) {
+						const val = (window.getComputedStyle(surfaces[i].ctx.canvas).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
+						const abs = Math.abs(val);
+						surfaces[i].ctx.uniform1f(surfaces[i].brightness, Math.cbrt((abs >= 0.04045) ? (val < 0 ? -1 : 1) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92));
+					}
+					redraw = true;
+					break;
+				case 'background':
+					/* This will eventually be where the transition between lights will live */
+					const opacity = Math.min(1, (timestamp - job.start) / job.time);
+					background.stage.lastChild.setAttribute('opacity', opacity);
+					if (opacity >= 1) {
+						URL.revokeObjectURL(background.stage.firstChild.getAttribute('href'));
+						background.stage.firstChild.remove();
+						redraw = true;
+					} else if (timestamp + 17 > job.end)
+						job.end += 17;
+					break;
+				case 'redraw':
+					redraw = true;
 			}
-			surfaces[i].ctx.drawArrays(surfaces[i].ctx.TRIANGLE_STRIP, 0, 4);
+			if (job.end < window.performance.now()) {
+				animations.queue.splice(i, 1);
+				i--; // Taking an item out of the queue while looping through it can result in jobs being skipped
+				     // Decrementing i will allow this "i" to be re-evaluated.
+			}
 		}
-		if (timestamp > animation_state.end)
-			return animation_state.active = false;
+		if (redraw)
+			for (let i = 0; i < surfaces.length; i++)
+				surfaces[i].ctx.drawArrays(surfaces[i].ctx.TRIANGLE_STRIP, 0, 4);
+		if (!animations.queue.length)
+			return animations.active = false;
 		window.requestAnimationFrame(refresh);
 	}
 }
@@ -83,21 +105,19 @@ function updateSurfaces() {
 	}
 	monitor.aw = Math.max(1.0, monitor.width  / monitor.height);
 	monitor.ah = Math.max(1.0, monitor.height / monitor.width);
-	monitor.cx = monitor.width  / 2.0;
-	monitor.cy = monitor.height / 2.0;
-	const diff_x = background.aw  / monitor.aw;
-	const diff_y = background.ah  / monitor.ah;
+	const diff_x = background.aw / monitor.aw;
+	const diff_y = background.ah / monitor.ah;
 	const min    = 1.0 / Math.min(diff_x, diff_y);
 	const scaled = {
-		x : monitor.width  * -2.0,
-		y : monitor.height *  2.0,
-		w : monitor.width  * diff_x * min,
-		h : monitor.height * diff_y * min,
+		x  : monitor.width  * -1.0,
+		y  : monitor.height,
+		w  : monitor.width  * diff_x * min,
+		h  : monitor.height * diff_y * min,
 	}
 	for(let i = 0; i < surfaces.length; i++) {
 		const rect = {
-			x : (surfaces[i].ctx.canvas.parentElement.offsetLeft + (surfaces[i].ctx.canvas.parentElement.offsetWidth  / 2.0) -  monitor.cx) / scaled.x,
-			y : (surfaces[i].ctx.canvas.parentElement.offsetTop  + (surfaces[i].ctx.canvas.parentElement.offsetHeight / 2.0) -  monitor.cy) / scaled.y,
+			x : (((surfaces[i].ctx.canvas.parentElement.offsetWidth  >> 1) + surfaces[i].ctx.canvas.parentElement.offsetLeft) / scaled.x) + 0.5,
+			y : (((surfaces[i].ctx.canvas.parentElement.offsetHeight >> 1) + surfaces[i].ctx.canvas.parentElement.offsetTop ) / scaled.y) - 0.5,
 			w : scaled.w / surfaces[i].ctx.canvas.parentElement.offsetWidth ,
 			h : scaled.h / surfaces[i].ctx.canvas.parentElement.offsetHeight,
 		};
@@ -197,16 +217,15 @@ export function createLights(surface) {
 export async function setBackground(file = null) {
 	const allowedFiletypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/svg+xml", "image/jxl"];
 	if (file === null) {
-		file = await fetch(default_background.getAttribute('href'))
+		file = await fetch('data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQvOY1r/+BiOh/AAA=')
 		.then(res => res.blob())
 		.then(blob => blob);
 		updateSurfaces();
-	} else if (!allowedFiletypes.includes(file.type))
+	} else if (!allowedFiletypes.includes(file.type) || file.name === background.stage.firstChild.getAttribute('name'))
 		return;
 	const new_background = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+	new_background.setAttribute('name',file.name)
 	new_background.setAttribute('preserveAspectRatio', 'xMidYMid slice');
-	new_background.setAttribute('height', '100%');
-	new_background.setAttribute('width' , '100%');
 	new_background.setAttribute('opacity' , '0');
 
 	const temp = new Image();

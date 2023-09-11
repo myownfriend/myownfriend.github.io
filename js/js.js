@@ -1,6 +1,8 @@
 "use strict";
 import {setBackground, createLights} from './scene.js';
 
+document.body.className = "overview";
+
 const panel = document.createElement('ul');
 panel.id = 'panel';
 const panel_left  = document.createElement('li');

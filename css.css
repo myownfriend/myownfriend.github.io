@@ -60,21 +60,27 @@
 			--extreme-fg:  #000;
 			--symbol-color: rgb(4 4 4);
 		}
+		& canvas {
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			z-index: -9;
+			position: absolute;
+			border-radius: inherit;
+			background-color: inherit;
+		}
 		& use {
 			fill: var(--symbol-color);
 			transition: fill var(--theme-transition);
 		}
 	}
 }
-canvas {
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	z-index: -9;
-	position: absolute;
-	border-radius: inherit;
-	background-color: inherit;
+#background {
+	& image {
+		width: 100%;
+		height: 100%;
+	}
 }
 .app-list {
 	display: inline-flex;
