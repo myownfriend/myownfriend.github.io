@@ -230,6 +230,8 @@ export async function setBackground(file = null) {
 	new_background.setAttribute('name',file.name)
 	new_background.setAttribute('preserveAspectRatio', 'xMidYMid slice');
 	new_background.setAttribute('opacity' , '0');
+	new_background.setAttribute('width'   , '100%');
+	new_background.setAttribute('height'  , '100%');
 	const temp = new Image();
 	temp.src = URL.createObjectURL(file);
 	temp.addEventListener('load', () => {
