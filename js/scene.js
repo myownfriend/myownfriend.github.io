@@ -22,10 +22,7 @@ document.adoptedStyleSheets = [css];
 document.body.addEventListener('change', () => {addAnimationJob(300, 'theme')});
 
 window.addEventListener('resize', () => {
-	surfaces[0].ctx.canvas.height = surfaces[0].ctx.canvas.parentElement.clientHeight;
-	surfaces[0].ctx.canvas.width  = surfaces[0].ctx.canvas.parentElement.clientWidth;
-	surfaces[0].ctx.viewport(0, 0, surfaces[0].ctx.canvas.width, surfaces[0].ctx.canvas.height);
-	updateSurfaces();
+	updateSurfaces(true);
 	addAnimationJob(0, 'redraw');
 });
 
@@ -99,7 +96,7 @@ function addAnimationJob(length, task) {
 	}
 }
 
-function updateSurfaces() {
+function updateSurfaces(full = false) {
 	const monitor = {
 		width  : document.documentElement.clientWidth,
 		height : document.documentElement.clientHeight,
@@ -110,15 +107,20 @@ function updateSurfaces() {
 	const diff_y = background.ah / monitor.ah;
 	const min    = 1.0 / Math.min(diff_x, diff_y);
 	const scaled = {
-		x  : monitor.width  * -1.0,
-		y  : monitor.height,
+		x  : 1.0 / (monitor.width  * -1.0),
+		y  : 1.0 / (monitor.height       ),
 		w  : monitor.width  * diff_x * min,
 		h  : monitor.height * diff_y * min,
 	}
 	for(let i = 0; i < surfaces.length; i++) {
+		if (full) {
+			surfaces[i].ctx.canvas.height = surfaces[i].ctx.canvas.parentElement.clientHeight * window.devicePixelRatio;
+			surfaces[i].ctx.canvas.width  = surfaces[i].ctx.canvas.parentElement.clientWidth  * window.devicePixelRatio;
+			surfaces[i].ctx.viewport(0, 0,  surfaces[i].ctx.canvas.width, surfaces[i].ctx.canvas.height);
+		}
 		const rect = {
-			x : (((surfaces[i].ctx.canvas.parentElement.offsetWidth  >> 1) + surfaces[i].ctx.canvas.parentElement.offsetLeft) / scaled.x) + 0.5,
-			y : (((surfaces[i].ctx.canvas.parentElement.offsetHeight >> 1) + surfaces[i].ctx.canvas.parentElement.offsetTop ) / scaled.y) - 0.5,
+			x : scaled.x * ((surfaces[i].ctx.canvas.parentElement.offsetWidth  >> 1) + surfaces[i].ctx.canvas.parentElement.offsetLeft) + 0.5,
+			y : scaled.y * ((surfaces[i].ctx.canvas.parentElement.offsetHeight >> 1) + surfaces[i].ctx.canvas.parentElement.offsetTop ) - 0.5,
 			w : scaled.w / surfaces[i].ctx.canvas.parentElement.offsetWidth ,
 			h : scaled.h / surfaces[i].ctx.canvas.parentElement.offsetHeight,
 		};
@@ -195,7 +197,8 @@ export function createLights(surface) {
 				in_acc += intensity;
 				ab_acc += intensity * lights[i].pos_color.ab;
 			}
-			color = vec4(OKLAB_to_SRGB(vec3(brightness, ab_acc / in_acc)),1.0);
+			ab_acc /= in_acc;
+			color = vec4(OKLAB_to_SRGB(vec3(brightness, ab_acc)),1.0);
 		}`);
 	data.ctx.attachShader(program, vShader);
 	data.ctx.attachShader(program, fShader);
@@ -220,7 +223,7 @@ export async function setBackground(file = null) {
 		file = await fetch('data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQvOY1r/+BiOh/AAA=')
 		.then(res => res.blob())
 		.then(blob => blob);
-		updateSurfaces();
+		updateSurfaces(true);
 	} else if (!filetypes.includes(file.type) || file.name === background.stage.firstChild.getAttribute('name'))
 		return;
 	const new_background = document.createElementNS('http://www.w3.org/2000/svg', 'image');
