@@ -71,10 +71,10 @@ gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 gl.bindFramebuffer(gl.FRAMEBUFFER, rgbaBuffer);
 gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, thumbnail, 0);
 
+gl.canvas.width  = 96;
+gl.canvas.height = 64;
+gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 onmessage = (e) => {
-	gl.canvas.width  = 96;
-	gl.canvas.height = 64;
-	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, e.data.width, e.data.height, 0, gl.RGB, gl.UNSIGNED_BYTE, e.data);
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	const pixels     = new Float32Array(gl.canvas.width * gl.canvas.height * 4);
@@ -82,13 +82,9 @@ onmessage = (e) => {
 
 	const start = performance.now();
 	const scene = {
-	      css    : '',
-	      aspect : new Float32Array([
-	      Math.max(1.0, e.data.width  / e.data.height),
-	      Math.max(1.0, e.data.height / e.data.width )
-	  ]),
-	  lights : new Float32Array(8 * 6),
-	  light_length : 6,
+	    css    : '',
+		lights : new Float32Array(8 * 6),
+		light_length : 6,
 	};
     const slice_w_   = 3;
     const slice_h_   = 2;
@@ -175,6 +171,7 @@ onmessage = (e) => {
 				weight: c.slices[b]});
 		}
 
+	let acc_intensity = 0;
 	for(let i in slices) {
 		// Get average color in bin
 		const color = [0,0,0];
@@ -189,14 +186,23 @@ onmessage = (e) => {
 		color[1] /= amount;
 		color[2] /= amount;
 		const offset = i * 8;
-		scene.lights[offset + 0] = 2 * ((i % slice_w_) / (slice_w_ - 1) + 0.00000001 * scene.aspect[0]) - 1;  // x
-		scene.lights[offset + 1] = 2 * ((1-Math.trunc(i / slice_w_) / (slice_h_ - 1)) + 0.00000001 * scene.aspect[1]) - 1; // y
-		scene.lights[offset + 2] = color[2]; // b
-		scene.lights[offset + 3] = color[1]; // a
-		scene.lights[offset + 4] = Math.random() + 1; // intensity;
+
+		scene.lights[offset + 0] = 2.0 * ((i % slice_w_) / (slice_w_ - 1)) - 1;  // x
+		scene.lights[offset + 1] = 2.0 * (1- Math.trunc(i / slice_w_) / (slice_h_ - 1)) - 1; // y
+		scene.lights[offset + 2] = 1.0;  // z
+		scene.lights[offset + 3] = 0;    // padding
+
+		scene.lights[offset + 4] = Math.random(); // intensity;
+		scene.lights[offset + 5] = 0;             // padding
+		scene.lights[offset + 6] = color[2];      // b
+		scene.lights[offset + 7] = color[1];      // a
+
+		acc_intensity += scene.lights[offset + 4];
 	}
 
-	// console.log(scene.lights);
+	for (let i = 0; i < scene.lights.length; i += 8) {
+		scene.lights[i + 4] /= acc_intensity;
+	}
 
 	const area  = gl.canvas.width * gl.canvas.height;
 	const dark  = okLtoR(Math.min(average[3], 0.25615)) * 255;
@@ -205,7 +211,7 @@ onmessage = (e) => {
 	average[0] /= area;
 	average[1] /= area;
 	average[2] /= area;
-	scene.css = `#dark-mode  body {background-color: rgb(${dark} ${dark} ${dark})} #light-mode body {background-color: rgb(${light} ${light} ${light})}`;
+	// scene.css = `#dark-mode  body {background-color: rgb(${dark} ${dark} ${dark})} #light-mode body {background-color: rgb(${light} ${light} ${light})}`;
 
 	postMessage(scene);
 }

@@ -15,49 +15,78 @@
 	user-select: none;
 	--nav-transition: 250ms;
 	--theme-transition:  300ms;
+	background-color: #000;
 
 	& body {
 		height: inherit;
 		display: flex;
 		flex-direction: column;
 		background-color: var(--stage-color);
-		transition: background-color var(--theme-transition);
+		transition-property: background-color, --brightness;
+		transition-duration: var(--theme-transition);
 		--accent-color : #3584e4;
+		--brightness: var(--stage-L);
 
-		&#dark-mode  {
-			--text-color:   rgb(229 229 229);
-			--dash-color:   rgb(61 61 61);
-			--dash-hover:   rgba(255 255 255 / 0.08);
-			--hover-shade:  rgba(255 255 255 / 0.125);
-			--toggle-color: rgba(255 255 255 / 0.13);
-			--search-color: rgb(70 70 70);
-			--search-hover: rgba(255 255 255 / 0.1);
-			--search-icon: rgba(255 255 255 / 0.45);
-			--search-place: rgba(255 255 255 / 0.9);
-			--dropdown-color: rgb(53 53 53);
-			--stage-color: rgb(40 40 40);
-			--track-color: rgba(255 255 255 / 0.450980392);
-			--thumb-color: #eee;
-			--extreme-bg:  #000;
-			--extreme-fg:  #fff;
-			--symbol-color: rgb(246 245 245);
-		}
+		animation-name: fade_in;
+		animation-duration: 1s;
+		animation-fill-mode: forwards;
+		animation-iteration-count: 1;
+
+		--text-color:   rgb(229 229 229);
+
+		--dash-color:   rgb(61 61 61);
+		--dash-L: 0.36002;
+
+		--dash-hover:   rgba(255 255 255 / 0.08);
+		--hover-shade:  rgba(255 255 255 / 0.125);
+		--toggle-color: rgba(255 255 255 / 0.13);
+
+		--search-color: rgb(70 70 70);
+		--search-L: 0.39418;
+
+		--search-hover: rgba(255 255 255 / 0.1);
+		--search-icon:  rgba(255 255 255 / 0.45);
+		--search-place: rgba(255 255 255 / 0.9);
+
+		--dropdown-color: rgb(53 53 53);
+		--dropdown-L: 0.32897;
+
+		--stage-color: rgb(40 40 40);
+		--stage-L: 0.27685;
+
+		--track-color:  rgba(255 255 255 / 0.450980392);
+		--thumb-color:  #eee;
+		--extreme-bg:   #000;
+		--extreme-fg:   #fff;
+		--symbol-color: rgb(246 245 245);
+
 		&#light-mode  {
 			--text-color:   rgb(2 2 2);
+
 			--dash-color:   rgb(145, 145, 145);
+			--dash-L:   0.65666;
+
 			--dash-hover:   rgba(0 0 0 / 0.08);
 			--hover-shade:  rgba(0 0 0 / 0.125);
 			--toggle-color: rgba(0 0 0 / 0.14);
+
 			--search-color: rgb(145 145 145);
+			--search-L: 0.65666;
+
 			--search-hover: rgba(0 0 0 / 0.2);
-			--search-icon: rgba(0 0 0 / 0.45);
+			--search-icon:  rgba(0 0 0 / 0.45);
 			--search-place: rgba(0 0 0 / 0.994);
+
 			--dropdown-color: rgb(190 190 190);
+			--dropdown-L: 0.80152;
+
 			--stage-color:  rgb(172 172 172);
-			--track-color: rgba(0 0 0 / 0.450980392);
-			--thumb-color: #000;
-			--extreme-bg:  #fff;
-			--extreme-fg:  #000;
+			--stage-L: 0.74443;
+
+			--track-color:  rgba(0 0 0 / 0.450980392);
+			--thumb-color:  #000;
+			--extreme-bg:   #fff;
+			--extreme-fg:   #000;
 			--symbol-color: rgb(4 4 4);
 		}
 		& canvas {
@@ -76,10 +105,28 @@
 		}
 	}
 }
+@keyframes fade_in {
+	0% {
+		opacity:0;
+	}
+	100% {
+		opacity:1;
+	}
+}
 #background {
 	& image {
-		width: 100%;
+		width:  100%;
 		height: 100%;
+
+		&:first-child {
+			opacity: 1;
+		}
+		&:nth-child(2) {
+			opacity: 0;
+			animation-name: fade_in;
+			animation-duration: var(--theme-transition);
+			animation-fill-mode: forwards;
+		}
 	}
 }
 .app-list {
@@ -193,7 +240,10 @@
 		width:350px;
 		position: fixed;
 		border-radius: 20px;
-		background: var(--search-color);
+		background-color: var(--search-color);
+		transition-property: background-color, --brightness;
+		transition-duration: var(--theme-transition);
+		--brightness: var(--search-L);
 
 		& input {
 			background-color: transparent;
@@ -269,6 +319,9 @@
 		height: 106px;
 		border-radius: calc(12px + 16px);
 		background-color: var(--dash-color);
+		transition-property: background-color, --brightness;
+		transition-duration: var(--theme-transition);
+		--brightness: var(--dash-L);
 
 		> * {
 			height:100%;
@@ -339,8 +392,10 @@ body { /*animations*/
 	border-radius:calc(16px * 2.25);
 	box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
 	contain: content;
-	transition: background-color var(--theme-transition);
+	transition-property: background-color, --brightness;
+	transition-duration: var(--theme-transition);
 	background-color: var(--dropdown-color);
+	--brightness: var(--dropdown-L);
 
 	.over-lights {
 		box-shadow: inset  0 0 3px var(--toggle-color);

@@ -1,10 +1,9 @@
 "use strict";
-import {setBackground, createLights} from './scene.js';
+import {setBackground, createSurface} from './scene.js';
 
 document.body.className = "overview";
 
-const panel = document.createElement('ul');
-panel.id = 'panel';
+const panel = Object.assign(document.createElement('ul'), {id:'panel'});
 const panel_left  = document.createElement('li');
 const panel_cent  = document.createElement('li');
 const panel_right = document.createElement('li');
@@ -30,8 +29,7 @@ panel.appendChild(panel_left);
 panel.appendChild(panel_cent);
 panel.appendChild(panel_right);
 
-const search = document.createElement('label');
-search.id = "search";
+const search = Object.assign(document.createElement('label'), {id : 'search'});
 const search_bar = document.createElement('input');
 search_bar.setAttribute('type', 'text');
 search_bar.setAttribute('placeholder', 'Type to search');
@@ -40,11 +38,10 @@ search_decoration.innerHTML += '<svg><use href="img/icons.svg#search"/></svg>'
 search_decoration.appendChild(search_bar);
 search.appendChild(search_decoration);
 
-const workspaces = document.createElement('div');
-workspaces.id = 'workspaces';
-for(let i = 0; i < 2; i++) {
+const workspaces = Object.assign(document.createElement('div'), {id: 'workspaces'});
+for(let i = 0; i < 2; i++)
 	workspaces.innerHTML += '<svg class="workspace"><use href="#background"/></svg>';
-}
+
 workspaces.addEventListener('dragover', (ev) => {
 	ev.preventDefault();
 });
@@ -68,9 +65,7 @@ const app_grid  = addAppList([
 ]);
 app_grid.id = 'app-grid';
 
-const dash = document.createElement('div');
-dash.id = 'dash';
-dash.className = 'hidden';
+const dash = Object.assign(document.createElement('div'), {id: 'dash', className: 'hidden'});
 dash.appendChild(addAppList( [
 	['Files','Nautilus', true],
 	['Software','Software', false],
@@ -81,8 +76,7 @@ dash.lastChild.addEventListener('click', () => {
 	document.body.classList.toggle('app-grid');
 });
 
-const toggles = document.createElement('div');
-toggles.id = 'toggles';
+const toggles = Object.assign(document.createElement('div'), {id: 'toggles'});
 
 const settings = {
 	wired        : addToggle('Wired', toggles),
@@ -99,8 +93,7 @@ settings.file_upload.addEventListener('change', (e) => {
 	setBackground(e.target.files[0]);
 });
 
-const over_lights = document.createElement('div');
-over_lights.className = 'over-lights';
+const over_lights = Object.assign(document.createElement('div'), {className: 'over-lights'});
 over_lights.innerHTML = `
 	<ul id="user-area"><li></li><li></li><li></li><li></li></ul>
 	<div id="audio-main">
@@ -110,13 +103,10 @@ over_lights.innerHTML = `
 	</div>`;
 over_lights.appendChild(toggles);
 
-const quick_settings = document.createElement('form');
-quick_settings.id = 'quick-settings';
-quick_settings.className = 'dropdown';
+const quick_settings = Object.assign(document.createElement('form'), {id :'quick-settings', className: 'dropdown'});
 quick_settings.appendChild(over_lights);
 
-const workarea = document.createElement('section');
-workarea.id = 'workarea';
+const workarea = Object.assign(document.createElement('main'), {id : 'workarea'});
 workarea.appendChild(search);
 workarea.appendChild(app_grid);
 workarea.appendChild(dash);
@@ -131,10 +121,11 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)
 	setTheme(e.target.matches);
 });
 
-createLights(document.body);
-createLights(search);
-createLights(dash);
-createLights(quick_settings);
+createSurface(document.body),
+createSurface(search),
+createSurface(dash),
+createSurface(quick_settings)
+
 setBackground();
 
 function setTheme(dark) {
@@ -154,8 +145,7 @@ function changeView() {
 }
 
 function addAppList(apps, hidden=false) {
-	const applist = document.createElement('ul');
-	applist.className = 'app-list';
+	const applist = Object.assign(document.createElement('ul'), {className: 'app-list'});
 	if (hidden)
 		applist.classList.add('hidden');
 	for (let i = 0; i < apps.length; i++)
@@ -171,8 +161,7 @@ function addToggle(name, parent, type="checkbox") {
 }
 
 function addButton(id, parent) {
-	const button = document.createElement('button');
-	button.id = id;
+	const button = Object.assign(document.createElement('button'), {id: id});
 	parent.appendChild(button);
 	return button;
 }

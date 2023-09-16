@@ -1,24 +1,19 @@
 "use strict";
-const filetypes  = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/svg+xml" , "image/jxl"];
+import {support} from './support.js';
+
 const surfaces   = [];
 const analyst    = new Worker('./js/median_cut.js');
-const css        = new CSSStyleSheet();
 const animations = {
 	queue  : new Array(),
 	active : false,
 }
-const background = {
-	stage :  document.createElementNS('http://www.w3.org/2000/svg', 'symbol'),
-	aw    :  1.0,
-	ah    :  1.0,
-	nw    : -1.0,
-	nh    : -1.0,
-}
-background.stage.id = 'background';
-background.stage.appendChild(document.createElement('image'));
+const background = Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'symbol'), {
+	id      : 'background',
+	image   : new Array(2),
+	current : 0,
+});
 
-document.body.appendChild(background.stage);
-document.adoptedStyleSheets = [css];
+document.body.appendChild(background);
 document.body.addEventListener('change', () => {addAnimationJob(300, 'theme')});
 
 window.addEventListener('resize', () => {
@@ -27,18 +22,12 @@ window.addEventListener('resize', () => {
 });
 
 analyst.onmessage = (e) => {
-	css.replaceSync(e.data.css);
 	for(let i = 0; i < surfaces.length; i++) {
 		surfaces[i].ctx.uniform1i(surfaces[i].light_length, e.data.light_length);
 		surfaces[i].ctx.bufferData(surfaces[i].ctx.UNIFORM_BUFFER, e.data.lights, surfaces[i].ctx.STATIC_READ);
 	}
-	if (background.aw != e.data.aspect[0] && background.ah != e.data.aspect[1]) {
-		background.aw = e.data.aspect[0];
-		background.ah = e.data.aspect[1];
-		background.nw = e.data.aspect[0] * -1.0;
-		background.nh = e.data.aspect[1] * -1.0;
-		updateSurfaces();
-	}
+	background.appendChild(background.image[background.current]);
+	updateSurfaces();
 	addAnimationJob(300, 'background');
 };
 
@@ -60,21 +49,16 @@ function addAnimationJob(length, task) {
 			const job = animations.queue[i];
 			switch (job.type) {
 				case 'theme' :
-					for (let i = 0; i < surfaces.length; i++) {
-						const val = (window.getComputedStyle(surfaces[i].ctx.canvas).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
-						const abs = Math.abs(val);
-						surfaces[i].ctx.uniform1f(surfaces[i].brightness, Math.cbrt((abs >= 0.04045) ? (val < 0 ? -1 : 1) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92));
-					}
+					for (let i = 0; i < surfaces.length; i++)
+						surfaces[i].ctx.uniform1f(surfaces[i].brightness, getBrightness(surfaces[i].ctx.canvas));
 					redraw = true;
 					break;
 				case 'background':
 					const opacity = Math.min(1, (timestamp - job.start) / job.time);
-					background.stage.lastChild.setAttribute('opacity', opacity);
-					if (opacity >= 1) {
-						while (background.stage.children.length > 1) {
-							URL.revokeObjectURL(background.stage.firstChild.getAttribute('href'));
-							background.stage.firstChild.remove();
-						}
+					if (opacity >= 1 && background.children.length > 1) {
+						const old_background = background.image[background.current ^ 1];
+						URL.revokeObjectURL(old_background.image.src);
+						old_background.remove();
 						redraw = true;
 					} else if (timestamp + 17 > job.end)
 						job.end += 17;
@@ -96,6 +80,14 @@ function addAnimationJob(length, task) {
 	}
 }
 
+function getBrightness(obj) {
+	if (support.customCSSProperties)
+		return window.getComputedStyle(obj).getPropertyValue("--brightness");
+	const val = (window.getComputedStyle(obj).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
+	const abs = Math.abs(val);
+	return Math.cbrt((abs >= 0.04045) ? (val < 0 ? -1 : 1) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92);
+}
+
 function updateSurfaces(full = false) {
 	const monitor = {
 		width  : document.documentElement.clientWidth,
@@ -103,26 +95,28 @@ function updateSurfaces(full = false) {
 	}
 	monitor.aw = Math.max(1.0, monitor.width  / monitor.height);
 	monitor.ah = Math.max(1.0, monitor.height / monitor.width);
-	const diff_x = background.aw / monitor.aw;
-	const diff_y = background.ah / monitor.ah;
+	const current = background.image[background.current];
+	const diff_x = current.aspectW / monitor.aw;
+	const diff_y = current.aspectH / monitor.ah;
 	const min    = 1.0 / Math.min(diff_x, diff_y);
 	const scaled = {
 		x  : 1.0 / (monitor.width  * -1.0),
-		y  : 1.0 / (monitor.height       ),
+		y  : 1.0 / (monitor.height *  1.0),
 		w  : monitor.width  * diff_x * min,
 		h  : monitor.height * diff_y * min,
 	}
 	for(let i = 0; i < surfaces.length; i++) {
+		const clientRect = surfaces[i].ctx.canvas.parentElement.getBoundingClientRect();
 		if (full) {
-			surfaces[i].ctx.canvas.height = surfaces[i].ctx.canvas.parentElement.clientHeight * window.devicePixelRatio;
-			surfaces[i].ctx.canvas.width  = surfaces[i].ctx.canvas.parentElement.clientWidth  * window.devicePixelRatio;
+			surfaces[i].ctx.canvas.height = clientRect.height * window.devicePixelRatio;
+			surfaces[i].ctx.canvas.width  = clientRect.width  * window.devicePixelRatio;
 			surfaces[i].ctx.viewport(0, 0,  surfaces[i].ctx.canvas.width, surfaces[i].ctx.canvas.height);
 		}
 		const rect = {
-			x : scaled.x * ((surfaces[i].ctx.canvas.parentElement.offsetWidth  >> 1) + surfaces[i].ctx.canvas.parentElement.offsetLeft) + 0.5,
-			y : scaled.y * ((surfaces[i].ctx.canvas.parentElement.offsetHeight >> 1) + surfaces[i].ctx.canvas.parentElement.offsetTop ) - 0.5,
-			w : scaled.w / surfaces[i].ctx.canvas.parentElement.offsetWidth ,
-			h : scaled.h / surfaces[i].ctx.canvas.parentElement.offsetHeight,
+			x : /* scaled.x * */ ((clientRect.width  >> 1) + clientRect.x) / monitor.width  * -1.0 + 0.5,
+			y : /* scaled.y * */ ((clientRect.height >> 1) + clientRect.y) / monitor.height *  1.0 - 0.5,
+			w : monitor.width  / clientRect.width  * diff_x * min, // scaled.w / clientRect.width ,
+			h : monitor.height / clientRect.height * diff_y * min, // scaled.h / clientRect.height,
 		};
 		const transform = {
 			px : ( 1.0 + rect.x) * rect.w,
@@ -131,15 +125,15 @@ function updateSurfaces(full = false) {
 			ny : (-1.0 + rect.y) * rect.h,
 		}
 		surfaces[i].ctx.bufferData(surfaces[i].ctx.ARRAY_BUFFER, new Float32Array([
-			transform.nx, transform.py, background.nw, background.aw,
-			transform.nx, transform.ny, background.nw, background.nw,
-			transform.px, transform.py, background.aw, background.aw,
-			transform.px, transform.ny, background.aw, background.nw
+			transform.nx, transform.py, -1.0,  1.0,
+			transform.nx, transform.ny, -1.0, -1.0,
+			transform.px, transform.py,  1.0,  1.0,
+			transform.px, transform.ny,  1.0, -1.0
 		]), surfaces[i].ctx.STATIC_DRAW);
 	}
 }
 
-export function createLights(surface) {
+export function createSurface(surface) {
 	const canvas  = document.createElement('canvas');
 	surface.prepend(canvas);
 	const data = {
@@ -169,8 +163,8 @@ export function createLights(surface) {
 		precision mediump int;
 		in vec2 lxy;
 		struct light {
-			vec4 pos_color;
-			vec4 intensity;
+			vec4 pos;
+			vec4 color;
 		};
 		layout(std140) uniform lighting {
 			light lights[6];
@@ -191,14 +185,14 @@ export function createLights(surface) {
 		}
 		void main() {
 			float in_acc = 0.0;
-			vec2  ab_acc = vec2(0.0, 0.0);
+			vec2  ab = vec2(0.0, 0.0);
 			for (int i = 0; i < length; i++) {
-				float intensity = lights[i].intensity.x / pow(distance(lxy, lights[i].pos_color.xy), 2.0);
+				float intensity = lights[i].color.x / pow(distance(lxy, lights[i].pos.xy), 2.0);
 				in_acc += intensity;
-				ab_acc += intensity * lights[i].pos_color.ab;
+				ab += intensity * lights[i].color.ab;
 			}
-			ab_acc /= in_acc;
-			color = vec4(OKLAB_to_SRGB(vec3(brightness, ab_acc)),1.0);
+			ab /= in_acc;
+			color = vec4(OKLAB_to_SRGB(vec3(brightness, ab)),1.0);
 		}`);
 	data.ctx.attachShader(program, vShader);
 	data.ctx.attachShader(program, fShader);
@@ -223,23 +217,30 @@ export async function setBackground(file = null) {
 		file = await fetch('data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQvOY1r/+BiOh/AAA=')
 		.then(res => res.blob())
 		.then(blob => blob);
-		updateSurfaces(true);
-	} else if (!filetypes.includes(file.type) || file.name === background.stage.firstChild.getAttribute('name'))
+	} else if (!support.filetypes.includes(file.type))
 		return;
-	const new_background = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-	new_background.setAttribute('name',file.name)
-	new_background.setAttribute('preserveAspectRatio', 'xMidYMid slice');
-	new_background.setAttribute('opacity' , '0');
-	new_background.setAttribute('width'   , '100%');
-	new_background.setAttribute('height'  , '100%');
 	const temp = new Image();
 	temp.src = URL.createObjectURL(file);
 	temp.addEventListener('load', () => {
-		new_background.setAttribute('href', temp.src);
-		const temp_scale = Math.min(1, 64 / Math.min(temp.width, temp.height));
-		createImageBitmap(new_background, {resizeWidth: temp.width  * temp_scale, resizeHeight: temp.height * temp_scale}).then((background) => {
-			analyst.postMessage(background, [background]);
+		URL.revokeObjectURL(temp.src);
+		const newbg = Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'image'), {
+			image    : temp,
+			aspectW  : Math.max(1.0, temp.width  / temp.height),
+			aspectH  : Math.max(1.0, temp.height / temp.width ),
+		});
+		newbg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+		newbg.setAttribute('href', newbg.image.src);
+		newbg.setAttribute('width'  , '100%');
+		newbg.setAttribute('height' , '100%');
+		background.current ^= 1;
+		background.image[background.current] = newbg;
+		createImageBitmap(newbg.image, {
+			resizeWidth:  newbg.aspectW * 64,
+			resizeHeight: newbg.aspectH * 64,
+		}).then((image) => {
+			analyst.postMessage(image, [image]);
+
+			console.log(temp.src);
 		});
 	})
-	background.stage.appendChild(new_background);
 }
