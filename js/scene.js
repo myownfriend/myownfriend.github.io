@@ -9,8 +9,8 @@ const animations = {
 }
 const background = Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'symbol'), {
 	id      : 'background',
-	image   : new Array(2),
-	current : 0,
+	old     : null,
+	current : null,
 });
 
 document.body.appendChild(background);
@@ -20,16 +20,6 @@ window.addEventListener('resize', () => {
 	updateSurfaces(true);
 	addAnimationJob(0, 'redraw');
 });
-
-analyst.onmessage = (e) => {
-	for(let i = 0; i < surfaces.length; i++) {
-		surfaces[i].ctx.uniform1i(surfaces[i].light_length, e.data.light_length);
-		surfaces[i].ctx.bufferData(surfaces[i].ctx.UNIFORM_BUFFER, e.data.lights, surfaces[i].ctx.STATIC_READ);
-	}
-	background.appendChild(background.image[background.current]);
-	updateSurfaces();
-	addAnimationJob(300, 'background');
-};
 
 function addAnimationJob(length, task) {
 	animations.queue.push({
@@ -56,9 +46,9 @@ function addAnimationJob(length, task) {
 				case 'background':
 					const opacity = Math.min(1, (timestamp - job.start) / job.time);
 					if (opacity >= 1 && background.children.length > 1) {
-						const old_background = background.image[background.current ^ 1];
-						URL.revokeObjectURL(old_background.image.src);
-						old_background.remove();
+						URL.revokeObjectURL(background.old.image.src);
+						background.old.remove();
+						background.old = null;
 						redraw = true;
 					} else if (timestamp + 17 > job.end)
 						job.end += 17;
@@ -95,9 +85,8 @@ function updateSurfaces(full = false) {
 	}
 	monitor.aw = Math.max(1.0, monitor.width  / monitor.height);
 	monitor.ah = Math.max(1.0, monitor.height / monitor.width);
-	const current = background.image[background.current];
-	const diff_x = current.aspectW / monitor.aw;
-	const diff_y = current.aspectH / monitor.ah;
+	const diff_x = background.current.aspectW / monitor.aw;
+	const diff_y = background.current.aspectH / monitor.ah;
 	const min    = 1.0 / Math.min(diff_x, diff_y);
 	const scaled = {
 		x  : 1.0 / (monitor.width  * -1.0),
@@ -232,15 +221,22 @@ export async function setBackground(file = null) {
 		newbg.setAttribute('href', newbg.image.src);
 		newbg.setAttribute('width'  , '100%');
 		newbg.setAttribute('height' , '100%');
-		background.current ^= 1;
-		background.image[background.current] = newbg;
 		createImageBitmap(newbg.image, {
 			resizeWidth:  newbg.aspectW * 64,
 			resizeHeight: newbg.aspectH * 64,
 		}).then((image) => {
 			analyst.postMessage(image, [image]);
-
-			console.log(temp.src);
 		});
+		analyst.onmessage = (e) => {
+			for(let i = 0; i < surfaces.length; i++) {
+				surfaces[i].ctx.uniform1i(surfaces[i].light_length, e.data.light_length);
+				surfaces[i].ctx.bufferData(surfaces[i].ctx.UNIFORM_BUFFER, e.data.lights, surfaces[i].ctx.STATIC_READ);
+			}
+			background.old = background.current;
+			background.current = newbg;
+			background.appendChild(newbg);
+			updateSurfaces();
+			addAnimationJob(300, 'background');
+		};
 	})
 }
