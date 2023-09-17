@@ -35,12 +35,12 @@ function addAnimationJob(length, task) {
 
 	function refresh(timestamp) {
 		let redraw = false;
-		for (let i = 0; i < animations.queue.length; i++) {
-			const job = animations.queue[i];
+		for (let a = 0; a < animations.queue.length; a++) {
+			const job = animations.queue[a];
 			switch (job.type) {
 				case 'theme' :
-					for (let i = 0; i < surfaces.length; i++)
-						surfaces[i].uniform1f(surfaces[i].brightness, getBrightness(surfaces[i].canvas));
+					for (let s = surfaces.length - 1; s >= 0; s--)
+						surfaces[s].uniform1f(surfaces[s].brightness, getBrightness(surfaces[s].canvas));
 					redraw = true;
 					break;
 				case 'background':
@@ -56,25 +56,17 @@ function addAnimationJob(length, task) {
 					redraw = true;
 			}
 			if (job.end < window.performance.now()) {
-				animations.queue.splice(i, 1);
-				i--;
+				animations.queue.splice(a, 1);
+				a--;
 			}
 		}
 		if (redraw)
-			for (let i = 0; i < surfaces.length; i++)
-				surfaces[i].drawArrays(surfaces[i].TRIANGLE_STRIP, 0, 4);
+			for (let s = 0; s < surfaces.length; s++)
+				surfaces[s].drawArrays(surfaces[s].TRIANGLE_STRIP, 0, 4);
 		if (!animations.queue.length)
 			return animations.active = false;
 		window.requestAnimationFrame(refresh);
 	}
-}
-
-function getBrightness(obj) {
-	if (support.customCSSProperties)
-		return window.getComputedStyle(obj).getPropertyValue("--brightness");
-	const val = (window.getComputedStyle(obj).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
-	const abs = Math.abs(val);
-	return Math.cbrt((abs >= 0.04045) ? (val < 0 ? -1 : 1) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92);
 }
 
 function updateSurfaces(full = false) {
@@ -84,8 +76,8 @@ function updateSurfaces(full = false) {
 	}
 	monitor.aw = Math.max(1.0, monitor.width  / monitor.height);
 	monitor.ah = Math.max(1.0, monitor.height / monitor.width);
-	const diff_x = background.current.aspectW / monitor.aw;
-	const diff_y = background.current.aspectH / monitor.ah;
+	const diff_x = background.current.aspectWidth  / monitor.aw;
+	const diff_y = background.current.aspectHeight / monitor.ah;
 	const min    = 1.0 / Math.min(diff_x, diff_y);
 	const scaled = {
 		x  : 1.0 / (monitor.width  * -1.0),
@@ -120,6 +112,18 @@ function updateSurfaces(full = false) {
 		]), surfaces[i].STATIC_DRAW);
 	}
 }
+
+var getBrightness = function () { return; }
+if (support.customCSSProperties)
+	getBrightness = function (obj) {
+		return window.getComputedStyle(obj).getPropertyValue("--brightness");
+	}
+else
+	getBrightness = function (obj) {
+		const val = (window.getComputedStyle(obj).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
+		const abs = Math.abs(val);
+		return Math.cbrt((abs >= 0.04045) ? (val < 0 ? -1 : 1) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92);
+	}
 
 export function createSurface(surface) {
 	const canvas = document.createElement('canvas');
@@ -192,7 +196,7 @@ export function createSurface(surface) {
 	ctx.enableVertexAttribArray(vPosition);
 	ctx.bindBuffer(ctx.ARRAY_BUFFER, ctx.createBuffer());
 	ctx.vertexAttribPointer(vPosition, 4, ctx.FLOAT, false, 0, 0);
-	ctx.light_length = ctx.getUniformLocation(program, "length");
+	ctx.length = ctx.getUniformLocation(program, "length");
 	ctx.brightness   = ctx.getUniformLocation(program, "brightness");
 	ctx.bindBufferBase(ctx.UNIFORM_BUFFER, ctx.getUniformBlockIndex(program, "lighting"), ctx.createBuffer());
 	surfaces.push(ctx);
@@ -201,39 +205,38 @@ export function createSurface(surface) {
 export async function setBackground(file = null) {
 	if (file === null) {
 		file = await fetch('data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQvOY1r/+BiOh/AAA=')
-		.then(res => res.blob())
+		.then(res  => res.blob())
 		.then(blob => blob);
 	} else if (!support.filetypes.includes(file.type))
 		return;
-	const temp = new Image();
-	temp.src = URL.createObjectURL(file);
-	temp.addEventListener('load', () => {
-		URL.revokeObjectURL(temp.src);
-		const newbg = Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'image'), {
-			image    : temp,
-			aspectW  : Math.max(1.0, temp.width  / temp.height),
-			aspectH  : Math.max(1.0, temp.height / temp.width ),
-		});
+	const newbg = Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'image'), {
+		image : new Image(),
+	});
+	newbg.image.src = URL.createObjectURL(file);
+	newbg.image.addEventListener('load', () => {
+		URL.revokeObjectURL(newbg.image.src);
+		newbg.aspectWidth  = Math.max(1.0, newbg.image.width  / newbg.image.height);
+		newbg.aspectHeight = Math.max(1.0, newbg.image.height / newbg.image.width );
 		newbg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
 		newbg.setAttribute('href', newbg.image.src);
-		newbg.setAttribute('width'  , '100%');
-		newbg.setAttribute('height' , '100%');
+		newbg.setAttribute('width' , '100%');
+		newbg.setAttribute('height', '100%');
 		createImageBitmap(newbg.image, {
-			resizeWidth:  newbg.aspectW * 64,
-			resizeHeight: newbg.aspectH * 64,
+			resizeWidth:  newbg.aspectWidth  * 64,
+			resizeHeight: newbg.aspectHeight * 64,
 		}).then((image) => {
 			analyst.postMessage(image, [image]);
 		});
-		analyst.onmessage = (e) => {
-			for(let i = 0; i < surfaces.length; i++) {
-				surfaces[i].uniform1i(surfaces[i].light_length, e.data.light_length);
-				surfaces[i].bufferData(surfaces[i].UNIFORM_BUFFER, e.data.lights, surfaces[i].STATIC_READ);
-			}
-			background.old = background.current;
-			background.current = newbg;
-			background.appendChild(newbg);
-			updateSurfaces();
-			addAnimationJob(300, 'background');
-		};
-	})
+	});
+	analyst.onmessage = (e) => {
+		for(let i = 0; i < surfaces.length; i++) {
+			surfaces[i].uniform1i( surfaces[i].length, e.data.length);
+			surfaces[i].bufferData(surfaces[i].UNIFORM_BUFFER, e.data.lights, surfaces[i].STATIC_READ);
+		}
+		background.old = background.current;
+		background.current = newbg;
+		background.appendChild(newbg);
+		updateSurfaces();
+		addAnimationJob(300, 'background');
+	};
 }
