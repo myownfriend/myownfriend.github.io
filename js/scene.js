@@ -153,8 +153,9 @@ export function createSurface(surface) {
 		};
 		layout(std140) uniform lighting {
 			light lights[6];
-			float length;
+			int   length;
 		};
+		//uniform float depth;
 		uniform float brightness;
 		out vec4 color;
 		vec3 OKLAB_to_SRGB(vec3 OKLAB) {
@@ -171,7 +172,7 @@ export function createSurface(surface) {
 		void main() {
 			float in_acc = 0.0;
 			vec2  ab = vec2(0.0, 0.0);
-			for (int i = int(length); i >= 0; i--) {
+			for (int i = length - 1; i >= 0; i--) {
 				float intensity = lights[i].color.x / pow(distance(lxy, lights[i].pos.xy), 2.0);
 				in_acc += intensity;
 				ab += intensity * lights[i].color.ab;
@@ -228,7 +229,6 @@ export async function setBackground(file = null) {
 		});
 	});
 	analyst.onmessage = (e) => {
-		newbg.length   = e.data.length;
 		newbg.lighting = e.data.lights;
 		for(let i = 0; i < surfaces.length; i++)
 			surfaces[i].bufferData(surfaces[i].UNIFORM_BUFFER, e.data.lights, surfaces[i].STATIC_READ);

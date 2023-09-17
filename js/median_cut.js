@@ -81,11 +81,11 @@ onmessage = (e) => {
 	gl.readPixels(0, 0, gl.canvas.width, gl.canvas.height, gl.RGBA, gl.FLOAT, pixels);
 
 	const start = performance.now();
-	const scene = {
-	    css    : '',
-		lights : new Float32Array(8 * 6 + 4),
-		length : 6,
-	};
+
+	const buffer  = new ArrayBuffer(208);
+	const float32 = new Float32Array(buffer);
+	const int32   = new Int32Array(buffer);
+
     const slice_w_   = 3;
     const slice_h_   = 2;
 	const average    = new Float32Array(4); // average l,a,b, and saturation
@@ -187,26 +187,23 @@ onmessage = (e) => {
 		color[2] /= amount;
 		const offset = i * 8;
 
-		scene.lights[offset + 0] = 2.0 * ((i % slice_w_) / (slice_w_ - 1)) - 1;  // x
-		scene.lights[offset + 1] = 2.0 * (1- Math.trunc(i / slice_w_) / (slice_h_ - 1)) - 1; // y
-		scene.lights[offset + 2] = 1.0;  // z
-		scene.lights[offset + 3] = 0;    // padding
+		float32[offset + 0] = 2.0 * ((i % slice_w_) / (slice_w_ - 1)) - 1;  // x
+		float32[offset + 1] = 2.0 * (1- Math.trunc(i / slice_w_) / (slice_h_ - 1)) - 1; // y
+		float32[offset + 2] = 1.0;       // z
+		float32[offset + 3] = 0.0;       // padding
 
-		scene.lights[offset + 4] = Math.random(); // intensity;
-		scene.lights[offset + 5] = 0;             // padding
-		scene.lights[offset + 6] = color[2];      // b
-		scene.lights[offset + 7] = color[1];      // a
+		float32[offset + 4] = Math.random(); // intensity;
+		float32[offset + 5] = 0.0;       // padding
+		float32[offset + 6] = color[2];  // b
+		float32[offset + 7] = color[1];  // a
 
-		acc_intensity += scene.lights[offset + 4];
+		acc_intensity += float32[offset + 4];
 	}
 
-	for (let i = 0; i < scene.lights.length; i += 8)
-		scene.lights[i + 4] /= acc_intensity;
+	for (let i = 0; i < float32.length; i += 8)
+		float32[i + 4] /= acc_intensity;
 
-	// The length entry
-	scene.lights[48] = 6;
-
-	//console.log(scene.lights);
+	int32[48] = 6;
 
 	const area  = gl.canvas.width * gl.canvas.height;
 	const dark  = okLtoR(Math.min(average[3], 0.25615)) * 255;
@@ -215,9 +212,10 @@ onmessage = (e) => {
 	average[0] /= area;
 	average[1] /= area;
 	average[2] /= area;
-	// scene.css = `#dark-mode  body {background-color: rgb(${dark} ${dark} ${dark})} #light-mode body {background-color: rgb(${light} ${light} ${light})}`;
 
-	postMessage(scene);
+	postMessage({
+		lights : buffer,
+	});
 }
 
 function okLtoR(okL) {
