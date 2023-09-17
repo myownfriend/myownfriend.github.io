@@ -1,7 +1,7 @@
 "use strict";
 import {support} from './support.js';
 
-const surfaces   = [];
+const surfaces   = new Array();
 const analyst    = new Worker('./js/median_cut.js');
 const animations = {
 	queue  : new Array(),
@@ -40,12 +40,11 @@ function addAnimationJob(length, task) {
 			switch (job.type) {
 				case 'theme' :
 					for (let i = 0; i < surfaces.length; i++)
-						surfaces[i].ctx.uniform1f(surfaces[i].brightness, getBrightness(surfaces[i].ctx.canvas));
+						surfaces[i].uniform1f(surfaces[i].brightness, getBrightness(surfaces[i].canvas));
 					redraw = true;
 					break;
 				case 'background':
-					const opacity = Math.min(1, (timestamp - job.start) / job.time);
-					if (opacity >= 1 && background.children.length > 1) {
+					if (Math.min(1, (timestamp - job.start) / job.time) >= 1 && background.children.length > 1) {
 						URL.revokeObjectURL(background.old.image.src);
 						background.old.remove();
 						background.old = null;
@@ -63,7 +62,7 @@ function addAnimationJob(length, task) {
 		}
 		if (redraw)
 			for (let i = 0; i < surfaces.length; i++)
-				surfaces[i].ctx.drawArrays(surfaces[i].ctx.TRIANGLE_STRIP, 0, 4);
+				surfaces[i].drawArrays(surfaces[i].TRIANGLE_STRIP, 0, 4);
 		if (!animations.queue.length)
 			return animations.active = false;
 		window.requestAnimationFrame(refresh);
@@ -95,11 +94,11 @@ function updateSurfaces(full = false) {
 		h  : monitor.height * diff_y * min,
 	}
 	for(let i = 0; i < surfaces.length; i++) {
-		const clientRect = surfaces[i].ctx.canvas.parentElement.getBoundingClientRect();
+		const clientRect = surfaces[i].canvas.parentElement.getBoundingClientRect();
 		if (full) {
-			surfaces[i].ctx.canvas.height = clientRect.height * window.devicePixelRatio;
-			surfaces[i].ctx.canvas.width  = clientRect.width  * window.devicePixelRatio;
-			surfaces[i].ctx.viewport(0, 0,  surfaces[i].ctx.canvas.width, surfaces[i].ctx.canvas.height);
+			surfaces[i].canvas.height = clientRect.height * window.devicePixelRatio;
+			surfaces[i].canvas.width  = clientRect.width  * window.devicePixelRatio;
+			surfaces[i].viewport(0, 0,  surfaces[i].canvas.width, surfaces[i].canvas.height);
 		}
 		const rect = {
 			x : /* scaled.x * */ ((clientRect.width  >> 1) + clientRect.x) / monitor.width  * -1.0 + 0.5,
@@ -113,20 +112,19 @@ function updateSurfaces(full = false) {
 			nx : (-1.0 + rect.x) * rect.w,
 			ny : (-1.0 + rect.y) * rect.h,
 		}
-		surfaces[i].ctx.bufferData(surfaces[i].ctx.ARRAY_BUFFER, new Float32Array([
+		surfaces[i].bufferData(surfaces[i].ARRAY_BUFFER, new Float32Array([
 			transform.nx, transform.py, -1.0,  1.0,
 			transform.nx, transform.ny, -1.0, -1.0,
 			transform.px, transform.py,  1.0,  1.0,
 			transform.px, transform.ny,  1.0, -1.0
-		]), surfaces[i].ctx.STATIC_DRAW);
+		]), surfaces[i].STATIC_DRAW);
 	}
 }
 
 export function createSurface(surface) {
-	const canvas  = document.createElement('canvas');
+	const canvas = document.createElement('canvas');
 	surface.prepend(canvas);
-	const data = {
-		ctx : canvas.getContext('webgl2', {
+	const ctx = canvas.getContext('webgl2', {
 			depth     : false,
 			alpha     : false,
 			stencil   : false,
@@ -134,12 +132,11 @@ export function createSurface(surface) {
 			desynchronized : true,
 			preserveDrawingBuffer: true,
 			powerPreference : "low-power",
-		}),
-	};
-	const program = data.ctx.createProgram();
-	const vShader = data.ctx.createShader(data.ctx.VERTEX_SHADER);
-	const fShader = data.ctx.createShader(data.ctx.FRAGMENT_SHADER);
-	data.ctx.shaderSource(vShader, `#version 300 es
+	});
+	const program = ctx.createProgram();
+	const vShader = ctx.createShader(ctx.VERTEX_SHADER);
+	const fShader = ctx.createShader(ctx.FRAGMENT_SHADER);
+	ctx.shaderSource(vShader, `#version 300 es
 		precision mediump float;
 		in   vec4 vPosition;
 		out  vec2 lxy;
@@ -147,7 +144,7 @@ export function createSurface(surface) {
 			lxy = vPosition.zw;
 			gl_Position = vec4(vPosition.xy, 1.0, 1.0);
 		}`);
-	data.ctx.shaderSource(fShader, `#version 300 es
+	ctx.shaderSource(fShader, `#version 300 es
 		precision mediump float;
 		precision mediump int;
 		in vec2 lxy;
@@ -183,22 +180,22 @@ export function createSurface(surface) {
 			ab /= in_acc;
 			color = vec4(OKLAB_to_SRGB(vec3(brightness, ab)),1.0);
 		}`);
-	data.ctx.attachShader(program, vShader);
-	data.ctx.attachShader(program, fShader);
-	data.ctx.compileShader(vShader);
-	data.ctx.compileShader(fShader);
-	data.ctx.linkProgram(program);
-	data.ctx.useProgram(program);
-	data.ctx.enable(data.ctx.DITHER);
-	data.ctx.depthFunc(data.ctx.NEVER);
-	const vPosition = data.ctx.getAttribLocation(program, 'vPosition');
-	data.ctx.enableVertexAttribArray(vPosition);
-	data.ctx.bindBuffer(data.ctx.ARRAY_BUFFER, data.ctx.createBuffer());
-	data.ctx.vertexAttribPointer(vPosition, 4, data.ctx.FLOAT, false, 0, 0);
-	data.light_length = data.ctx.getUniformLocation(program, "length");
-	data.brightness   = data.ctx.getUniformLocation(program, "brightness");
-	data.ctx.bindBufferBase(data.ctx.UNIFORM_BUFFER, data.ctx.getUniformBlockIndex(program, "lighting"), data.ctx.createBuffer());
-	surfaces.push(data);
+	ctx.attachShader(program, vShader);
+	ctx.attachShader(program, fShader);
+	ctx.compileShader(vShader);
+	ctx.compileShader(fShader);
+	ctx.linkProgram(program);
+	ctx.useProgram(program);
+	ctx.enable(ctx.DITHER);
+	ctx.depthFunc(ctx.NEVER);
+	const vPosition = ctx.getAttribLocation(program, 'vPosition');
+	ctx.enableVertexAttribArray(vPosition);
+	ctx.bindBuffer(ctx.ARRAY_BUFFER, ctx.createBuffer());
+	ctx.vertexAttribPointer(vPosition, 4, ctx.FLOAT, false, 0, 0);
+	ctx.light_length = ctx.getUniformLocation(program, "length");
+	ctx.brightness   = ctx.getUniformLocation(program, "brightness");
+	ctx.bindBufferBase(ctx.UNIFORM_BUFFER, ctx.getUniformBlockIndex(program, "lighting"), ctx.createBuffer());
+	surfaces.push(ctx);
 }
 
 export async function setBackground(file = null) {
@@ -229,8 +226,8 @@ export async function setBackground(file = null) {
 		});
 		analyst.onmessage = (e) => {
 			for(let i = 0; i < surfaces.length; i++) {
-				surfaces[i].ctx.uniform1i(surfaces[i].light_length, e.data.light_length);
-				surfaces[i].ctx.bufferData(surfaces[i].ctx.UNIFORM_BUFFER, e.data.lights, surfaces[i].ctx.STATIC_READ);
+				surfaces[i].uniform1i(surfaces[i].light_length, e.data.light_length);
+				surfaces[i].bufferData(surfaces[i].UNIFORM_BUFFER, e.data.lights, surfaces[i].STATIC_READ);
 			}
 			background.old = background.current;
 			background.current = newbg;

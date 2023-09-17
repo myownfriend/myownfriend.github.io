@@ -29,7 +29,7 @@ panel.appendChild(panel_left);
 panel.appendChild(panel_cent);
 panel.appendChild(panel_right);
 
-const search = Object.assign(document.createElement('label'), {id : 'search'});
+const search = Object.assign(document.createElement('label'), { id : 'search'});
 const search_bar = document.createElement('input');
 search_bar.setAttribute('type', 'text');
 search_bar.setAttribute('placeholder', 'Type to search');
@@ -38,7 +38,7 @@ search_decoration.innerHTML += '<svg><use href="img/icons.svg#search"/></svg>'
 search_decoration.appendChild(search_bar);
 search.appendChild(search_decoration);
 
-const workspaces = Object.assign(document.createElement('div'), {id: 'workspaces'});
+const workspaces = Object.assign(document.createElement('div'), { id: 'workspaces'});
 for(let i = 0; i < 2; i++)
 	workspaces.innerHTML += '<svg class="workspace"><use href="#background"/></svg>';
 
@@ -51,7 +51,7 @@ workspaces.addEventListener('drop', (ev) => {
 });
 workspaces.addEventListener('click', changeView);
 
-const app_grid  = addAppList([
+const app_grid  = Object.assign(addAppList([
 	['Weather','Weather', false],
 	['Maps', 'Maps', false],
 	['Text Editor', 'TextEditor', false],
@@ -62,8 +62,7 @@ const app_grid  = addAppList([
 	['Disk Usage Analyzer', 'baobab', false],
 	['Photos', 'Photos', false],
 	['Tour', 'Tour', false]
-]);
-app_grid.id = 'app-grid';
+]), { id:'app-grid'} );
 
 const dash = Object.assign(document.createElement('div'), {id: 'dash', className: 'hidden'});
 dash.appendChild(addAppList( [
@@ -121,10 +120,10 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)
 	setTheme(e.target.matches);
 });
 
-createSurface(document.body),
-createSurface(search),
-createSurface(dash),
-createSurface(quick_settings)
+createSurface(document.body);
+createSurface(search);
+createSurface(dash);
+createSurface(quick_settings);
 
 setBackground();
 
