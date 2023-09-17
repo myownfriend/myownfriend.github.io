@@ -86,34 +86,30 @@ function updateSurfaces(full = false) {
 		h  : monitor.height * diff_y * min,
 	}
 	for(let i = 0; i < surfaces.length; i++) {
-		const clientRect = surfaces[i].canvas.parentElement.getBoundingClientRect();
+		const clientRect = surfaces[i].canvas.getBoundingClientRect();
 		if (full) {
 			surfaces[i].canvas.height = clientRect.height * window.devicePixelRatio;
 			surfaces[i].canvas.width  = clientRect.width  * window.devicePixelRatio;
 			surfaces[i].viewport(0, 0,  surfaces[i].canvas.width, surfaces[i].canvas.height);
 		}
 		const rect = {
-			x : /* scaled.x * */ ((clientRect.width  >> 1) + clientRect.x) / monitor.width  * -1.0 + 0.5,
-			y : /* scaled.y * */ ((clientRect.height >> 1) + clientRect.y) / monitor.height *  1.0 - 0.5,
+			x : scaled.x * (((clientRect.width  >> 1) + clientRect.x) / monitor.width  * -1.0 + 0.5),
+			y : scaled.y * (((clientRect.height >> 1) + clientRect.y) / monitor.height *  1.0 - 0.5),
 			w : monitor.width  / clientRect.width  * diff_x * min, // scaled.w / clientRect.width ,
 			h : monitor.height / clientRect.height * diff_y * min, // scaled.h / clientRect.height,
 		};
 		const transform = {
-			px : ( 1.0 + rect.x) * rect.w,
-			py : ( 1.0 + rect.y) * rect.h,
-			nx : (-1.0 + rect.x) * rect.w,
-			ny : (-1.0 + rect.y) * rect.h,
+			px : ( 1.0 + rect.x) * rect.w, py : ( 1.0 + rect.y) * rect.h,
+			nx : (-1.0 + rect.x) * rect.w, ny : (-1.0 + rect.y) * rect.h,
 		}
 		surfaces[i].bufferData(surfaces[i].ARRAY_BUFFER, new Float32Array([
-			transform.nx, transform.py, -1.0,  1.0,
-			transform.nx, transform.ny, -1.0, -1.0,
-			transform.px, transform.py,  1.0,  1.0,
-			transform.px, transform.ny,  1.0, -1.0
+			transform.nx, transform.py, transform.nx, transform.ny,
+			transform.px, transform.py, transform.px, transform.ny
 		]), surfaces[i].STATIC_DRAW);
 	}
 }
 
-var getBrightness = function () { return; }
+var getBrightness = function () {}
 if (support.customCSSProperties)
 	getBrightness = function (obj) {
 		return window.getComputedStyle(obj).getPropertyValue("--brightness");
@@ -142,11 +138,12 @@ export function createSurface(surface) {
 	const fShader = ctx.createShader(ctx.FRAGMENT_SHADER);
 	ctx.shaderSource(vShader, `#version 300 es
 		precision mediump float;
-		in   vec4 vPosition;
+		in   vec2 pos;
+		in   vec2 luv;
 		out  vec2 lxy;
 		void main() {
-			lxy = vPosition.zw;
-			gl_Position = vec4(vPosition.xy, 1.0, 1.0);
+			lxy = luv;
+			gl_Position = vec4(pos.xy, 1.0, 1.0);
 		}`);
 	ctx.shaderSource(fShader, `#version 300 es
 		precision mediump float;
@@ -192,12 +189,21 @@ export function createSurface(surface) {
 	ctx.useProgram(program);
 	ctx.enable(ctx.DITHER);
 	ctx.depthFunc(ctx.NEVER);
-	const vPosition = ctx.getAttribLocation(program, 'vPosition');
-	ctx.enableVertexAttribArray(vPosition);
+
+	const luv = ctx.getAttribLocation(program, 'luv');
+	ctx.enableVertexAttribArray(luv);
 	ctx.bindBuffer(ctx.ARRAY_BUFFER, ctx.createBuffer());
-	ctx.vertexAttribPointer(vPosition, 4, ctx.FLOAT, false, 0, 0);
+	ctx.vertexAttribPointer(luv, 2, ctx.FLOAT, false, 0, 0);
+	ctx.bufferData(ctx.ARRAY_BUFFER, new Float32Array([-1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, -1.0]), ctx.STATIC_DRAW);
+
+	const pos = ctx.getAttribLocation(program, 'pos');
+	ctx.enableVertexAttribArray(pos);
+	ctx.bindBuffer(ctx.ARRAY_BUFFER, ctx.createBuffer());
+	ctx.vertexAttribPointer(pos, 2, ctx.FLOAT, false, 0, 0);
+
 	ctx.length = ctx.getUniformLocation(program, "length");
-	ctx.brightness   = ctx.getUniformLocation(program, "brightness");
+	ctx.brightness = ctx.getUniformLocation(program, "brightness");
+
 	ctx.bindBufferBase(ctx.UNIFORM_BUFFER, ctx.getUniformBlockIndex(program, "lighting"), ctx.createBuffer());
 	surfaces.push(ctx);
 }
@@ -210,7 +216,7 @@ export async function setBackground(file = null) {
 	} else if (!support.filetypes.includes(file.type))
 		return;
 	const newbg = Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'image'), {
-		image : new Image(),
+		image : new Image()
 	});
 	newbg.image.src = URL.createObjectURL(file);
 	newbg.image.addEventListener('load', () => {
@@ -229,6 +235,8 @@ export async function setBackground(file = null) {
 		});
 	});
 	analyst.onmessage = (e) => {
+		newbg.length   = e.data.length;
+		newbg.lighting = e.data.lights;
 		for(let i = 0; i < surfaces.length; i++) {
 			surfaces[i].uniform1i( surfaces[i].length, e.data.length);
 			surfaces[i].bufferData(surfaces[i].UNIFORM_BUFFER, e.data.lights, surfaces[i].STATIC_READ);

@@ -84,7 +84,7 @@ onmessage = (e) => {
 	const scene = {
 	    css    : '',
 		lights : new Float32Array(8 * 6),
-		light_length : 6,
+		length : 6,
 	};
     const slice_w_   = 3;
     const slice_h_   = 2;
@@ -200,9 +200,8 @@ onmessage = (e) => {
 		acc_intensity += scene.lights[offset + 4];
 	}
 
-	for (let i = 0; i < scene.lights.length; i += 8) {
+	for (let i = 0; i < scene.lights.length; i += 8)
 		scene.lights[i + 4] /= acc_intensity;
-	}
 
 	const area  = gl.canvas.width * gl.canvas.height;
 	const dark  = okLtoR(Math.min(average[3], 0.25615)) * 255;
