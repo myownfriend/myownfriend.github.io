@@ -1,3 +1,19 @@
+@keyframes fade_in {
+	0% {
+		opacity:0;
+	}
+	100% {
+		opacity:1;
+	}
+}
+@keyframes change_depth {
+	99% {
+		z-index: 0;
+	}
+	100% {
+		z-index: 1;
+	}
+}
 * {
 	font-family:Canterall, sans-serif;
 	color: var(--text-color);
@@ -30,41 +46,41 @@
 		animation-name: fade_in;
 		animation-duration: 1s;
 		animation-fill-mode: forwards;
-		animation-iteration-count: 1;
 
-		--text-color:   rgb(229 229 229);
+		&#dark-mode  {
+			--text-color:   rgb(229 229 229);
 
-		--dash-color:   rgb(61 61 61);
-		--dash-L: 0.36002;
+			--dash-color:   rgb(61 61 61);
+			--dash-L: 0.36002;
 
-		--dash-hover:   rgba(255 255 255 / 0.08);
-		--hover-shade:  rgba(255 255 255 / 0.125);
-		--toggle-color: rgba(255 255 255 / 0.13);
+			--dash-hover:   rgba(255 255 255 / 0.08);
+			--hover-shade:  rgba(255 255 255 / 0.125);
+			--toggle-color: rgba(255 255 255 / 0.13);
 
-		--search-color: rgb(70 70 70);
-		--search-L: 0.39418;
+			--search-color: rgb(70 70 70);
+			--search-L: 0.39418;
 
-		--search-hover: rgba(255 255 255 / 0.1);
-		--search-icon:  rgba(255 255 255 / 0.45);
-		--search-place: rgba(255 255 255 / 0.9);
+			--search-hover: rgba(255 255 255 / 0.1);
+			--search-icon:  rgba(255 255 255 / 0.45);
+			--search-place: rgba(255 255 255 / 0.9);
 
-		--dropdown-color: rgb(53 53 53);
-		--dropdown-L: 0.32897;
+			--dropdown-color: rgb(53 53 53);
+			--dropdown-L: 0.32897;
 
-		--stage-color: rgb(40 40 40);
-		--stage-L: 0.27685;
+			--stage-color: rgb(40 40 40);
+			--stage-L: 0.27685;
 
-		--track-color:  rgba(255 255 255 / 0.450980392);
-		--thumb-color:  #eee;
-		--extreme-bg:   #000;
-		--extreme-fg:   #fff;
-		--symbol-color: rgb(246 245 245);
-
+			--track-color:  rgba(255 255 255 / 0.450980392);
+			--thumb-color:  #eee;
+			--extreme-bg:   #000;
+			--extreme-fg:   #fff;
+			--symbol-color: rgb(246 245 245);
+		}
 		&#light-mode  {
 			--text-color:   rgb(2 2 2);
 
 			--dash-color:   rgb(145, 145, 145);
-			--dash-L:   0.65666;
+			--dash-L: 0.65666;
 
 			--dash-hover:   rgba(0 0 0 / 0.08);
 			--hover-shade:  rgba(0 0 0 / 0.125);
@@ -88,13 +104,29 @@
 			--extreme-bg:   #fff;
 			--extreme-fg:   #000;
 			--symbol-color: rgb(4 4 4);
+
+			/* Gnome's Light Mode
+
+			--dash-color: rgb(242 242 242);
+			--dash-L:   0.96115; //0.65666;
+
+			--search-color: rgb(255 255 255);// rgb(145 145 145);
+			--search-L: 1;//0.65666;
+
+			--dropdown-color: rgb(247 245 246);//rgb(190 190 190);
+			--dropdown-L: 0.97196; // 0.80152;
+
+			--stage-color:  rgb(230 227 224);// rgb(172 172 172);
+			--stage-L: 0.91732;//0.74443;
+
+			*/
 		}
 		& canvas {
 			top: 0;
 			left: 0;
+			z-index: -9;
 			width: 100%;
 			height: 100%;
-			z-index: -9;
 			position: absolute;
 			border-radius: inherit;
 			background-color: inherit;
@@ -105,22 +137,11 @@
 		}
 	}
 }
-@keyframes fade_in {
-	0% {
-		opacity:0;
-	}
-	100% {
-		opacity:1;
-	}
-}
 #background {
 	& image {
 		width:  100%;
 		height: 100%;
 
-		&:first-child {
-			opacity: 1;
-		}
 		&:nth-child(2) {
 			opacity: 0;
 			animation-name: fade_in;
@@ -349,8 +370,8 @@ body { /*animations*/
 			background: var(--hover-shade);
 		}
 		#dash {
-			z-index:9;
-			transition: z-index 0ms calc(var(--nav-transition) / 2);
+			animation: var(--nav-transition) linear 0ms change_depth;
+			animation-fill-mode: forwards;
 		}
 		#workspaces {
 			translate:0 -2.5svh -0.2rem;
@@ -533,15 +554,14 @@ body { /*animations*/
 					opacity: 0;
 					display: none;
 				}
-				~ span{
-					display: block;
+				~ h3{
 					background-color: var(--toggle-color);
 					border-radius: 30px;
 					padding:13px 25px;
 					width:100%;
 					transition: transform var(--nav-transition), color var(--theme-transition);
 				}
-				&[type=checkbox]:checked ~ span{
+				&[type=checkbox]:checked ~ h3{
 					background-color: var(--accent-color)
 				}
 			}

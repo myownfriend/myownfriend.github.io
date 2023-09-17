@@ -109,22 +109,20 @@ function updateSurfaces(full = false) {
 	}
 }
 
-var getBrightness = function () {}
+var getBrightness = function (obj) {
+	const val = (window.getComputedStyle(obj).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
+	const abs = Math.abs(val);
+	return Math.cbrt((abs >= 0.04045) ? (val < 0 ? -1 : 1) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92);
+}
 if (support.customCSSProperties)
 	getBrightness = function (obj) {
 		return window.getComputedStyle(obj).getPropertyValue("--brightness");
-	}
-else
-	getBrightness = function (obj) {
-		const val = (window.getComputedStyle(obj).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
-		const abs = Math.abs(val);
-		return Math.cbrt((abs >= 0.04045) ? (val < 0 ? -1 : 1) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92);
 	}
 
 export function createSurface(surface) {
 	const canvas = document.createElement('canvas');
 	surface.prepend(canvas);
-	const ctx = canvas.getContext('webgl2', {
+	const gl = canvas.getContext('webgl2', {
 			depth     : false,
 			alpha     : false,
 			stencil   : false,
@@ -133,10 +131,10 @@ export function createSurface(surface) {
 			preserveDrawingBuffer: true,
 			powerPreference : "low-power",
 	});
-	const program = ctx.createProgram();
-	const vShader = ctx.createShader(ctx.VERTEX_SHADER);
-	const fShader = ctx.createShader(ctx.FRAGMENT_SHADER);
-	ctx.shaderSource(vShader, `#version 300 es
+	const program = gl.createProgram();
+	const vShader = gl.createShader(gl.VERTEX_SHADER);
+	const fShader = gl.createShader(gl.FRAGMENT_SHADER);
+	gl.shaderSource(vShader, `#version 300 es
 		precision mediump float;
 		in   vec2 pos;
 		in   vec2 luv;
@@ -145,7 +143,7 @@ export function createSurface(surface) {
 			lxy = luv;
 			gl_Position = vec4(pos.xy, 1.0, 1.0);
 		}`);
-	ctx.shaderSource(fShader, `#version 300 es
+	gl.shaderSource(fShader, `#version 300 es
 		precision mediump float;
 		precision mediump int;
 		in vec2 lxy;
@@ -155,9 +153,9 @@ export function createSurface(surface) {
 		};
 		layout(std140) uniform lighting {
 			light lights[6];
+			float length;
 		};
 		uniform float brightness;
-		uniform int length;
 		out vec4 color;
 		vec3 OKLAB_to_SRGB(vec3 OKLAB) {
 			vec3 LMS = mat3(
@@ -173,7 +171,7 @@ export function createSurface(surface) {
 		void main() {
 			float in_acc = 0.0;
 			vec2  ab = vec2(0.0, 0.0);
-			for (int i = 0; i < length; i++) {
+			for (int i = int(length); i >= 0; i--) {
 				float intensity = lights[i].color.x / pow(distance(lxy, lights[i].pos.xy), 2.0);
 				in_acc += intensity;
 				ab += intensity * lights[i].color.ab;
@@ -181,31 +179,28 @@ export function createSurface(surface) {
 			ab /= in_acc;
 			color = vec4(OKLAB_to_SRGB(vec3(brightness, ab)),1.0);
 		}`);
-	ctx.attachShader(program, vShader);
-	ctx.attachShader(program, fShader);
-	ctx.compileShader(vShader);
-	ctx.compileShader(fShader);
-	ctx.linkProgram(program);
-	ctx.useProgram(program);
-	ctx.enable(ctx.DITHER);
-	ctx.depthFunc(ctx.NEVER);
+	gl.attachShader(program, vShader);
+	gl.attachShader(program, fShader);
+	gl.compileShader(vShader);
+	gl.compileShader(fShader);
+	gl.linkProgram(program);
+	gl.useProgram(program);
+	gl.depthFunc(gl.NEVER);
 
-	const luv = ctx.getAttribLocation(program, 'luv');
-	ctx.enableVertexAttribArray(luv);
-	ctx.bindBuffer(ctx.ARRAY_BUFFER, ctx.createBuffer());
-	ctx.vertexAttribPointer(luv, 2, ctx.FLOAT, false, 0, 0);
-	ctx.bufferData(ctx.ARRAY_BUFFER, new Float32Array([-1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, -1.0]), ctx.STATIC_DRAW);
+	const luv = gl.getAttribLocation(program, 'luv');
+	gl.enableVertexAttribArray(luv);
+	gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+	gl.vertexAttribPointer(luv, 2, gl.FLOAT, false, 0, 0);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, -1.0]), gl.STATIC_DRAW);
 
-	const pos = ctx.getAttribLocation(program, 'pos');
-	ctx.enableVertexAttribArray(pos);
-	ctx.bindBuffer(ctx.ARRAY_BUFFER, ctx.createBuffer());
-	ctx.vertexAttribPointer(pos, 2, ctx.FLOAT, false, 0, 0);
+	const pos = gl.getAttribLocation(program, 'pos');
+	gl.enableVertexAttribArray(pos);
+	gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+	gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
 
-	ctx.length = ctx.getUniformLocation(program, "length");
-	ctx.brightness = ctx.getUniformLocation(program, "brightness");
-
-	ctx.bindBufferBase(ctx.UNIFORM_BUFFER, ctx.getUniformBlockIndex(program, "lighting"), ctx.createBuffer());
-	surfaces.push(ctx);
+	gl.brightness = gl.getUniformLocation(program, "brightness");
+	gl.bindBufferBase(gl.UNIFORM_BUFFER, gl.getUniformBlockIndex(program, "lighting"), gl.createBuffer());
+	surfaces.push(gl);
 }
 
 export async function setBackground(file = null) {
@@ -220,13 +215,11 @@ export async function setBackground(file = null) {
 	});
 	newbg.image.src = URL.createObjectURL(file);
 	newbg.image.addEventListener('load', () => {
-		URL.revokeObjectURL(newbg.image.src);
 		newbg.aspectWidth  = Math.max(1.0, newbg.image.width  / newbg.image.height);
 		newbg.aspectHeight = Math.max(1.0, newbg.image.height / newbg.image.width );
 		newbg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
-		newbg.setAttribute('href', newbg.image.src);
+		newbg.setAttribute('href'  , newbg.image.src);
 		newbg.setAttribute('width' , '100%');
-		newbg.setAttribute('height', '100%');
 		createImageBitmap(newbg.image, {
 			resizeWidth:  newbg.aspectWidth  * 64,
 			resizeHeight: newbg.aspectHeight * 64,
@@ -237,10 +230,8 @@ export async function setBackground(file = null) {
 	analyst.onmessage = (e) => {
 		newbg.length   = e.data.length;
 		newbg.lighting = e.data.lights;
-		for(let i = 0; i < surfaces.length; i++) {
-			surfaces[i].uniform1i( surfaces[i].length, e.data.length);
+		for(let i = 0; i < surfaces.length; i++)
 			surfaces[i].bufferData(surfaces[i].UNIFORM_BUFFER, e.data.lights, surfaces[i].STATIC_READ);
-		}
 		background.old = background.current;
 		background.current = newbg;
 		background.appendChild(newbg);

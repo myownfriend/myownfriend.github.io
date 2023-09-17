@@ -148,13 +148,13 @@ function addAppList(apps, hidden=false) {
 	if (hidden)
 		applist.classList.add('hidden');
 	for (let i = 0; i < apps.length; i++)
-		applist.innerHTML += `<li class="app${(apps[i][2] ? ` open` : ``)}" ><img src="apps/org.gnome.${apps[i][1]}.svg"/><p class="name">${apps[i][0]}</p></li>`;
+		applist.innerHTML += `<li class="app${(apps[i][2] ? ` open` : ``)}" ><img src="apps/org.gnome.${apps[i][1]}.svg"/><h2 class="name">${apps[i][0]}</h2></li>`;
 	return applist;
 }
 
 function addToggle(name, parent, type="checkbox") {
 	const toggle = document.createElement('label');
-	toggle.innerHTML = `<input type="${type}"><span>${name}</span>`;
+	toggle.innerHTML = `<input type="${type}"><h3>${name}</h3>`;
 	parent.appendChild(toggle);
 	return toggle;
 }

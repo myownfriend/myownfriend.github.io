@@ -83,7 +83,7 @@ onmessage = (e) => {
 	const start = performance.now();
 	const scene = {
 	    css    : '',
-		lights : new Float32Array(8 * 6),
+		lights : new Float32Array(8 * 6 + 4),
 		length : 6,
 	};
     const slice_w_   = 3;
@@ -202,6 +202,11 @@ onmessage = (e) => {
 
 	for (let i = 0; i < scene.lights.length; i += 8)
 		scene.lights[i + 4] /= acc_intensity;
+
+	// The length entry
+	scene.lights[48] = 6;
+
+	//console.log(scene.lights);
 
 	const area  = gl.canvas.width * gl.canvas.height;
 	const dark  = okLtoR(Math.min(average[3], 0.25615)) * 255;
