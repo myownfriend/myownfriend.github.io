@@ -1,7 +1,7 @@
 "use strict";
-import {setBackground, createSurface} from './scene.js';
+import {createScene, setBackground} from './scene.js';
 
-document.body.className = "overview";
+Object.assign(document.body, { className: 'overview', depth: 1.0});
 
 const panel = Object.assign(document.createElement('ul'), {id:'panel'});
 const panel_left  = document.createElement('li');
@@ -29,7 +29,7 @@ panel.appendChild(panel_left);
 panel.appendChild(panel_cent);
 panel.appendChild(panel_right);
 
-const search = Object.assign(document.createElement('label'), { id : 'search'});
+const search = Object.assign(document.createElement('label'), { id : 'search', depth: 1.1});
 const search_bar = document.createElement('input');
 search_bar.setAttribute('type', 'text');
 search_bar.setAttribute('placeholder', 'Type to search');
@@ -39,7 +39,7 @@ search_decoration.appendChild(search_bar);
 search.appendChild(search_decoration);
 
 const workspaces = Object.assign(document.createElement('div'), { id: 'workspaces'});
-for(let i = 0; i < 2; i++)
+for (let i = 0; i < 2; i++)
 	workspaces.innerHTML += '<svg class="workspace"><use href="#background"/></svg>';
 
 workspaces.addEventListener('dragover', (ev) => {
@@ -64,7 +64,7 @@ const app_grid  = Object.assign(addAppList([
 	['Tour', 'Tour', false]
 ]), { id:'app-grid'} );
 
-const dash = Object.assign(document.createElement('div'), {id: 'dash', className: 'hidden'});
+const dash = Object.assign(document.createElement('div'), {id: 'dash', className: 'hidden', depth: 1.1});
 dash.appendChild(addAppList( [
 	['Files','Nautilus', true],
 	['Software','Software', false],
@@ -92,17 +92,16 @@ settings.file_upload.addEventListener('change', (e) => {
 	setBackground(e.target.files[0]);
 });
 
-const over_lights = Object.assign(document.createElement('div'), {className: 'over-lights'});
-over_lights.innerHTML = `
+const over_lights = Object.assign(document.createElement('div'), {className: 'over-lights', innerHTML : `
 	<ul id="user-area"><li></li><li></li><li></li><li></li></ul>
 	<div id="audio-main">
 		<div class="volume-slider">
 			<input type="range" min="1" max="100" value="40"/>
 		</div>
-	</div>`;
+	</div>`});
 over_lights.appendChild(toggles);
 
-const quick_settings = Object.assign(document.createElement('form'), {id :'quick-settings', className: 'dropdown'});
+const quick_settings = Object.assign(document.createElement('form'), {id :'quick-settings', className: 'dropdown', depth: 1.5});
 quick_settings.appendChild(over_lights);
 
 const workarea = Object.assign(document.createElement('main'), {id : 'workarea'});
@@ -120,12 +119,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)
 	setTheme(e.target.matches);
 });
 
-createSurface(document.body);
-createSurface(search);
-createSurface(dash);
-createSurface(quick_settings);
-
-setBackground();
+createScene();
 
 function setTheme(dark) {
 	settings.dark_mode.checked = dark;

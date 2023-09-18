@@ -80,15 +80,13 @@ onmessage = (e) => {
 	const pixels     = new Float32Array(gl.canvas.width * gl.canvas.height * 4);
 	gl.readPixels(0, 0, gl.canvas.width, gl.canvas.height, gl.RGBA, gl.FLOAT, pixels);
 
-	const start = performance.now();
-
 	const buffer  = new ArrayBuffer(208);
 	const float32 = new Float32Array(buffer);
 	const int32   = new Int32Array(buffer);
 
     const slice_w_   = 3;
     const slice_h_   = 2;
-	const average    = new Float32Array(4); // average l,a,b, and saturation
+	const average    = {l : 0, a : 0, b : 0, s : 0};
     const bins       = [[]];
     const sliceh     = 2 * Math.round(gl.canvas.height / slice_h_ / 2);
     const wline      = gl.canvas.width * 4;
@@ -107,10 +105,10 @@ onmessage = (e) => {
                     const l  = pixels[xo + 0];
                     const a  = pixels[xo + 1];
                     const b  = pixels[xo + 2];
-					average[3] += pixels[xo + 3];
-					average[0] += l;
-					average[1] += a;
-					average[2] += b;
+					average.s += pixels[xo + 3];
+					average.l += l;
+					average.a += a;
+					average.b += b;
                     bins[0].push([l, a, b, current_slice]);
                 }
             }
@@ -187,15 +185,15 @@ onmessage = (e) => {
 		color[2] /= amount;
 		const offset = i * 8;
 
-		float32[offset + 0] = 2.0 * ((i % slice_w_) / (slice_w_ - 1)) - 1;  // x
+		float32[offset + 0] = 2.0 * ((i % slice_w_) / (slice_w_ - 1)) - 1;              // x
 		float32[offset + 1] = 2.0 * (1- Math.trunc(i / slice_w_) / (slice_h_ - 1)) - 1; // y
-		float32[offset + 2] = 1.0;       // z
-		float32[offset + 3] = 0.0;       // padding
+		float32[offset + 2] = 1 + Math.random(); // z
+		float32[offset + 3] = 0.0;           // ______
 
 		float32[offset + 4] = Math.random(); // intensity;
-		float32[offset + 5] = 0.0;       // padding
-		float32[offset + 6] = color[2];  // b
-		float32[offset + 7] = color[1];  // a
+		float32[offset + 5] = 0.0;           // ______
+		float32[offset + 6] = color[2];      // b
+		float32[offset + 7] = color[1];      // a
 
 		acc_intensity += float32[offset + 4];
 	}
@@ -206,26 +204,12 @@ onmessage = (e) => {
 	int32[48] = 6;
 
 	const area  = gl.canvas.width * gl.canvas.height;
-	const dark  = okLtoR(Math.min(average[3], 0.25615)) * 255;
-	const light = okLtoR(Math.max(1.0 - (average[0]), 1 - 0.25615)) * 255;
-	average[3] /= area;
-	average[0] /= area;
-	average[1] /= area;
-	average[2] /= area;
+	average.s /= area;
+	average.l /= area;
+	average.a /= area;
+	average.b /= area;
 
 	postMessage({
 		lights : buffer,
 	});
-}
-
-function okLtoR(okL) {
-	const l = (okL + 0.3963377774 * 0.0 + 0.2158037573 * 0.0) ** 3;
-    const m = (okL - 0.1055613458 * 0.0 - 0.0638541728 * 0.0) ** 3;
-    const s = (okL - 0.0894841775 * 0.0 - 1.2914855480 * 0.0) ** 3;
-    const rgb = [
-		+4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
-		-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
-		-0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s,
-	];
-	return rgb[0] <= 0.0031308 ? rgb[0] ** 3 : 1.055 * Math.pow(rgb[0], 1/2.4) - 0.055;
 }
