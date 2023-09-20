@@ -1,84 +1,9 @@
 "use strict";
-const gl = new OffscreenCanvas(100, 100).getContext('webgl2', {
-	depth     : false,
-	alpha     : false,
-	stencil   : false,
-	antialias : false,
-	preserveDrawingBuffer: true,
-});
-const program    = gl.createProgram();
-const vShader    = gl.createShader(gl.VERTEX_SHADER);
-const fShader    = gl.createShader(gl.FRAGMENT_SHADER);
-const thumbnail  = gl.createTexture();
-const rgbaBuffer = gl.createFramebuffer();
-
-gl.shaderSource(vShader, `#version 300 es
-	precision mediump float;
-	in      vec2  vPosition;
-	in      vec2  tuv;
-	out     vec2  uv;
-	void main() {
-		uv  = tuv;
-		gl_Position = vec4(vPosition, 0.0, 1.0);
-	}`);
-gl.shaderSource(fShader, `#version 300 es
-	precision mediump float;
-	precision lowp int;
-	in vec2 uv;
-	uniform sampler2D wallpaper;
-	out vec4 color;
-	void main() {
-		vec3 tex = texture(wallpaper, uv).rgb;
-		vec3 RGB = mix(pow((tex + 0.055) / 1.055, vec3(2.4)), tex / 12.92, lessThanEqual(tex,vec3(0.04045)));
-		vec3 LMS = mat3(0.4121656120, 0.2118591070, 0.0883097947,
-						0.5362752080, 0.6807189584, 0.2818474174,
-						0.0514575653, 0.1074065790, 0.6302613616) * RGB;
-		vec3 LAB = mat3(
-				0.2104542553,  1.9779984951, 0.0259040371,
-				0.7936177850, -2.4285922050, 0.7827717662,
-			-0.0040720468,  0.4505937099,-0.8086757660) * pow(LMS, vec3( 1.0 / 3.0));
-		color = vec4(LAB, 1.0);
-	}`);
-gl.attachShader(program, vShader);
-gl.attachShader(program, fShader);
-gl.compileShader(vShader);
-gl.compileShader(fShader);
-gl.linkProgram(program);
-gl.useProgram(program);
-
-gl.getExtension("EXT_color_buffer_float");
-
-const uv         = gl.getAttribLocation(program, 'tuv');
-const vPosition  = gl.getAttribLocation(program, 'vPosition');
-gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1.0,1.0, -1.0,-1.0, 1.0,1.0, 1.0,-1.0]), gl.STATIC_DRAW);
-gl.enableVertexAttribArray(vPosition);
-gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
-gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0.0,1.0, 0.0,0.0, 1.0,1.0, 1.0,0.0]), gl.STATIC_DRAW);
-gl.enableVertexAttribArray(uv);
-gl.vertexAttribPointer(uv, 2, gl.FLOAT, false, 0, 0);
-
-gl.activeTexture(gl.TEXTURE1);
-gl.bindTexture(gl.TEXTURE_2D, thumbnail);
-
-gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, gl.canvas.width, gl.canvas.height, 0, gl.RGBA, gl.FLOAT, null);
-
-gl.activeTexture(gl.TEXTURE0);
-gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-
-gl.bindFramebuffer(gl.FRAMEBUFFER, rgbaBuffer);
-gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, thumbnail, 0);
-
-gl.canvas.width  = 96;
-gl.canvas.height = 64;
-gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 onmessage = (e) => {
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, e.data.width, e.data.height, 0, gl.RGB, gl.UNSIGNED_BYTE, e.data);
-	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-	const pixels     = new Float32Array(gl.canvas.width * gl.canvas.height * 4);
-	gl.readPixels(0, 0, gl.canvas.width, gl.canvas.height, gl.RGBA, gl.FLOAT, pixels);
+	const bitmap = new OffscreenCanvas(96, 64).getContext('2d');
+	bitmap.drawImage(e.data, 0, 0, bitmap.canvas.width, bitmap.canvas.height);
+	const pixels = bitmap.getImageData(0, 0, bitmap.canvas.width, bitmap.canvas.height).data;
+	e.data.close();
 
 	const buffer  = new ArrayBuffer(208);
 	const float32 = new Float32Array(buffer);
@@ -88,8 +13,8 @@ onmessage = (e) => {
     const slice_h_   = 2;
 	const average    = {l : 0, a : 0, b : 0, s : 0};
     const bins       = [[]];
-    const sliceh     = 2 * Math.round(gl.canvas.height / slice_h_ / 2);
-    const wline      = gl.canvas.width * 4;
+    const sliceh     = 2 * Math.round(bitmap.canvas.height / slice_h_ / 2);
+    const wline      = bitmap.canvas.width * 4;
     const line       = 2 * Math.round(wline / slice_w_ / 2);
 
 	// convert image data to pixel array + slicing
@@ -101,15 +26,34 @@ onmessage = (e) => {
             for(let y = 0; y < sliceh; y++) {
                 const yo = (y * wline) + xso;
                 for(let x = 0; x < line; x += 4) {
-                    const xo = yo + x;
-                    const l  = pixels[xo + 0];
-                    const a  = pixels[xo + 1];
-                    const b  = pixels[xo + 2];
-					average.s += pixels[xo + 3];
-					average.l += l;
+					const xo = yo + x;
+
+					const sR = pixels[xo]     / 255;
+					const sG = pixels[xo + 1] / 255;
+					const sB = pixels[xo + 2] / 255;
+
+					const rsign = sR < 0 ? -1 : 1;
+					const rabs = Math.abs(sR);
+					const red   = (rabs < 0.04045) ? sR / 12.92 : rsign * (Math.pow((rabs + 0.055) / 1.055, 2.4));
+					const gsign = sG < 0 ? -1 : 1;
+					const gabs = Math.abs(sG);
+					const green = (gabs < 0.04045) ? sG / 12.92 : gsign * (Math.pow((gabs + 0.055) / 1.055, 2.4));
+					const bsign = sB < 0 ? -1 : 1;
+					const babs = Math.abs(sB);
+					const blue  = (babs < 0.04045) ? sB / 12.92 : bsign * (Math.pow((babs + 0.055) / 1.055, 2.4));
+
+					const l = Math.cbrt(0.4122214708 * red + 0.5363325363 * green + 0.0514459929 * blue);
+					const m = Math.cbrt(0.2119034982 * red + 0.6806995451 * green + 0.1073969566 * blue);
+					const s = Math.cbrt(0.0883024619 * red + 0.2817188376 * green + 0.6299787005 * blue);
+
+					const L = 0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s;
+					const a = 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s;
+					const b = 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s;
+
+					average.l += L;
 					average.a += a;
 					average.b += b;
-                    bins[0].push([l, a, b, current_slice]);
+                    bins[0].push([L, a, b, current_slice]);
                 }
             }
         }
@@ -203,7 +147,7 @@ onmessage = (e) => {
 
 	int32[48] = 6;
 
-	const area  = gl.canvas.width * gl.canvas.height;
+	const area = bitmap.canvas.width * bitmap.canvas.height;
 	average.s /= area;
 	average.l /= area;
 	average.a /= area;
