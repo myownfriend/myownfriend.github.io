@@ -1,52 +1,40 @@
 "use strict";
 import './separateCanvases.js';
 
-const addAnimationJob = (() => {
+const addAnimation = (() => {
 	const queue = new Array();
 	let  active = false;
-	function animate(timestamp) {
-		for (let a = 0; a < queue.length; a++) {
-			queue[a].task();
-			if (queue[a].end < window.performance.now()) {
-				if (queue[a].cleanup)
-					queue[a].cleanup();
-				queue.splice(a, 1);
-				a--;
+	function animate() {
+		for (let i = 0; i < queue.length; i++) {
+			queue[i].task();
+			if (queue[i].end < window.performance.now()) {
+				if (queue[i].cleanup)
+					queue[i].cleanup();
+				queue.splice(i, 1);
+				i--;
 			}
 		}
 		draw();
-		if (!queue.length)
-			return active = false;
+		if (!queue.length) return active = false;
 		window.requestAnimationFrame(animate);
 	}
 	return (length, task, cleanup = null) => {
-		const time = performance.now();
-		queue.push((() => {
-			const start = time;
-			return {
-				task,
-				end : start + length,
-				cleanup
-			}
-		})())
-		if (active)
-			return;
+		queue.push({
+			end : performance.now() + length,
+			task, cleanup
+		});
+		if (active) return;
 		active = true;
 		window.requestAnimationFrame(animate);
 	}
 })()
 
-window.addEventListener('resize', () => {
-	addAnimationJob(0, () => {
-	updateSurfaces(true);
-})});
+window.addEventListener('resize', () => { addAnimation(0, updateSurfaces)});
 
 window.setTheme = (dark) => {
 	quick_settings.theme(dark);
 	document.body.id = (dark ? 'dark' : 'light') + "-mode";
-	addAnimationJob(300, () => {
-		updateBrightness();
-	});
+	addAnimation(300, updateBrightness);
 }
 
 window.background = document.body.appendChild(Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'symbol'), {
@@ -114,10 +102,7 @@ window.setBackground = (() => {
 			background.old = background.current;
 			background.current = newbg;
 			background.appendChild(newbg);
-			addAnimationJob(300, ()=> {
-				updateBackground();
-				updateSurfaces();
-			}, ()=> {
+			addAnimation(300, updateBackground, ()=> {
 				if (background.children.length > 1) {
 					URL.revokeObjectURL(background.old.image.src);
 					background.old.remove();

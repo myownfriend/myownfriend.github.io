@@ -7,6 +7,7 @@ window.updateBrightness = () => {
 window.updateBackground = () => {
 	for (let i = surfaces.length - 1; i >= 0; i--)
 		surfaces[i].bufferData(surfaces[i].UNIFORM_BUFFER, background.current.lighting, surfaces[i].STATIC_READ);
+	updateSurfaces();
 }
 
 window.updateSurfaces = (full = false) => {

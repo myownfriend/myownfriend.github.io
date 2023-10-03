@@ -89,6 +89,7 @@ window.updateBrightness = () => {
 
 window.updateBackground = () => {
 	gl.bufferData(gl.UNIFORM_BUFFER, background.current.lighting, gl.STATIC_READ);
+	updateSurfaces();
 }
 
 window.updateSurfaces = () => {
