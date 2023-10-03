@@ -1,8 +1,8 @@
 "use strict";
 import './scene.js';
 
-Object.assign(document.body, { className: 'overview', depth: 1.0});
-
+document.body.className = 'overview';
+document.body.depth = 1.0;
 document.body.appendChild((() => {
 	const obj = Object.assign(document.createElement('ul'), {id:'panel'});
 	const left  = obj.appendChild(document.createElement('li'));
@@ -29,16 +29,15 @@ document.body.appendChild((() => {
 	return obj
 })());
 
-
 const workarea = document.body.appendChild(Object.assign(document.createElement('main'), {id : 'workarea'}));
 
 workarea.appendChild((() => {
-	const decoration = Object.assign(document.createElement('p'), { innerHTML : '<svg><use href="img/icons.svg#search"/></svg>'});
-	const bar = decoration.appendChild(document.createElement('input'));
+	const icon = Object.assign(document.createElement('p'), { innerHTML : '<svg><use href="img/icons.svg#search"/></svg>'});
+	const bar = icon.appendChild(document.createElement('input'));
 	bar.setAttribute('type', 'text');
 	bar.setAttribute('placeholder', 'Type to search');
 	const obj = Object.assign(document.createElement('label'), { id : 'search', depth: 1.1});
-	obj.appendChild(decoration);
+	obj.appendChild(icon);
 	return obj
 })());
 
@@ -87,29 +86,27 @@ window.quick_settings = document.body.appendChild((()=> {
 	function addToggle(name, type="checkbox") {
 		return toggles.appendChild(Object.assign(document.createElement('label'), {innerHTML :`<input type="${type}"><h3>${name}</h3>`}));
 	}
-	const toggles = Object.assign(document.createElement('div'), {id: 'toggles'});
-	const wired      = addToggle('Wired');
-	const wifi       = addToggle('Wi-Fi');
-	const bluetooth  = addToggle('Bluetooth');
-	const power      = addToggle('Power Saver');
-	const theme  = addToggle('Dark Mode').firstChild;
-	const upload  = addToggle('Upload Image', 'file');
-	const over = Object.assign(document.createElement('div'), {className: 'over-lights', innerHTML : `
+	const obj = Object.assign(document.createElement('form'), {id :'quick-settings', className: 'dropdown', depth: 1.5,
+	theme : (val) => {
+		theme.checked = val;
+	}});
+	const over = obj.appendChild(Object.assign(document.createElement('div'), {className: 'over-lights', innerHTML : `
 		<ul id="user-area"><li></li><li></li><li></li><li></li></ul>
 		<div id="audio-main">
 			<div class="volume-slider">
 				<input type="range" min="1" max="100" value="40"/>
 			</div>
-		</div>`});
-	over.appendChild(toggles);
+		</div>`}));
+	const toggles = over.appendChild(Object.assign(document.createElement('div'), {id: 'toggles'}));
+	const wired   = addToggle('Wired');
+	const wifi    = addToggle('Wi-Fi');
+	const blue    = addToggle('Bluetooth');
+	const power   = addToggle('Power Saver');
+	const theme   = addToggle('Dark Mode').firstChild;
+	const upload  = addToggle('Upload Image', 'file');
 	theme.addEventListener('click', (e) => { setTheme(e.target.checked) });
 	upload.addEventListener('change', (e) => { setBackground(e.target.files[0]) });
-	const obj = Object.assign(document.createElement('form'), {id :'quick-settings', className: 'dropdown', depth: 1.5,
-		theme : (val) => {
-			theme.checked = val;
-		}});
-	obj.appendChild(over);
-	return obj
+	return obj;
 })());
 
 setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);

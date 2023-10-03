@@ -4,15 +4,9 @@ window.updateBrightness = () => {
 		surfaces[i].uniform1f(surfaces[i].brightness, getBrightness(surfaces[i].canvas));
 }
 
-window.updateBackground = (job, timestamp) => {
+window.updateBackground = () => {
 	for (let i = surfaces.length - 1; i >= 0; i--)
 		surfaces[i].bufferData(surfaces[i].UNIFORM_BUFFER, background.current.lighting, surfaces[i].STATIC_READ);
-	if (Math.min(1, (timestamp - job.start) / job.time) >= 1 && background.children.length > 1) {
-		URL.revokeObjectURL(background.old.image.src);
-		background.old.remove();
-		background.old = null;
-	} else if (timestamp + 17 > job.end)
-		job.end += 17;
 }
 
 window.updateSurfaces = (full = false) => {
@@ -67,7 +61,6 @@ window.getSurfaces = (element) => {
 	if (element.hasOwnProperty('depth')) {
 		const gl = document.createElement('canvas').getContext('webgl2', {
 				depth     : false,
-				//alpha     : false,
 				stencil   : false,
 				antialias : false,
 				desynchronized : true,

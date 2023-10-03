@@ -87,14 +87,8 @@ window.updateBrightness = () => {
 		surfaces[i].brightness = getBrightness(surfaces[i]);
 }
 
-window.updateBackground = (job, timestamp) => {
+window.updateBackground = () => {
 	gl.bufferData(gl.UNIFORM_BUFFER, background.current.lighting, gl.STATIC_READ);
-	if (Math.min(1, (timestamp - job.start) / job.time) >= 1 && background.children.length > 1) {
-		URL.revokeObjectURL(background.old.image.src);
-		background.old.remove();
-		background.old = null;
-	} else if (timestamp + 17 > job.end)
-		job.end += 17;
 }
 
 window.updateSurfaces = () => {
