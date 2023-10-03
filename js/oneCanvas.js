@@ -1,5 +1,4 @@
 "use strict";
-import {getBrightness, background, surfaces} from './common.js';
 
 const canvas = Object.assign(document.createElement('canvas'), {
 	depth : 1.0,
@@ -9,7 +8,6 @@ document.body.prepend(canvas);
 
 const gl = canvas.getContext('webgl2', {
 	depth     : false,
-	alpha     : false,
 	stencil   : false,
 	antialias : false,
 	desynchronized : true,
@@ -78,17 +76,18 @@ const vPosition = gl.getAttribLocation(program, 'vPosition');
 gl.enableVertexAttribArray(vPosition);
 gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
 gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
+gl.bindBufferBase(gl.UNIFORM_BUFFER, gl.getUniformBlockIndex(program, "lighting"), gl.createBuffer());
 
 const bright_index = gl.getUniformLocation(program, "brightness");
 const depth_index  = gl.getUniformLocation(program, "depth");
 
-export function updateBrightness() {
+window.updateBrightness = () => {
 	canvas.brightness = getBrightness(canvas);
 	for (let i = surfaces.length - 1; i >= 0; i--)
 		surfaces[i].brightness = getBrightness(surfaces[i]);
 }
 
-export function updateBackground(job, timestamp) {
+window.updateBackground = (job, timestamp) => {
 	gl.bufferData(gl.UNIFORM_BUFFER, background.current.lighting, gl.STATIC_READ);
 	if (Math.min(1, (timestamp - job.start) / job.time) >= 1 && background.children.length > 1) {
 		URL.revokeObjectURL(background.old.image.src);
@@ -98,7 +97,7 @@ export function updateBackground(job, timestamp) {
 		job.end += 17;
 }
 
-export function updateSurfaces() {
+window.updateSurfaces = () => {
 	const monitor = {
 		width  : window.innerWidth,
 		height : window.innerHeight,
@@ -128,7 +127,7 @@ export function updateSurfaces() {
 	gl.viewport(0, 0,  gl.canvas.width, gl.canvas.height);
 }
 
-export function draw() {
+window.draw = () => {
 	for (let i = 0; i < surfaces.length; i++) {
 		drawSurface(surfaces[i]);
 		URL.revokeObjectURL(surfaces[i].url);
@@ -137,7 +136,7 @@ export function draw() {
 		createImageBitmap(canvas, surfaces[i].x, surfaces[i].y, surfaces[i].w, surfaces[i].h).then((image) => {
 			ctx.transferFromImageBitmap(image);
 			cvs.convertToBlob().then((blob) => {
-				surfaces[i].url   = URL.createObjectURL(blob);
+				surfaces[i].url   =  URL.createObjectURL(blob);
 				surfaces[i].style = `background-image: url(${surfaces[i].url});`;
 			});
 			image.close();
@@ -153,19 +152,18 @@ export function draw() {
 	}
 }
 
-export function getSurfaces(element) {
-	for (let i = element.children.length - 1; i > -1; i--)
+window.getSurfaces = (element) => {
+	for (let i = 0; i < element.children.length; i++)
 		getSurfaces(element.children[i]);
-	if (!element.hasOwnProperty('depth') || element === document.body)
-		return;
-	element.setAttribute('data-surface', `${element.length}`);
-	const rect = element.getBoundingClientRect();
-	surfaces.push(Object.assign(element, {
-		x     : rect.x,
-		y     : rect.y,
-		w     : rect.width,
-		h     : rect.height,
-		rect  : new Float32Array(8),
-		depth : element.depth,
-	}));
+	if (element.hasOwnProperty('depth') && element.localName != 'canvas' && element.localName != 'body') {
+		const rect = element.getBoundingClientRect();
+		surfaces.push(Object.assign(element, {
+			x     : rect.x,
+			y     : rect.y,
+			w     : rect.width,
+			h     : rect.height,
+			rect  : new Float32Array(8),
+			depth : element.depth,
+		}));
+	}
 }

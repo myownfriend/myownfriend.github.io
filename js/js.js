@@ -1,57 +1,48 @@
 "use strict";
-import {createScene, setBackground} from './scene.js';
+import './scene.js';
 
 Object.assign(document.body, { className: 'overview', depth: 1.0});
 
-const panel = Object.assign(document.createElement('ul'), {id:'panel'});
-const panel_left  = document.createElement('li');
-const panel_cent  = document.createElement('li');
-const panel_right = document.createElement('li');
+document.body.appendChild((() => {
+	const obj = Object.assign(document.createElement('ul'), {id:'panel'});
+	const left  = obj.appendChild(document.createElement('li'));
+	const cent  = obj.appendChild(document.createElement('li'));
+	const right = obj.appendChild(document.createElement('li'));
+	left.appendChild((() => {
+			const obj = Object.assign(document.createElement('button'), {id: 'overview-toggle', innerHTML :'Activities'})
+			obj.addEventListener('click', changeView);
+			return obj;
+	})());
+	cent.appendChild(Object.assign(document.createElement('button'), { id: 'clock', innerHTML : 'Thu Nov 25  2:15 AM'}));
+	right.appendChild((()=> {
+		let text = '';
+		for (const icon of [
+			'night-light',
+			'network-wireless-signal-excellent',
+			'network-vpn',
+			'microphone-sensitivity-high',
+			'battery-charging'
+		])
+		text += `<svg><use href="img/icons.svg#${icon}"/></svg>`;
+		return Object.assign(document.createElement('button'), {id: 'system-status-area', innerHTML : text})
+	})())
+	return obj
+})());
 
-const activities_toggle = addButton('overview-toggle', panel_left);
-activities_toggle.innerHTML = 'Activities';
-activities_toggle.addEventListener('click', changeView);
 
-const clock = addButton('clock', panel_cent);
-clock.innerHTML = 'Thu Nov 25  2:15 AM';
+const workarea = document.body.appendChild(Object.assign(document.createElement('main'), {id : 'workarea'}));
 
-const system_status_area = addButton('system-status-area', panel_right);
-for (const icon of [
-		'night-light',
-		'network-wireless-signal-excellent',
-		'network-vpn',
-		'microphone-sensitivity-high',
-		'battery-charging'
-	])
-	system_status_area.innerHTML += `<svg><use href="img/icons.svg#${icon}"/></svg>`;
+workarea.appendChild((() => {
+	const decoration = Object.assign(document.createElement('p'), { innerHTML : '<svg><use href="img/icons.svg#search"/></svg>'});
+	const bar = decoration.appendChild(document.createElement('input'));
+	bar.setAttribute('type', 'text');
+	bar.setAttribute('placeholder', 'Type to search');
+	const obj = Object.assign(document.createElement('label'), { id : 'search', depth: 1.1});
+	obj.appendChild(decoration);
+	return obj
+})());
 
-panel.appendChild(panel_left);
-panel.appendChild(panel_cent);
-panel.appendChild(panel_right);
-
-const search = Object.assign(document.createElement('label'), { id : 'search', depth: 1.1});
-const search_bar = document.createElement('input');
-search_bar.setAttribute('type', 'text');
-search_bar.setAttribute('placeholder', 'Type to search');
-const search_decoration = document.createElement('p');
-search_decoration.innerHTML += '<svg><use href="img/icons.svg#search"/></svg>'
-search_decoration.appendChild(search_bar);
-search.appendChild(search_decoration);
-
-const workspaces = Object.assign(document.createElement('div'), { id: 'workspaces'});
-for (let i = 0; i < 2; i++)
-	workspaces.innerHTML += '<svg class="workspace"><use href="#background"/></svg>';
-
-workspaces.addEventListener('dragover', (ev) => {
-	ev.preventDefault();
-});
-workspaces.addEventListener('drop', (ev) => {
-	ev.preventDefault();
-	setBackground(ev.dataTransfer.items[0].getAsFile());
-});
-workspaces.addEventListener('click', changeView);
-
-const app_grid  = Object.assign(addAppList([
+workarea.appendChild(Object.assign(addAppList([
 	['Weather','Weather', false],
 	['Maps', 'Maps', false],
 	['Text Editor', 'TextEditor', false],
@@ -62,80 +53,78 @@ const app_grid  = Object.assign(addAppList([
 	['Disk Usage Analyzer', 'baobab', false],
 	['Photos', 'Photos', false],
 	['Tour', 'Tour', false]
-]), { id:'app-grid'} );
+]), { id:'app-grid'} ));
 
-const dash = Object.assign(document.createElement('div'), {id: 'dash', className: 'hidden', depth: 1.1});
-dash.appendChild(addAppList( [
-	['Files','Nautilus', true],
-	['Software','Software', false],
-	['Settings','Settings', false]
-], true));
-dash.innerHTML += `<div id="show-apps-toggle" class="app"><svg viewbox="0 0 16 16"><use href="img/icons.svg#show-apps"/></svg><p class="name">Show Apps</p></div>`;
-dash.lastChild.addEventListener('click', () => {
-	document.body.classList.toggle('app-grid');
-});
+workarea.appendChild((() => {
+	const obj = Object.assign(document.createElement('div'), {id: 'dash', className: 'hidden', depth: 1.1});
+	obj.appendChild(addAppList( [
+		['Files','Nautilus', true],
+		['Software','Software', false],
+		['Settings','Settings', false]
+	], true));
+	obj.innerHTML += `<div id="show-apps-toggle" class="app"><svg viewbox="0 0 16 16"><use href="img/icons.svg#show-apps"/></svg><p class="name">Show Apps</p></div>`;
+	obj.lastChild.addEventListener('click', () => {
+		document.body.classList.toggle('app-grid');
+	});
+	return obj;
+})());
 
-const toggles = Object.assign(document.createElement('div'), {id: 'toggles'});
+workarea.appendChild((() => {
+	const obj = Object.assign(document.createElement('div'), { id: 'workspaces'});
+	for (let i = 0; i < 2; i++)
+		obj.innerHTML += '<svg class="workspace"><use href="#background"/></svg>';
+	obj.addEventListener('dragover', (ev) => {
+		ev.preventDefault();
+	});
+	obj.addEventListener('drop', (ev) => {
+		ev.preventDefault();
+		setBackground(ev.dataTransfer.items[0].getAsFile());
+	})
+	return obj;
+})());
 
-const settings = {
-	wired        : addToggle('Wired', toggles),
-	wifi         : addToggle('Wi-Fi', toggles),
-	bluetooth    : addToggle('Bluetooth', toggles),
-	power        : addToggle('Power Saver', toggles),
-	dark_mode    : addToggle('Dark Mode', toggles).firstChild,
-	file_upload  : addToggle('Upload Image', toggles, 'file'),
-}
-settings.dark_mode.addEventListener('click', (e) => {
-	setTheme(e.target.checked);
-});
-settings.file_upload.addEventListener('change', (e) => {
-	setBackground(e.target.files[0]);
-});
-
-const over_lights = Object.assign(document.createElement('div'), {className: 'over-lights', innerHTML : `
-	<ul id="user-area"><li></li><li></li><li></li><li></li></ul>
-	<div id="audio-main">
-		<div class="volume-slider">
-			<input type="range" min="1" max="100" value="40"/>
-		</div>
-	</div>`});
-over_lights.appendChild(toggles);
-
-const quick_settings = Object.assign(document.createElement('form'), {id :'quick-settings', className: 'dropdown', depth: 1.5});
-quick_settings.appendChild(over_lights);
-
-const workarea = Object.assign(document.createElement('main'), {id : 'workarea'});
-workarea.appendChild(search);
-workarea.appendChild(app_grid);
-workarea.appendChild(dash);
-workarea.appendChild(workspaces);
-
-document.body.appendChild(panel);
-document.body.appendChild(workarea);
-document.body.appendChild(quick_settings);
+window.quick_settings = document.body.appendChild((()=> {
+	function addToggle(name, type="checkbox") {
+		return toggles.appendChild(Object.assign(document.createElement('label'), {innerHTML :`<input type="${type}"><h3>${name}</h3>`}));
+	}
+	const toggles = Object.assign(document.createElement('div'), {id: 'toggles'});
+	const wired      = addToggle('Wired');
+	const wifi       = addToggle('Wi-Fi');
+	const bluetooth  = addToggle('Bluetooth');
+	const power      = addToggle('Power Saver');
+	const theme  = addToggle('Dark Mode').firstChild;
+	const upload  = addToggle('Upload Image', 'file');
+	const over = Object.assign(document.createElement('div'), {className: 'over-lights', innerHTML : `
+		<ul id="user-area"><li></li><li></li><li></li><li></li></ul>
+		<div id="audio-main">
+			<div class="volume-slider">
+				<input type="range" min="1" max="100" value="40"/>
+			</div>
+		</div>`});
+	over.appendChild(toggles);
+	theme.addEventListener('click', (e) => { setTheme(e.target.checked) });
+	upload.addEventListener('change', (e) => { setBackground(e.target.files[0]) });
+	const obj = Object.assign(document.createElement('form'), {id :'quick-settings', className: 'dropdown', depth: 1.5,
+		theme : (val) => {
+			theme.checked = val;
+		}});
+	obj.appendChild(over);
+	return obj
+})());
 
 setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
+
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)=> {
 	setTheme(e.target.matches);
 });
 
-createScene();
-
-function setTheme(dark) {
-	settings.dark_mode.checked = dark;
-	document.body.id = (dark ? 'dark' : 'light') + "-mode";
-	document.body.dispatchEvent(new Event("change"));
-}
-
-function changeView() {
-	if (document.body.classList.contains('app-grid')) {
-		document.body.classList.remove('overview', 'app-grid');
-	} else {
-		document.body.classList.toggle('overview');
-		document.body.classList.remove('app-grid');
-	}
-	document.body.dispatchEvent(new Event("change"));
-}
+(async () => {
+	getSurfaces(document.body);
+	const default_background = await fetch('data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQvOY1r/+BiOh/AAA=')
+	.then(res  => res.blob())
+	.then(blob => blob);
+	setBackground(default_background);
+})();
 
 function addAppList(apps, hidden=false) {
 	const applist = Object.assign(document.createElement('ul'), {className: 'app-list'});
@@ -144,17 +133,4 @@ function addAppList(apps, hidden=false) {
 	for (let i = 0; i < apps.length; i++)
 		applist.innerHTML += `<li class="app${(apps[i][2] ? ` open` : ``)}" ><img src="apps/org.gnome.${apps[i][1]}.svg"/><h2 class="name">${apps[i][0]}</h2></li>`;
 	return applist;
-}
-
-function addToggle(name, parent, type="checkbox") {
-	const toggle = document.createElement('label');
-	toggle.innerHTML = `<input type="${type}"><h3>${name}</h3>`;
-	parent.appendChild(toggle);
-	return toggle;
-}
-
-function addButton(id, parent) {
-	const button = Object.assign(document.createElement('button'), {id: id});
-	parent.appendChild(button);
-	return button;
 }

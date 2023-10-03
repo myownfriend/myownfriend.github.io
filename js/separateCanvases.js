@@ -1,12 +1,10 @@
 "use strict";
-import {surfaces, background, getBrightness} from './common.js';
-
-export function updateBrightness() {
+window.updateBrightness = () => {
 	for (let i = surfaces.length - 1; i >= 0; i--)
 		surfaces[i].uniform1f(surfaces[i].brightness, getBrightness(surfaces[i].canvas));
 }
 
-export function updateBackground(job, timestamp) {
+window.updateBackground = (job, timestamp) => {
 	for (let i = surfaces.length - 1; i >= 0; i--)
 		surfaces[i].bufferData(surfaces[i].UNIFORM_BUFFER, background.current.lighting, surfaces[i].STATIC_READ);
 	if (Math.min(1, (timestamp - job.start) / job.time) >= 1 && background.children.length > 1) {
@@ -17,7 +15,7 @@ export function updateBackground(job, timestamp) {
 		job.end += 17;
 }
 
-export function updateSurfaces(full = false) {
+window.updateSurfaces = (full = false) => {
 	const monitor = {
 		width  : window.innerWidth,
 		height : window.innerHeight,
@@ -57,19 +55,19 @@ export function updateSurfaces(full = false) {
 	}
 }
 
-export function draw() {
+window.draw = () => {
 	for (let i = 0; i < surfaces.length; i++)
 		surfaces[i].drawArrays(surfaces[i].TRIANGLE_STRIP, 0, 4);
 }
 
-export function getSurfaces(element) {
+window.getSurfaces = (element) => {
 	for (let i = element.children.length - 1; i > -1; i--)
 		getSurfaces(element.children[i]);
 
 	if (element.hasOwnProperty('depth')) {
 		const gl = document.createElement('canvas').getContext('webgl2', {
 				depth     : false,
-				alpha     : false,
+				//alpha     : false,
 				stencil   : false,
 				antialias : false,
 				desynchronized : true,
