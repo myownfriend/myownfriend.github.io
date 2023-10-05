@@ -10,10 +10,10 @@ window.updateBackground = () => {
 	updateSurfaces();
 }
 
-window.updateSurfaces = (full = false) => {
+window.updateSurfaces = () => {
 	const monitor = {
-		width  : window.innerWidth,
-		height : window.innerHeight,
+		width  : innerWidth,
+		height : innerHeight,
 	}
 	monitor.aw    = Math.max(1.0, monitor.width     / monitor.height);
 	monitor.ah    = Math.max(1.0, monitor.height    / monitor.width);
@@ -28,11 +28,9 @@ window.updateSurfaces = (full = false) => {
 	}
 	for(let i = 0; i < surfaces.length; i++) {
 		const clientRect = surfaces[i].canvas.getBoundingClientRect();
-		if (full) {
-			surfaces[i].canvas.height = clientRect.height * window.devicePixelRatio;
-			surfaces[i].canvas.width  = clientRect.width  * window.devicePixelRatio;
-			surfaces[i].viewport(0, 0,  surfaces[i].canvas.width, surfaces[i].canvas.height);
-		}
+		surfaces[i].canvas.height = clientRect.height * devicePixelRatio;
+		surfaces[i].canvas.width  = clientRect.width  * devicePixelRatio;
+		surfaces[i].viewport(0, 0,  surfaces[i].canvas.width, surfaces[i].canvas.height);
 		const rect = {
 			x : ratio.x * (((clientRect.width  >> 1) + clientRect.x) / monitor.width  * -1.0 + 0.5),
 			y : ratio.y * (((clientRect.height >> 1) + clientRect.y) / monitor.height *  1.0 - 0.5),

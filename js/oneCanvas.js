@@ -94,8 +94,8 @@ window.updateBackground = () => {
 
 window.updateSurfaces = () => {
 	const monitor = {
-		width  : window.innerWidth,
-		height : window.innerHeight,
+		width  : innerWidth,
+		height : innerHeight,
 	}
 	monitor.aw   = Math.max(1.0, monitor.width  / monitor.height);
 	monitor.ah   = Math.max(1.0, monitor.height / monitor.width);

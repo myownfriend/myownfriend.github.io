@@ -3,6 +3,7 @@ import './scene.js';
 
 document.body.className = 'overview';
 document.body.depth = 1.0;
+
 document.body.appendChild((() => {
 	const obj = Object.assign(document.createElement('ul'), {id:'panel'});
 	const left  = obj.appendChild(document.createElement('li'));
@@ -109,9 +110,9 @@ window.quick_settings = document.body.appendChild((()=> {
 	return obj;
 })());
 
-setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
+setTheme(matchMedia('(prefers-color-scheme: dark)').matches);
 
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)=> {
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)=> {
 	setTheme(e.target.matches);
 });
 
