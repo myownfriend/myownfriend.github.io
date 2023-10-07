@@ -5,7 +5,7 @@ document.body.className = 'overview';
 document.body.depth = 1.0;
 
 document.body.appendChild((() => {
-	const obj = Object.assign(document.createElement('ul'), {id:'panel'});
+	const obj   = Object.assign(document.createElement('ul'), {id:'panel'});
 	const left  = obj.appendChild(document.createElement('li'));
 	const cent  = obj.appendChild(document.createElement('li'));
 	const right = obj.appendChild(document.createElement('li'));
@@ -73,12 +73,12 @@ workarea.appendChild((() => {
 	const obj = Object.assign(document.createElement('div'), { id: 'workspaces'});
 	for (let i = 0; i < 2; i++)
 		obj.innerHTML += '<svg class="workspace"><use href="#background"/></svg>';
-	obj.addEventListener('dragover', (ev) => {
-		ev.preventDefault();
+	obj.addEventListener('dragover', (e) => {
+		e.preventDefault();
 	});
-	obj.addEventListener('drop', (ev) => {
-		ev.preventDefault();
-		setBackground(ev.dataTransfer.items[0].getAsFile());
+	obj.addEventListener('drop', (e) => {
+		e.preventDefault();
+		setBackground(e.dataTransfer.items[0].getAsFile());
 	})
 	return obj;
 })());
@@ -87,10 +87,7 @@ window.quick_settings = document.body.appendChild((()=> {
 	function addToggle(name, type="checkbox") {
 		return toggles.appendChild(Object.assign(document.createElement('label'), {innerHTML :`<input type="${type}"><h3>${name}</h3>`}));
 	}
-	const obj = Object.assign(document.createElement('form'), {id :'quick-settings', className: 'dropdown', depth: 1.5,
-	theme : (val) => {
-		theme.checked = val;
-	}});
+	const obj = Object.assign(document.createElement('form'), {id :'quick-settings', className: 'dropdown', depth: 1.5});
 	const over = obj.appendChild(Object.assign(document.createElement('div'), {className: 'over-lights', innerHTML : `
 		<ul id="user-area"><li></li><li></li><li></li><li></li></ul>
 		<div id="audio-main">
@@ -99,14 +96,14 @@ window.quick_settings = document.body.appendChild((()=> {
 			</div>
 		</div>`}));
 	const toggles = over.appendChild(Object.assign(document.createElement('div'), {id: 'toggles'}));
-	const wired   = addToggle('Wired');
-	const wifi    = addToggle('Wi-Fi');
-	const blue    = addToggle('Bluetooth');
-	const power   = addToggle('Power Saver');
-	const theme   = addToggle('Dark Mode').firstChild;
-	const upload  = addToggle('Upload Image', 'file');
-	theme.addEventListener('click', (e) => { setTheme(e.target.checked) });
-	upload.addEventListener('change', (e) => { setBackground(e.target.files[0]) });
+	obj.wired  = addToggle('Wired');
+	obj.wifi   = addToggle('Wi-Fi');
+	obj.blue   = addToggle('Bluetooth');
+	obj.power  = addToggle('Power Saver');
+	obj.theme  = addToggle('Dark Mode').firstChild;
+	obj.upload = addToggle('Upload Image', 'file');
+	obj.theme .addEventListener('click' , (e) => { setTheme(e.target.checked) });
+	obj.upload.addEventListener('change', (e) => { setBackground(e.target.files[0]) });
 	return obj;
 })());
 
@@ -118,13 +115,13 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)=> {
 
 (async () => {
 	getSurfaces(document.body);
-	const default_background = await fetch('data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQvOY1r/+BiOh/AAA=')
+	const image = await fetch('data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQvOY1r/+BiOh/AAA=')
 	.then(res  => res.blob())
 	.then(blob => blob);
-	setBackground(default_background);
+	setBackground(image);
 })();
 
-function addAppList(apps, hidden=false) {
+function addAppList(apps, hidden = false) {
 	const applist = Object.assign(document.createElement('ul'), {className: 'app-list'});
 	if (hidden)
 		applist.classList.add('hidden');

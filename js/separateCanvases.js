@@ -1,61 +1,57 @@
 "use strict";
 window.updateBrightness = () => {
-	for (let i = surfaces.length - 1; i >= 0; i--)
-		surfaces[i].uniform1f(surfaces[i].brightness, getBrightness(surfaces[i].canvas));
+	for (const surface of surfaces)
+		surface.uniform1f(surface.brightness, getBrightness(surface.canvas));
 }
 
 window.updateBackground = () => {
-	for (let i = surfaces.length - 1; i >= 0; i--)
-		surfaces[i].bufferData(surfaces[i].UNIFORM_BUFFER, background.current.lighting, surfaces[i].STATIC_READ);
+	for (const surface of surfaces)
+		surface.bufferData(surface.UNIFORM_BUFFER, background.current.lighting, surface.STATIC_READ);
 	updateSurfaces();
 }
 
 window.updateSurfaces = () => {
-	const monitor = {
-		width  : innerWidth,
-		height : innerHeight,
-	}
-	monitor.aw    = Math.max(1.0, monitor.width     / monitor.height);
-	monitor.ah    = Math.max(1.0, monitor.height    / monitor.width);
-	const diff_x  = background.current.aspectWidth  / monitor.aw;
-	const diff_y  = background.current.aspectHeight / monitor.ah;
+	const aw      = Math.max(1.0, innerWidth  / innerHeight);
+	const ah      = Math.max(1.0, innerHeight / innerWidth );
+	const diff_x  = background.current.aw / aw;
+	const diff_y  = background.current.ah / ah;
 	const min     = 1.0 / Math.min(diff_x, diff_y);
 	const ratio   = {
-		x  : 1.0 / (monitor.width  * -1.0),
-		y  : 1.0 / (monitor.height *  1.0),
-		w  : monitor.width  * diff_x * min,
-		h  : monitor.height * diff_y * min,
-	}
-	for(let i = 0; i < surfaces.length; i++) {
-		const clientRect = surfaces[i].canvas.getBoundingClientRect();
-		surfaces[i].canvas.height = clientRect.height * devicePixelRatio;
-		surfaces[i].canvas.width  = clientRect.width  * devicePixelRatio;
-		surfaces[i].viewport(0, 0,  surfaces[i].canvas.width, surfaces[i].canvas.height);
+		x  : 1.0 / (innerWidth  * -1.0),
+		y  : 1.0 / (innerHeight *  1.0),
+		w  : innerWidth  * diff_x * min,
+		h  : innerHeight * diff_y * min,
+	};
+	for (const surface of surfaces) {
+		const clientRect = surface.canvas.getBoundingClientRect();
+		surface.canvas.height = clientRect.height * devicePixelRatio;
+		surface.canvas.width  = clientRect.width  * devicePixelRatio;
+		surface.viewport(0, 0,  surface.canvas.width, surface.canvas.height);
 		const rect = {
-			x : ratio.x * (((clientRect.width  >> 1) + clientRect.x) / monitor.width  * -1.0 + 0.5),
-			y : ratio.y * (((clientRect.height >> 1) + clientRect.y) / monitor.height *  1.0 - 0.5),
-			w : monitor.width  / clientRect.width  * diff_x * min, // scaled.w / clientRect.width ,
-			h : monitor.height / clientRect.height * diff_y * min, // scaled.h / clientRect.height,
+			x : ratio.x * (((clientRect.width  >> 1) + clientRect.x) / innerWidth  * -1.0 + 0.5),
+			y : ratio.y * (((clientRect.height >> 1) + clientRect.y) / innerHeight *  1.0 - 0.5),
+			w : innerWidth  / clientRect.width  * diff_x * min, // scaled.w / clientRect.width ,
+			h : innerHeight / clientRect.height * diff_y * min, // scaled.h / clientRect.height,
 		};
-		const transform = {
-			px : ( 1.0 + rect.x) * rect.w, py : ( 1.0 + rect.y) * rect.h,
-			nx : (-1.0 + rect.x) * rect.w, ny : (-1.0 + rect.y) * rect.h,
-		}
-		surfaces[i].bufferData(surfaces[i].ARRAY_BUFFER, new Float32Array([
-			transform.nx, transform.py, transform.nx, transform.ny,
-			transform.px, transform.py, transform.px, transform.ny
-		]), surfaces[i].STATIC_DRAW);
+		const px = ( 1.0 + rect.x) * rect.w;
+		const py = ( 1.0 + rect.y) * rect.h;
+		const nx = (-1.0 + rect.x) * rect.w;
+		const ny = (-1.0 + rect.y) * rect.h;
+		surface.bufferData(surface.ARRAY_BUFFER, new Float32Array([
+			nx, py, nx, ny,
+			px, py, px, ny
+		]), surface.STATIC_DRAW);
 	}
 }
 
 window.draw = () => {
-	for (let i = 0; i < surfaces.length; i++)
-		surfaces[i].drawArrays(surfaces[i].TRIANGLE_STRIP, 0, 4);
+	for (const surface of surfaces)
+		surface.drawArrays(surface.TRIANGLE_STRIP, 0, 4);
 }
 
 window.getSurfaces = (element) => {
-	for (let i = element.children.length - 1; i > -1; i--)
-		getSurfaces(element.children[i]);
+	for (const child of element.children)
+		getSurfaces(child);
 
 	if (element.hasOwnProperty('depth')) {
 		const gl = document.createElement('canvas').getContext('webgl2', {
