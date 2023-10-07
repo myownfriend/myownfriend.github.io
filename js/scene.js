@@ -93,12 +93,12 @@ window.getBrightness = (() => {
 		CSS.registerProperty({
 			name: '--brightness',
 			syntax: '<number>',
-			inherits: false,
+			inherits: true,
 			initialValue: 0.5,
 		});
 		return (obj) => {
-			return getComputedStyle(obj).getPropertyValue('--brightness');
-			return obj.computedStyleMap().get('--brightness');
+			return Number(getComputedStyle(obj).getPropertyValue('--brightness'));
+			//return obj.computedStyleMap().get('--brightness');
 		}
 	}
 	return (obj) => {
