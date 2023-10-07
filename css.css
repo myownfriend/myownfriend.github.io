@@ -38,10 +38,11 @@ html {
 		display: flex;
 		flex-direction: column;
 		background-color: var(--stage-color);
+		--brightness: var(--stage-L);
 		transition-property: background-color, --brightness;
 		transition-duration: var(--theme-transition);
 		--accent-color : #3584e4;
-		--brightness: var(--stage-L);
+
 
 		animation-name: fade_in;
 		animation-duration: 1s;
@@ -51,24 +52,25 @@ html {
 			--text-color:   rgb(229 229 229);
 
 			--dash-color:   rgb(61 61 61);
-			--dash-L: 0.36002;
+			--dash-L: 0.3920154048446703;
 
 			--dash-hover:   rgba(255 255 255 / 0.08);
 			--hover-shade:  rgba(255 255 255 / 0.125);
 			--toggle-color: rgba(255 255 255 / 0.13);
 
 			--search-color: rgb(70 70 70);
-			--search-L: 0.39418;
+			--search-L: 0.425975851240448;
 
 			--search-hover: rgba(255 255 255 / 0.1);
 			--search-icon:  rgba(255 255 255 / 0.45);
 			--search-place: rgba(255 255 255 / 0.9);
 
 			--dropdown-color: rgb(53 53 53);
-			--dropdown-L: 0.32897;
+			--dropdown-L: 0.36090458592269137;
 
-			--stage-color: rgb(40 40 40);
-			--stage-L: 0.27685;
+			/* --stage-color: rgb(40 40 40); */
+			--stage-L: 0.30812118967070723;
+			--stage-color: oklab(30.812118967070723% 0 0);
 
 			--track-color:  rgba(255 255 255 / 0.450980392);
 			--thumb-color:  #eee;
@@ -80,24 +82,24 @@ html {
 			--text-color:   rgb(2 2 2);
 
 			--dash-color:   rgb(145, 145, 145);
-			--dash-L: 0.65666;
+			--dash-L: 0.6800800374206339;
 
 			--dash-hover:   rgba(0 0 0 / 0.08);
 			--hover-shade:  rgba(0 0 0 / 0.125);
 			--toggle-color: rgba(0 0 0 / 0.14);
 
 			--search-color: rgb(145 145 145);
-			--search-L: 0.65666;
+			--search-L: 0.6800800374206339;
 
 			--search-hover: rgba(0 0 0 / 0.2);
 			--search-icon:  rgba(0 0 0 / 0.45);
 			--search-place: rgba(0 0 0 / 0.994);
 
 			--dropdown-color: rgb(190 190 190);
-			--dropdown-L: 0.80152;
+			--dropdown-L: 0.8164317409783746;
 
 			--stage-color:  rgb(172 172 172);
-			--stage-L: 0.74443;
+			--stage-L: 0.7629645512651786;
 
 			--track-color:  rgba(0 0 0 / 0.450980392);
 			--thumb-color:  #000;
