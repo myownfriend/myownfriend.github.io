@@ -68,9 +68,8 @@ html {
 			--dropdown-color: rgb(53 53 53);
 			--dropdown-L: 0.36090458592269137;
 
-			/* --stage-color: rgb(40 40 40); */
+			--stage-color: rgb(40 40 40);
 			--stage-L: 0.30812118967070723;
-			--stage-color: oklab(30.812118967070723% 0 0);
 
 			--track-color:  rgba(255 255 255 / 0.450980392);
 			--thumb-color:  #eee;

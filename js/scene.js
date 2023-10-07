@@ -97,7 +97,7 @@ window.getBrightness = (() => {
 			initialValue: 0.5,
 		});
 		return (obj) => {
-			// return Number(getComputedStyle(obj).getPropertyValue('--brightness'));
+			//return Number(getComputedStyle(obj).getPropertyValue('--brightness'));
 			return obj.computedStyleMap().get('--brightness');
 		}
 	}
