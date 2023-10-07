@@ -22,10 +22,7 @@ const addAnimation = (() => {
 		requestAnimationFrame(animate);
 	}
 	return (length, task, cleanup = null) => {
-		queue.push({
-			end : performance.now() + length,
-			task, cleanup
-		});
+		queue.push({ end : performance.now() + length, task, cleanup });
 		if (active) return;
 		active = true;
 		requestAnimationFrame(animate);
@@ -92,7 +89,7 @@ window.setBackground = (() => {
 })();
 
 window.getBrightness = (() => {
-	if ('CSS' in window && 'registerProperty' in CSS) {
+ 	if ('CSS' in window && 'registerProperty' in CSS) {
 		CSS.registerProperty({
 			name: '--brightness',
 			syntax: '<number>',
@@ -100,6 +97,7 @@ window.getBrightness = (() => {
 			initialValue: 0.5,
 		});
 		return (obj) => {
+			return getComputedStyle(obj).getPropertyValue('--brightness');
 			return obj.computedStyleMap().get('--brightness');
 		}
 	}
