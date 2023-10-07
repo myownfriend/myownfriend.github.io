@@ -106,6 +106,6 @@ window.getBrightness = (() => {
 	return (obj) => {
 		const val = (getComputedStyle(obj).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
 		const abs = Math.abs(val);
-		return Math.cbrt((abs >= 0.04045) ? ((0 >= 0) - (0 < 0)) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92);
+		return Math.cbrt((abs >= 0.04045) ? ((val >= 0) - (val < 0)) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92);
 	}
 })();
