@@ -1,4 +1,3 @@
-"use strict";
 window.updateBrightness = () => {
 	for (const surface of surfaces)
 		surface.uniform1f(surface.brightness, getBrightness(surface.canvas));
@@ -27,16 +26,14 @@ window.updateSurfaces = () => {
 		surface.canvas.height = clientRect.height * devicePixelRatio;
 		surface.canvas.width  = clientRect.width  * devicePixelRatio;
 		surface.viewport(0, 0,  surface.canvas.width, surface.canvas.height);
-		const rect = {
-			x : ratio.x * (((clientRect.width  >> 1) + clientRect.x) / innerWidth  * -1.0 + 0.5),
-			y : ratio.y * (((clientRect.height >> 1) + clientRect.y) / innerHeight *  1.0 - 0.5),
-			w : innerWidth  / clientRect.width  * diff_x * min, // scaled.w / clientRect.width ,
-			h : innerHeight / clientRect.height * diff_y * min, // scaled.h / clientRect.height,
-		};
-		const px = ( 1.0 + rect.x) * rect.w;
-		const py = ( 1.0 + rect.y) * rect.h;
-		const nx = (-1.0 + rect.x) * rect.w;
-		const ny = (-1.0 + rect.y) * rect.h;
+		const rectx = ratio.x * (((clientRect.width  >> 1) + clientRect.x) / innerWidth  * -1.0 + 0.5);
+		const recty = ratio.y * (((clientRect.height >> 1) + clientRect.y) / innerHeight *  1.0 - 0.5);
+		const rectw = innerWidth  / clientRect.width  * diff_x * min; // scaled.w / clientRect.width ,
+		const recth = innerHeight / clientRect.height * diff_y * min; // scaled.h / clientRect.height,
+		const px = ( 1.0 + rectx) * rectw;
+		const py = ( 1.0 + recty) * recth;
+		const nx = (-1.0 + rectx) * rectw;
+		const ny = (-1.0 + recty) * recth;
 		surface.bufferData(surface.ARRAY_BUFFER, new Float32Array([
 			nx, py, nx, ny,
 			px, py, px, ny
@@ -63,6 +60,10 @@ window.getSurfaces = (element) => {
 				preserveDrawingBuffer: true,
 				powerPreference : "low-power",
 		});
+		const clientRect = gl.canvas.getBoundingClientRect();
+		gl.canvas.height = clientRect.height * devicePixelRatio;
+		gl.canvas.width  = clientRect.width  * devicePixelRatio;
+		gl.viewport(0, 0,  gl.canvas.width, gl.canvas.height);
 		element.prepend(gl.canvas);
 		const program = gl.createProgram();
 		const vShader = gl.createShader(gl.VERTEX_SHADER);

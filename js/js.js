@@ -1,8 +1,77 @@
 "use strict";
-import './scene.js';
+import './oneCanvas.js';
+
+const addAnimation = (() => {
+	const queue = new Array();
+	let  active = false;
+	function animate() {
+		for (let i = 0; i < queue.length; i++) {
+			queue[i].task();
+			if (queue[i].end < performance.now()) {
+				if (queue[i].cleanup)
+					queue[i].cleanup();
+				queue.splice(i, 1);
+				i--;
+			}
+		}
+		draw();
+		if (!queue.length) return active = false;
+		requestAnimationFrame(animate);
+	}
+	return (length, task, cleanup = null) => {
+		queue.push({ end : performance.now() + length, task, cleanup });
+		if (active) return;
+		active = true;
+		requestAnimationFrame(animate);
+	}
+})()
+
+window.surfaces = new Array();
+window.addEventListener('resize', ()=> { addAnimation(0, updateSurfaces)});
 
 document.body.className = 'overview';
 document.body.depth = 1.0;
+
+window.background = document.body.appendChild(Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'symbol'), {
+	id : 'background', old : null, current : null,
+	set: (() => {
+		const types = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/svg+xml"]
+		const analyst = new Worker('./js/median_cut.js');
+		return (file) => {
+			if (!types.includes(file.type))
+				return;
+			const bg = document.createElementNS('http://www.w3.org/2000/svg', 'image')
+			bg.image = new Image();
+			bg.image.src = URL.createObjectURL(file);
+			bg.image.addEventListener('load', () => {
+				bg.aw = Math.max(1.0, bg.image.width  / bg.image.height);
+				bg.ah = Math.max(1.0, bg.image.height / bg.image.width );
+				bg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+				bg.setAttribute('href' , bg.image.src);
+				bg.setAttribute('width', '100%');
+				createImageBitmap(bg.image, {
+					resizeWidth : bg.aw * 64,
+					resizeHeight: bg.ah * 64,
+				}).then((image) => {
+					analyst.postMessage(image, [image]);
+				});
+			}, { once: true });
+			analyst.onmessage = (e) => {
+				bg.lighting = e.data.lights;
+				background.old = background.current;
+				background.current = bg;
+				background.appendChild(bg);
+				addAnimation(300, updateBackground, ()=> {
+					if (background.children.length > 1) {
+						URL.revokeObjectURL(background.old.image.src);
+						background.old.remove();
+						background.old = null;
+					}
+				});
+			};
+		}
+	})()
+}));
 
 document.body.appendChild((() => {
 	const obj   = Object.assign(document.createElement('ul'), {id:'panel'});
@@ -11,7 +80,14 @@ document.body.appendChild((() => {
 	const right = obj.appendChild(document.createElement('li'));
 	left.appendChild((() => {
 			const obj = Object.assign(document.createElement('button'), {id: 'overview-toggle', innerHTML :'Activities'})
-			obj.addEventListener('click', changeView);
+			obj.addEventListener('click', () => {
+				if (document.body.classList.contains('app-grid'))
+					document.body.classList.remove('overview', 'app-grid');
+				else {
+					document.body.classList.toggle('overview');
+					document.body.classList.remove('app-grid');
+				}
+			});
 			return obj;
 	})());
 	cent.appendChild(Object.assign(document.createElement('button'), { id: 'clock', innerHTML : 'Thu Nov 25  2:15 AM'}));
@@ -78,12 +154,12 @@ workarea.appendChild((() => {
 	});
 	obj.addEventListener('drop', (e) => {
 		e.preventDefault();
-		setBackground(e.dataTransfer.items[0].getAsFile());
+		background.set(e.dataTransfer.items[0].getAsFile());
 	})
 	return obj;
 })());
 
-window.quick_settings = document.body.appendChild((()=> {
+document.body.appendChild((()=> {
 	function addToggle(name, type="checkbox") {
 		return toggles.appendChild(Object.assign(document.createElement('label'), {innerHTML :`<input type="${type}"><h3>${name}</h3>`}));
 	}
@@ -96,29 +172,35 @@ window.quick_settings = document.body.appendChild((()=> {
 			</div>
 		</div>`}));
 	const toggles = over.appendChild(Object.assign(document.createElement('div'), {id: 'toggles'}));
-	obj.wired  = addToggle('Wired');
-	obj.wifi   = addToggle('Wi-Fi');
-	obj.blue   = addToggle('Bluetooth');
-	obj.power  = addToggle('Power Saver');
-	obj.theme  = addToggle('Dark Mode').firstChild;
-	obj.upload = addToggle('Upload Image', 'file');
-	obj.theme .addEventListener('click' , (e) => { setTheme(e.target.checked) });
-	obj.upload.addEventListener('change', (e) => { setBackground(e.target.files[0]) });
+	window.wired  = addToggle('Wired');
+	window.wifi   = addToggle('Wi-Fi');
+	window.blue   = addToggle('Bluetooth');
+	window.power  = addToggle('Power Saver');
+
+	window.theme  = addToggle('Dark Mode').firstChild;
+	theme.set = () => {
+		document.body.id = (theme.checked ? 'dark' : 'light') + "-mode";
+		addAnimation(300, updateBrightness);
+	}
+	theme.addEventListener('change', theme.set);
+
+	background.upload = addToggle('Upload Image', 'file');
+	background.upload.addEventListener('change', (e) => { background.set(e.target.files[0]) });
 	return obj;
 })());
 
-setTheme(matchMedia('(prefers-color-scheme: dark)').matches);
-
-matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)=> {
-	setTheme(e.target.matches);
-});
-
 (async () => {
+	const scheme = matchMedia('(prefers-color-scheme: dark)');
+	scheme.addEventListener('change', (e)=> {
+		theme.checked = e.target.matches;
+		theme.set();
+	});
+	scheme.dispatchEvent(new Event('change'));
 	getSurfaces(document.body);
 	const image = await fetch('data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQvOY1r/+BiOh/AAA=')
 	.then(res  => res.blob())
 	.then(blob => blob);
-	setBackground(image);
+	background.set(image);
 })();
 
 function addAppList(apps, hidden = false) {
@@ -129,3 +211,22 @@ function addAppList(apps, hidden = false) {
 		applist.innerHTML += `<li class="app${(apps[i][2] ? ` open` : ``)}" ><img src="apps/org.gnome.${apps[i][1]}.svg"/><h2 class="name">${apps[i][0]}</h2></li>`;
 	return applist;
 }
+
+window.getBrightness = (() => {
+	if ('CSS' in window && 'registerProperty' in CSS) {
+	   CSS.registerProperty({
+		   name: '--brightness',
+		   syntax: '<number>',
+		   inherits: true,
+		   initialValue: 0.5,
+	   });
+	   return (obj) => {
+		   return Number(getComputedStyle(obj).getPropertyValue('--brightness'));
+	   }
+   }
+   return (obj) => {
+	   const val = (getComputedStyle(obj).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
+	   const abs = Math.abs(val);
+	   return Math.cbrt((abs >= 0.04045) ? ((val >= 0) - (val < 0)) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92);
+   }
+})();
