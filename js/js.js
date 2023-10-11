@@ -1,6 +1,11 @@
 "use strict";
 import './oneCanvas.js';
+/*
+ Maybe try to refactor this with element.getAnimations()?
+ Being able to see when the animation is finished would be nice.
 
+ Also check out animate();
+*/
 const addAnimation = (() => {
 	const queue = new Array();
 	let  active = false;
@@ -31,6 +36,13 @@ window.addEventListener('resize', ()=> { addAnimation(0, updateSurfaces)});
 
 document.body.className = 'overview';
 document.body.depth = 1.0;
+
+const svg = document.body.appendChild(Object.assign(document.createElementNS("http://www.w3.org/2000/svg", 'svg'), {id:"masks"}));
+const defs = svg.appendChild(document.createElement('defs'));
+svg.innerHTML = `<mask id="masking">
+<rect fill="#fff" width="100%" height="100%"></rect>
+<rect rx="36px" fill="#000" style="	x: calc(100vw - 10px - 420px); y: 6px; width: 420px; height: 311px;"></rect>
+</mask>`;
 
 window.background = document.body.appendChild(Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'symbol'), {
 	id : 'background', old : null, current : null,
