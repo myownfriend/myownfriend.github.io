@@ -43,7 +43,6 @@ html {
 		transition-duration: var(--theme-transition);
 		--accent-color : #3584e4;
 
-
 		animation-name: fade_in;
 		animation-duration: 1s;
 		animation-fill-mode: forwards;
@@ -51,24 +50,24 @@ html {
 		&#dark-mode  {
 			--text-color:   rgb(229 229 229);
 
-			--dash-color:   rgb(61 61 61);
+			--dash-color:   rgba(61 61 61 / 0.01);
 			--dash-L: 0.3920154048446703;
 
 			--dash-hover:   rgba(255 255 255 / 0.08);
 			--hover-shade:  rgba(255 255 255 / 0.125);
 			--toggle-color: rgba(255 255 255 / 0.13);
 
-			--search-color: rgb(70 70 70);
+			--search-color: rgba(70 70 70 / 0.01);
 			--search-L: 0.425975851240448;
 
 			--search-hover: rgba(255 255 255 / 0.1);
 			--search-icon:  rgba(255 255 255 / 0.45);
 			--search-place: rgba(255 255 255 / 0.9);
 
-			--dropdown-color: rgb(53 53 53);
+			--dropdown-color: rgba(53 53 53 / 0.01);
 			--dropdown-L: 0.36090458592269137;
 
-			--stage-color: rgb(40 40 40);
+			--stage-color: rgba(40 40 40 / 0.01);
 			--stage-L: 0.30812118967070723;
 
 			--track-color:  rgba(255 255 255 / 0.450980392);
@@ -80,24 +79,24 @@ html {
 		&#light-mode  {
 			--text-color:   rgb(2 2 2);
 
-			--dash-color:   rgb(145, 145, 145);
+			--dash-color:   rgba(145 145 145 / 0.01);
 			--dash-L: 0.6800800374206339;
 
 			--dash-hover:   rgba(0 0 0 / 0.08);
 			--hover-shade:  rgba(0 0 0 / 0.125);
 			--toggle-color: rgba(0 0 0 / 0.14);
 
-			--search-color: rgb(145 145 145);
+			--search-color: rgba(145 145 145 / 0.01);
 			--search-L: 0.6800800374206339;
 
 			--search-hover: rgba(0 0 0 / 0.2);
 			--search-icon:  rgba(0 0 0 / 0.45);
 			--search-place: rgba(0 0 0 / 0.994);
 
-			--dropdown-color: rgb(190 190 190);
+			--dropdown-color: rgba(190 190 190 / 0.01);
 			--dropdown-L: 0.8164317409783746;
 
-			--stage-color:  rgb(172 172 172);
+			--stage-color:  rgba(172 172 172 / 0.01);
 			--stage-L: 0.7629645512651786;
 
 			--track-color:  rgba(0 0 0 / 0.450980392);
@@ -106,21 +105,18 @@ html {
 			--extreme-fg:   #000;
 			--symbol-color: rgb(4 4 4);
 
-			/* Gnome's Light Mode
+			/* Gnome's Light Mode */
+/* 			--dash-color: rgba(242 242 242 / 0.01);
+			--dash-L:   0.96115;
 
-			--dash-color: rgb(242 242 242);
-			--dash-L:   0.96115; //0.65666;
+			--search-color: rgba(255 255 255 / 0.01);
+			--search-L: 1;
 
-			--search-color: rgb(255 255 255);// rgb(145 145 145);
-			--search-L: 1;//0.65666;
+			--dropdown-color: rgba(247 245 246 / 0.01);
+			--dropdown-L: 0.97196;
 
-			--dropdown-color: rgb(247 245 246);//rgb(190 190 190);
-			--dropdown-L: 0.97196; // 0.80152;
-
-			--stage-color:  rgb(230 227 224);// rgb(172 172 172);
-			--stage-L: 0.91732;//0.74443;
-
-			*/
+			--stage-color:  rgba(230 227 224 / 0.01);
+			--stage-L: 0.91732; */
 		}
 		& canvas {
 			top: 0;
@@ -357,6 +353,16 @@ html {
 			border-radius: 16px;
 		}
 	}
+}
+#masks {
+	position: absolute;
+	width:100%;
+	height:100%;
+	z-index: -999;
+}
+main {
+	mask-image: url(#masking);
+	mask-type: luminance;
 }
 body { /*animations*/
 	#workspaces {
