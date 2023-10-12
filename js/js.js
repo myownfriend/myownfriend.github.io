@@ -39,9 +39,12 @@ document.body.depth = 1.0;
 
 const svg = document.body.appendChild(Object.assign(document.createElementNS("http://www.w3.org/2000/svg", 'svg'), {id:"masks"}));
 const defs = svg.appendChild(document.createElement('defs'));
-svg.innerHTML = `<mask id="masking">
-<rect fill="#fff" width="100%" height="100%"></rect>
-<rect rx="36px" fill="#000" style="	x: calc(100vw - 10px - 420px); y: 6px; width: 420px; height: 311px;"></rect>
+svg.innerHTML = `<mask id="quick-settings-mask">
+<rect fill="#fff" width="100%" height="100%"/>
+<rect rx="36px" fill="#000" style="	x: calc(100vw - 10px - 420px); y: 6px; width: 420px; height: 311px;"/>
+</mask><mask id="dash-mask">
+<rect fill="#fff" width="100%" height="100%"/>
+<rect rx="28px" fill="#000" style="x: calc(50% - (364px / 2)); y: calc(100% - 106px - 42px); width: 364px; height: 106px;"/>
 </mask>`;
 
 window.background = document.body.appendChild(Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'symbol'), {
@@ -130,21 +133,25 @@ workarea.appendChild((() => {
 	return obj
 })());
 
-workarea.appendChild(Object.assign(addAppList([
-	['Weather','Weather', false],
-	['Maps', 'Maps', false],
-	['Text Editor', 'TextEditor', false],
-	['Cheese', 'Cheese', false],
-	['Calculator', 'Calculator', false],
-	['Boxes', 'Boxes', false],
-	['Contacts', 'Contacts', false],
-	['Disk Usage Analyzer', 'baobab', false],
-	['Photos', 'Photos', false],
-	['Tour', 'Tour', false]
-]), { id:'app-grid'} ));
+workarea.appendChild((()=> {
+	const obj =  workarea.appendChild(Object.assign(document.createElement('div'), { id:'app-grid'} ));
+	obj.appendChild(addAppList([
+		['Weather','Weather', false],
+		['Maps', 'Maps', false],
+		['Text Editor', 'TextEditor', false],
+		['Cheese', 'Cheese', false],
+		['Calculator', 'Calculator', false],
+		['Boxes', 'Boxes', false],
+		['Contacts', 'Contacts', false],
+		['Disk Usage Analyzer', 'baobab', false],
+		['Photos', 'Photos', false],
+		['Tour', 'Tour', false]
+	]));
+	return obj;
+})());
 
 workarea.appendChild((() => {
-	const obj = Object.assign(document.createElement('div'), {id: 'dash', className: 'hidden', depth: 1.1});
+	const obj = Object.assign(document.createElement('div'), {id: 'dash', className: 'hidden', depth: 1.1, subcanvas: true});
 	obj.appendChild(addAppList( [
 		['Files','Nautilus', true],
 		['Software','Software', false],
@@ -175,7 +182,7 @@ document.body.appendChild((()=> {
 	function addToggle(name, type="checkbox") {
 		return toggles.appendChild(Object.assign(document.createElement('label'), {innerHTML :`<input type="${type}"><h3>${name}</h3>`}));
 	}
-	const obj = Object.assign(document.createElement('form'), {id :'quick-settings', className: 'dropdown', depth: 1.5});
+	const obj = Object.assign(document.createElement('form'), {id :'quick-settings', className: 'dropdown', depth: 1.5,  subcanvas: true});
 	const over = obj.appendChild(Object.assign(document.createElement('div'), {className: 'over-lights', innerHTML : `
 		<ul id="user-area"><li></li><li></li><li></li><li></li></ul>
 		<div id="audio-main">

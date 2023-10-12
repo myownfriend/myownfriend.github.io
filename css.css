@@ -313,15 +313,24 @@ html {
 		}
 	}
 	#app-grid {
-		top:100vh;
-		gap: 2%;
 		position: fixed;
-		flex-wrap: wrap;
-		max-width: 95vw;
-		max-height: 45vh;
-		aspect-ratio: 8 / 3;
-		transition: translate var(--nav-transition);
+		top:0;
+		left:0;
+		width:100vw;
+		height: 100vh;
+		display: flex;
+		justify-content: center;
 
+		.app-list {
+			top:100vh;
+			gap: 2%;
+			position: fixed;
+			flex-wrap: wrap;
+			max-width: 95vw;
+			max-height: 45vh;
+			aspect-ratio: 8 / 3;
+			transition: translate var(--nav-transition);
+		}
 		.app {
 			padding: 15px 30px;
 			max-width: calc((100% - (7 * 2%)) / 8);
@@ -354,15 +363,23 @@ html {
 		}
 	}
 }
-#masks {
-	position: absolute;
+.light {
 	width:100%;
 	height:100%;
-	z-index: -999;
 }
-main {
-	mask-image: url(#masking);
-	mask-type: luminance;
+#masks {
+	position: fixed;
+	width:100%;
+	height:100%;
+}
+#workarea {
+	-webkit-mask-image: url(#quick-settings-mask);
+	mask-image: url(#quick-settings-mask);
+
+	#app-grid {
+		-webkit-mask-image: url(#dash-mask);
+		mask-image: url(#dash-mask);
+	}
 }
 body { /*animations*/
 	#workspaces {
@@ -394,7 +411,9 @@ body { /*animations*/
 		}
 		&.app-grid {
 			#app-grid {
-				translate: 0 -65vh;
+				.app-list {
+					translate: 0 -65vh;
+				}
 			}
 			#workspaces {
 				gap: 16rem;

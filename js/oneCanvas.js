@@ -130,10 +130,3 @@ window.updateBrightness = () => {
 	for (const surface of surfaces)
 		surface.brightness = getBrightness(surface);
 }
-// You can dry creating mask images with 2D canvas and setting them as a mask-image to an element. That will punch a whole through something
-{/* <svg style="position: fixed;width: 100%;height: 100%;top: 0;left: 0;z-index: -999;"><defs xmlns="http://www.w3.org/2000/svg">
-    <mask id="masking" maskUnits="userSpaceOnUse">
-      <rect width="100%" height="100%" fill="#fff"></rect>
-      <rect fill="#000" height="311" x="1368px" y="6px" width="420" rx="36"></rect>
-    </mask>
-  </defs></svg> */}
