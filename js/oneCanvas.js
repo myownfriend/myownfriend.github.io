@@ -74,12 +74,62 @@ gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 const vPosition = gl.getAttribLocation(program, 'vPosition');
 gl.enableVertexAttribArray(vPosition);
 gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
 gl.bindBufferBase(gl.UNIFORM_BUFFER, gl.getUniformBlockIndex(program, "lighting"), gl.createBuffer());
 const size   = gl.getUniformLocation(program, "size");
 const radius = gl.getUniformLocation(program, "radius");
 const bright = gl.getUniformLocation(program, "brightness");
 const depth  = gl.getUniformLocation(program, "depth");
+
+const svg = gl.canvas.appendChild(Object.assign(document.createElementNS("http://www.w3.org/2000/svg", 'svg'), {id:"masks"}));
+function createMask(id) {
+	const mask = svg.appendChild(Object.assign(document.createElementNS("http://www.w3.org/2000/svg",'mask'), {id}));
+	mask.appendChild(document.createElementNS("http://www.w3.org/2000/svg", 'rect'));
+	mask.appendChild(document.createElementNS("http://www.w3.org/2000/svg", 'rect'));
+}
+createMask("quick-settings-mask");
+createMask("dash-mask");
+
+window.background = gl.canvas.appendChild(Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'symbol'), {
+	id : 'background', old : null, current : null,
+	set: (() => {
+		const types = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/svg+xml"]
+		const analyst = new Worker('./js/median_cut.js');
+		return (file) => {
+			if (!types.includes(file.type))
+				return;
+			const bg = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+			bg.image = new Image();
+			bg.image.src = URL.createObjectURL(file);
+			bg.image.addEventListener('load', () => {
+				bg.aw = Math.max(1.0, bg.image.width  / bg.image.height);
+				bg.ah = Math.max(1.0, bg.image.height / bg.image.width );
+				bg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+				bg.setAttribute('href' , bg.image.src);
+				bg.setAttribute('width', '100%');
+				createImageBitmap(bg.image, {
+					resizeWidth : bg.aw * 64,
+					resizeHeight: bg.ah * 64,
+				}).then((image) => {
+					analyst.postMessage(image, [image]);
+				});
+			}, { once: true });
+			analyst.onmessage = (e) => {
+				bg.lighting = e.data.lights;
+				background.old = background.current;
+				background.current = bg;
+				background.appendChild(bg);
+				addAnimation(300, updateBackground, ()=> {
+					if (background.children.length > 1) {
+						URL.revokeObjectURL(background.old.image.src);
+						background.old.remove();
+						background.old = null;
+					}
+				});
+			};
+		}
+	})()
+}));
 
 window.draw = () => {
 	for (const surface of surfaces) {
@@ -96,25 +146,22 @@ window.getSurfaces = (element) => {
 	for (const child of element.children)
 		getSurfaces(child);
 	if (element.hasOwnProperty('depth'))
-		surfaces.push(Object.assign(element, {rect: new Float32Array(16), depth: element.depth}));
-	surfaces.sort((a,b) => a.depth + b.depth);
-	updateSurfaces();
+		surfaces.push(Object.assign(element, {rect: new Float32Array(8), depth: element.depth}));
 }
 
 window.updateSurfaces = () => {
-/*  const diff_x = background.current.aspectWidth  / Math.max(1.0, innerWidth  / innerHeight);
-	const diff_y = background.current.aspectHeight / Math.max(1.0, innerHeight / innerWidth );
-	const min    = 1.0 / Math.min(diff_x, diff_y); */
 	for(const surface of surfaces) {
 		const rect = surface.getBoundingClientRect();
 		const w_center = rect.width  / 2;
 		const h_center = rect.height / 2;
+		const rect_bot = innerHeight - rect.bottom;
+		const rect_top = innerHeight - rect.top;
 		surface.radius = Number(getComputedStyle(surface).getPropertyValue('border-radius').split('px')[0] * devicePixelRatio);
-		surface.size = [(rect.left + w_center) * devicePixelRatio, ((innerHeight - rect.bottom)  + h_center) * devicePixelRatio, w_center * devicePixelRatio, h_center * devicePixelRatio];
-		surface.rect[0]  = surface.rect[4]  = rect.left  / innerWidth  *  2 - 1;
-		surface.rect[8]  = surface.rect[12] = rect.right / innerWidth  *  2 - 1;
-		surface.rect[5]  = surface.rect[13] = (innerHeight - rect.bottom) / innerHeight *  2 - 1;
-		surface.rect[1]  = surface.rect[9]  = (innerHeight - rect.top)    / innerHeight *  2 - 1;
+		surface.size   = [(rect.left + w_center) * devicePixelRatio, (rect_bot  + h_center) * devicePixelRatio, w_center * devicePixelRatio, h_center * devicePixelRatio];
+		surface.rect[0] = surface.rect[2] = rect.left  / innerWidth  *  2 - 1;
+		surface.rect[4] = surface.rect[6] = rect.right / innerWidth  *  2 - 1;
+		surface.rect[3] = surface.rect[7] = rect_bot   / innerHeight *  2 - 1;
+		surface.rect[1] = surface.rect[5] = rect_top   / innerHeight *  2 - 1;
 	}
 	gl.canvas.width  = innerWidth  * devicePixelRatio;
 	gl.canvas.height = innerHeight * devicePixelRatio;
@@ -122,8 +169,10 @@ window.updateSurfaces = () => {
 }
 
 window.updateBackground = () => {
+	const diff_x = background.current.aw / Math.max(1.0, innerWidth  / innerHeight);
+	const diff_y = background.current.ah / Math.max(1.0, innerHeight / innerWidth );
+	const min    = 1.0 / Math.min(diff_x, diff_y);
 	gl.bufferData(gl.UNIFORM_BUFFER, background.current.lighting, gl.STATIC_READ);
-	updateSurfaces();
 }
 
 window.updateBrightness = () => {
