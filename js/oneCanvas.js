@@ -82,22 +82,12 @@ const bright = gl.getUniformLocation(program, "brightness");
 const depth  = gl.getUniformLocation(program, "depth");
 
 const svg = gl.canvas.appendChild(Object.assign(document.createElementNS("http://www.w3.org/2000/svg", 'svg'), {id:"masks"}));
-function createMask(id) {
-	const mask = svg.appendChild(Object.assign(document.createElementNS("http://www.w3.org/2000/svg",'mask'), {id}));
-	mask.appendChild(document.createElementNS("http://www.w3.org/2000/svg", 'rect'));
-	mask.appendChild(document.createElementNS("http://www.w3.org/2000/svg", 'rect'));
-}
-createMask("quick-settings-mask");
-createMask("dash-mask");
 
 window.background = gl.canvas.appendChild(Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'symbol'), {
 	id : 'background', old : null, current : null,
 	set: (() => {
-		const types = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/svg+xml"]
 		const analyst = new Worker('./js/median_cut.js');
 		return (file) => {
-			if (!types.includes(file.type))
-				return;
 			const bg = document.createElementNS('http://www.w3.org/2000/svg', 'image');
 			bg.image = new Image();
 			bg.image.src = URL.createObjectURL(file);
@@ -145,8 +135,14 @@ window.draw = () => {
 window.getSurfaces = (element) => {
 	for (const child of element.children)
 		getSurfaces(child);
-	if (element.hasOwnProperty('depth'))
+	if (element.hasOwnProperty('depth')) {
+		if (element.hasOwnProperty('mask')) {
+			const mask = svg.appendChild(Object.assign(document.createElementNS("http://www.w3.org/2000/svg",'mask'), {id:`${element.id}-mask`}));
+			mask.appendChild(document.createElementNS("http://www.w3.org/2000/svg", 'rect'));
+			element.mask = mask.appendChild(document.createElementNS("http://www.w3.org/2000/svg", 'rect'));
+		}
 		surfaces.push(Object.assign(element, {rect: new Float32Array(8), depth: element.depth}));
+	}
 }
 
 window.updateSurfaces = () => {
@@ -154,14 +150,21 @@ window.updateSurfaces = () => {
 		const rect = surface.getBoundingClientRect();
 		const w_center = rect.width  / 2;
 		const h_center = rect.height / 2;
-		const rect_bot = innerHeight - rect.bottom;
-		const rect_top = innerHeight - rect.top;
+		rect.bot  = innerHeight - rect.bottom;
+		rect.top2 = innerHeight - rect.top;
 		surface.radius = Number(getComputedStyle(surface).getPropertyValue('border-radius').split('px')[0] * devicePixelRatio);
-		surface.size   = [(rect.left + w_center) * devicePixelRatio, (rect_bot  + h_center) * devicePixelRatio, w_center * devicePixelRatio, h_center * devicePixelRatio];
+		surface.size   = [(rect.left + w_center) * devicePixelRatio, (rect.bot  + h_center) * devicePixelRatio, w_center * devicePixelRatio, h_center * devicePixelRatio];
 		surface.rect[0] = surface.rect[2] = rect.left  / innerWidth  *  2 - 1;
 		surface.rect[4] = surface.rect[6] = rect.right / innerWidth  *  2 - 1;
-		surface.rect[3] = surface.rect[7] = rect_bot   / innerHeight *  2 - 1;
-		surface.rect[1] = surface.rect[5] = rect_top   / innerHeight *  2 - 1;
+		surface.rect[3] = surface.rect[7] = rect.bot   / innerHeight *  2 - 1;
+		surface.rect[1] = surface.rect[5] = rect.top2  / innerHeight *  2 - 1;
+
+		if (surface.hasOwnProperty('mask')) {
+			surface.mask.setAttribute('x', rect.left);
+			surface.mask.setAttribute('y', rect.top - 32);
+			surface.mask.setAttribute('height', surface.clientHeight);
+			surface.mask.setAttribute('width' , surface.clientWidth );
+		}
 	}
 	gl.canvas.width  = innerWidth  * devicePixelRatio;
 	gl.canvas.height = innerHeight * devicePixelRatio;
@@ -169,12 +172,31 @@ window.updateSurfaces = () => {
 }
 
 window.updateBackground = () => {
-	const diff_x = background.current.aw / Math.max(1.0, innerWidth  / innerHeight);
-	const diff_y = background.current.ah / Math.max(1.0, innerHeight / innerWidth );
+	const diff_x = background.current.aw / Math.max(1.0, background.current.ah);
+	const diff_y = background.current.ah / Math.max(1.0, background.current.aw);
 	const min    = 1.0 / Math.min(diff_x, diff_y);
 	gl.bufferData(gl.UNIFORM_BUFFER, background.current.lighting, gl.STATIC_READ);
 }
 
+window.changeLighting = () => {
+	/*
+		Might be better to store the new light list
+		in the list_old and old light list in the list_new
+		then slowly transition list_new into the new list.
+	*/
+ 	const newL = background.current.lighting;
+	const oldL = background.old.lighting;
+	const size = 6 * 8;
+
+	for (let i = 0; i < size; i += 8) {
+		oldL[i + 0] += newL[i + 0];
+		oldL[i + 1] += newL[i + 1];
+		oldL[i + 2] += newL[i + 2];
+		oldL[i + 4] += newL[i + 4];
+		oldL[i + 6] += newL[i + 6];
+		oldL[i + 7] += newL[i + 7];
+	}
+}
 window.updateBrightness = () => {
 	for (const surface of surfaces)
 		surface.brightness = getBrightness(surface);

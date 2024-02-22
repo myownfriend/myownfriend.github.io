@@ -1,10 +1,17 @@
 "use strict";
+window.lastDraw = 0;
+window.averageFrameTime = 0;
+window.frames = 0;
 import './oneCanvas.js';
+
+window.fileUpload = document.createElement('input');
+window.fileUpload.setAttribute('type', 'file');
+window.fileUpload.setAttribute('accept', 'image/jpeg, image/jpg, image/png, image/webp, image/gif, image/svg+xml, image/jxl');
+window.fileUpload.onchange = (e) => { background.set(e.target.files[0]) };
 
 window.addAnimation = (() => {
 	const queue = new Array();
-	let  active = false;
-	function animate() {
+	function animate(timestamp) {
 		for (let i = 0; i < queue.length; i++) {
 			queue[i].task();
 			if (queue[i].end < performance.now()) {
@@ -15,22 +22,23 @@ window.addAnimation = (() => {
 			}
 		}
 		draw();
-		if (!queue.length) return active = false;
+		if (!queue.length)
+			return active = false;
 		requestAnimationFrame(animate);
 	}
 	return (length, task, cleanup = null) => {
 		queue.push({ end : performance.now() + length, task, cleanup });
 		if (active) return;
 		active = true;
-		requestAnimationFrame(animate);
+		animate();
 	}
 })();
 
 window.surfaces = new Array();
-window.addEventListener('resize', ()=> {
+window.onresize = () => {
 	updateBackground();
 	addAnimation(0, updateSurfaces)
-});
+};
 
 document.body.className = 'overview';
 document.body.depth = 1.0;
@@ -41,15 +49,17 @@ document.body.appendChild((() => {
 	const cent  = obj.appendChild(document.createElement('li'));
 	const right = obj.appendChild(document.createElement('li'));
 	left.appendChild((() => {
-			const obj = Object.assign(document.createElement('button'), {id: 'overview-toggle', innerHTML :'Activities'})
-			obj.addEventListener('click', () => {
+			const obj = Object.assign(document.createElement('button'), {id: 'overview-toggle'});
+			obj.appendChild(document.createElement('div'));
+			obj.appendChild(document.createElement('div'));
+			obj.onclick = () => {
 				if (document.body.classList.contains('app-grid'))
 					document.body.classList.remove('overview', 'app-grid');
 				else {
 					document.body.classList.toggle('overview');
 					document.body.classList.remove('app-grid');
 				}
-			});
+			};
 			return obj;
 	})());
 	cent.appendChild(Object.assign(document.createElement('button'), { id: 'clock', innerHTML : 'Thu Nov 25  2:15 AM'}));
@@ -98,16 +108,16 @@ workarea.appendChild((()=> {
 })());
 
 workarea.appendChild((() => {
-	const obj = Object.assign(document.createElement('div'), {id: 'dash', className: 'hidden', depth: 1.1});
+	const obj = Object.assign(document.createElement('div'), {id: 'dash', className: 'hidden', depth: 1.1, mask: true});
 	obj.appendChild(addAppList( [
 		['Files','Nautilus', true],
 		['Software','Software', false],
 		['Settings','Settings', false]
 	], true));
 	obj.innerHTML += `<div id="show-apps-toggle" class="app"><svg viewbox="0 0 16 16"><use href="img/icons.svg#show-apps"/></svg><p class="name">Show Apps</p></div>`;
-	obj.lastChild.addEventListener('click', () => {
+	obj.lastChild.onclick = () => {
 		document.body.classList.toggle('app-grid');
-	});
+	};
 	return obj;
 })());
 
@@ -115,21 +125,24 @@ workarea.appendChild((() => {
 	const obj = Object.assign(document.createElement('div'), { id: 'workspaces'});
 	for (let i = 0; i < 2; i++)
 		obj.innerHTML += '<svg class="workspace"><use href="#background"/></svg>';
-	obj.addEventListener('dragover', (e) => {
+	obj.ondragover = (e) => {
 		e.preventDefault();
-	});
-	obj.addEventListener('drop', (e) => {
+	};
+	obj.ondrop = (e) => {
 		e.preventDefault();
 		background.set(e.dataTransfer.items[0].getAsFile());
-	})
+	};
 	return obj;
 })());
 
 document.body.appendChild((()=> {
 	function addToggle(name, type="checkbox") {
-		return toggles.appendChild(Object.assign(document.createElement('label'), {innerHTML :`<input type="${type}"><h3>${name}</h3>`}));
+		const toggle = toggles.appendChild(document.createElement('input'));
+		toggle.setAttribute('name', name);
+		toggle.setAttribute('type', type);
+		return toggle;
 	}
-	const obj = Object.assign(document.createElement('form'), {id :'quick-settings', className: 'dropdown', depth: 1.5});
+	const obj = Object.assign(document.createElement('form'), {id :'quick-settings', className: 'dropdown', depth: 1.5, mask: true});
 	obj.innerHTML = `<ul id="user-area"><li></li><li></li><li></li><li></li></ul>
 		<div id="audio-main">
 			<div class="volume-slider">
@@ -141,23 +154,25 @@ document.body.appendChild((()=> {
 	window.wifi   = addToggle('Wi-Fi');
 	window.blue   = addToggle('Bluetooth');
 	window.power  = addToggle('Power Saver');
-	window.theme  = addToggle('Dark Mode').firstChild;
+	window.theme  = addToggle('Dark Mode');
 	theme.set = () => {
 		document.body.id = (theme.checked ? 'dark' : 'light') + "-mode";
 		addAnimation(300, updateBrightness);
 	}
-	theme.addEventListener('change', theme.set);
-	background.upload = addToggle('Upload Image', 'file');
-	background.upload.addEventListener('change', (e) => { background.set(e.target.files[0]) });
+	theme.onchange = theme.set;
+	background.upload = addToggle('Upload Image', 'button');
+	background.upload.onclick = () => {
+		window.fileUpload.click();
+	};
 	return obj;
 })());
 
 (async () => {
 	const scheme = matchMedia('(prefers-color-scheme: dark)');
-	scheme.addEventListener('change', (e)=> {
+	scheme.onchange = (e)=> {
 		theme.checked = e.target.matches;
 		theme.set();
-	});
+	};
 	scheme.dispatchEvent(new Event('change'));
 	getSurfaces(document.body);
 	updateSurfaces();
@@ -177,21 +192,8 @@ function addAppList(apps, hidden = false) {
 	return obj;
 }
 
-window.getBrightness = (() => {
-	if ('CSS' in window && 'registerProperty' in CSS) {
-	   CSS.registerProperty({
-		   name: '--brightness',
-		   syntax: '<number>',
-		   inherits: true,
-		   initialValue: 0.5,
-	   });
-	   return (obj) => {
-		   return Number(getComputedStyle(obj).getPropertyValue('--brightness'));
-	   }
-   }
-   return (obj) => {
-	   const val = (getComputedStyle(obj).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
-	   const abs = Math.abs(val);
-	   return Math.cbrt((abs >= 0.04045) ? ((val >= 0) - (val < 0)) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92);
-   }
-})();
+window.getBrightness = (obj) => {
+	const val = (getComputedStyle(obj).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
+	const abs = Math.abs(val);
+	return Math.cbrt((abs >= 0.04045) ? ((val >= 0) - (val < 0)) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92);
+}
