@@ -11,7 +11,8 @@ window.fileUpload.onchange = (e) => { background.set(e.target.files[0]) };
 
 window.addAnimation = (() => {
 	const queue = new Array();
-	function animate(timestamp) {
+	let  active = false;
+	function animate() {
 		for (let i = 0; i < queue.length; i++) {
 			queue[i].task();
 			if (queue[i].end < performance.now()) {
