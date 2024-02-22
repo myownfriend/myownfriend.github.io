@@ -103,11 +103,6 @@ html {
 			--extreme-bg:   #fff;
 			--extreme-fg:   #000;
 			--symbol-color: rgb(4 4 4);
-
-/* 			--dropdown-color: rgba(247 245 243 / 0.01);
-			--dash-color:   rgba(242 242 242 / 0.01);
-			--search-color: rgba(255 255 255 / 0.01);
-			--stage-color:  rgba(230 227 227 / 0.01); */
 		}
 		& canvas {
 			width:  100vw;
@@ -119,26 +114,22 @@ html {
 				width:  inherit;
 				height: inherit;
 
-				& mask :first-child {
-					width:100%;
-					height:100%;
-					fill:#fff;
+				& mask {
+					& :first-child {
+						width:100%;
+						height:100%;
+						fill:#fff;
+					}
+					& :last-child {
+						fill:#000;
+					}
 				}
 				#dash-mask :last-child {
-					x: calc(50% - (364px / 2));
-					y: calc(65% - 106px - 32px);
+					y : calc(65% - 106px - 32px);
 					rx: 28px;
-					width: 364px;
-					height: 106px;
-					fill:#000;
 				}
 				#quick-settings-mask :last-child {
-					x: calc(100vw - 10px - 420px);
-					y: 6px;
 					rx: 36px;
-					width: 420px;
-					height: 297px;
-					fill:#000;
 				}
 			}
 		}
@@ -159,6 +150,7 @@ html {
 		animation-fill-mode: forwards;
 	}
 }
+
 .app-list {
 	display: inline-flex;
 	flex-direction: row;
@@ -175,7 +167,7 @@ html {
 	justify-content: center;
 	transition: background-color var(--nav-transition);
 
-	&.open::after {
+	&.open::before {
 		content: ' ';
 		height:6px;
 		aspect-ratio: 1;
@@ -190,7 +182,7 @@ html {
 	& .name {
 		height:2em;
 		max-width:100%;
-		padding: 5px 15px;
+		padding: 6px 15px 4px;
 		overflow-x: hidden;
 		border-radius: 15px;
 		white-space: nowrap;
@@ -218,6 +210,7 @@ html {
 		}
 	}
 }
+
 #panel {
 	position: fixed;
 	height: 2.2em;
@@ -253,6 +246,24 @@ html {
 			background: var(--dash-hover);
 		}
 	}
+	#overview-toggle {
+		display: flex;
+		gap:6px;
+		align-items: center;
+
+		div {
+			width:6px;
+			background-color: var(--text-color);
+			height:6px;
+			border-radius: 5px;
+			opacity: 0.5;
+		}
+		:first-child {
+			width:30px;
+			height:8px;
+			opacity: 1;
+		}
+	}
 	#system-status-area {
 		display: flex;
 		align-items: center;
@@ -278,6 +289,7 @@ html {
 		transition-property: background-color, --brightness;
 		transition-duration: var(--theme-transition);
 		--brightness: var(--search-L);
+		box-sizing: border-box;
 
 		& input {
 			background-color: transparent;
@@ -285,7 +297,10 @@ html {
 			outline: none;
 			font-size: 15px;
 			font-weight: 400;
+			padding-top:3px;
 			color: var(--text-color);
+			transition-property: color;
+			transition-duration: var(--theme-transition);
 
 			&::placeholder {
 				color:var(--search-place);
@@ -297,6 +312,8 @@ html {
 			border-radius: inherit;
 			display: flex;
 			align-items: center;
+			transition-property: background-color;
+			transition-duration: var(--nav-transition);
 
 			& svg {
 				width: 16px;
@@ -324,8 +341,12 @@ html {
 
 		.workspace {
 			flex: 100vw 0 0;
-			transition-property: scale, border-radius, box-shadow;
+			transition-property: border-radius, box-shadow;
 			transition-duration: var(--nav-transition);
+
+			+ & {
+				scale: 0.92;
+			}
 		}
 	}
 	#app-grid {
@@ -386,10 +407,13 @@ html {
 #workarea {
 	-webkit-mask-image: url(#quick-settings-mask);
 	mask-image: url(#quick-settings-mask);
+	mask-position: 0 -2.2em;
+	mask-repeat: no-repeat;
 
-	 #app-grid {
+	#app-grid {
 		-webkit-mask-image: url(#dash-mask);
 		mask-image: url(#dash-mask);
+		mask-repeat: no-repeat;
 	}
 }
 body { /*animations*/
@@ -411,10 +435,6 @@ body { /*animations*/
 			.workspace {
 				border-radius: 30px;
 				box-shadow: 0 16px 32px 8px rgba(0, 0, 0, 0.3);
-
-				+ & {
-					scale: 0.92;
-				}
 			}
 		}
 		&.app-grid {
@@ -431,9 +451,6 @@ body { /*animations*/
 					border-radius: 75px;
 					box-shadow: 0 16px 64px 32px rgba(0, 0, 0, 0.2);
 
-					+ & {
-						scale: 1.0;
-					}
 				}
 			}
 			#dash #show-apps-toggle {
@@ -472,29 +489,24 @@ body { /*animations*/
 		}
 	}
 	#toggles {
-		gap: 1em 0.5em;
+		gap: 1em;
 		display: grid;
-		grid-template-columns: 50% 50%;
+		grid-template-columns: auto auto;
 
-		& label {
-			position: relative;
-			margin-right: 10px;
+		input[type=checkbox], input[type=button] {
+			all: unset;
+			display: block;
+			background-color: var(--toggle-color);
+			border-radius: 30px;
+			padding:15px 25px 11px;
+			transition: color var(--theme-transition);
 
-			& input {
-				&[type=checkbox], &[type=file] {
-					opacity: 0;
-					display: none;
-				}
-				~ h3{
-					background-color: var(--toggle-color);
-					border-radius: 30px;
-					padding:13px 25px;
-					width:100%;
-					transition: transform var(--nav-transition), color var(--theme-transition);
-				}
-				&[type=checkbox]:checked ~ h3{
-					background-color: var(--accent-color)
-				}
+			&::after {
+				content: attr(name);
+				color: var(--text-color);
+			}
+			&:checked{
+				background-color: var(--accent-color)
 			}
 		}
 	}
