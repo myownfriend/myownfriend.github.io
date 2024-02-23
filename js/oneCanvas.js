@@ -156,6 +156,8 @@ window.draw = (element) => {
 		gl.uniform1f(bright, Math.cbrt((abs >= 0.04045) ? ((val >= 0) - (val < 0)) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92));
 		gl.uniform1f(depth , element.depth);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+		//console.log(element);
 	}
 	for (const child of element.children) {
 		draw(child);

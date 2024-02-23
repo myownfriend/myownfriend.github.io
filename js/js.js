@@ -1,5 +1,5 @@
 "use strict";
-import './oneCanvas.js';
+
 
 window.addAnimation = (() => {
 	const queue = new Array();
@@ -15,6 +15,9 @@ window.addAnimation = (() => {
 			}
 		}
 		update(scene_graph);
+
+		//console.log(performance.now());
+
 		if (!queue.length)
 			return active = false;
 		requestAnimationFrame(animate);
@@ -45,7 +48,7 @@ scene_graph.appendChild((() => {
 	const cent  = obj.appendChild(document.createElement('li'));
 	const right = obj.appendChild(document.createElement('li'));
 	left.appendChild((() => {
-			const obj = Object.assign(document.createElement('button'), {id: 'overview-toggle'});
+			const obj = Object.assign(document.createElement('button'), {id: 'overview-toggle', depth : 1.2});
 			obj.appendChild(document.createElement('div'));
 			obj.appendChild(document.createElement('div'));
 			obj.onclick = () => {
@@ -58,7 +61,7 @@ scene_graph.appendChild((() => {
 			};
 			return obj;
 	})());
-	cent.appendChild(Object.assign(document.createElement('button'), { id: 'clock', innerHTML : 'Thu Nov 25  2:15 AM'}));
+	cent.appendChild(Object.assign(document.createElement('button'), { id: 'clock', depth : 1.2, innerHTML : 'Thu Nov 25  2:15 AM'}));
 	right.appendChild((()=> {
 		let text = '';
 		for (const icon of [
@@ -69,7 +72,7 @@ scene_graph.appendChild((() => {
 			'battery-charging'
 		])
 		text += `<svg><use href="img/icons.svg#${icon}"/></svg>`;
-		return Object.assign(document.createElement('button'), {id: 'system-status-area', innerHTML : text})
+		return Object.assign(document.createElement('button'), {id: 'system-status-area', depth : 1.2, innerHTML : text})
 	})())
 	return obj;
 })());
@@ -140,24 +143,29 @@ scene_graph.appendChild((()=> {
 		const word   = label.appendChild(document.createElement('h3'));
 		word.innerHTML = `<svg><use href="img/icons.svg#${name.toLowerCase().replace(/\s+/g, "-")}"/></svg>${name}`;
 		toggle.setAttribute('type', type);
+		label.depth = 1.5;
 		return label;
 	}
 	const obj = Object.assign(document.createElement('form'), {
 		id :'quick-settings', className: 'dropdown', depth: 1.5,
 	});
 	obj.mask = createMask(obj);
-	obj.innerHTML = `<ul id="user-area"><li></li><li></li><li></li><li></li></ul>
-		<div id="audio-main">
-			<div class="volume-slider">
-				<input type="range" min="1" max="100" value="40"/>
-			</div>
-		</div>`;
+	const userarea = obj.appendChild(Object.assign(document.createElement('ul'), {id: 'user-area'}));
+	for (let i = 0; i < 4; i++)
+		userarea.appendChild(Object.assign(document.createElement('li'), {depth: 1.5}));
+
+	const audio_area = obj.appendChild(Object.assign(document.createElement('div'), {id : 'audio-main'}))
+	const volume = audio_area.appendChild(Object.assign(document.createElement('div'), {className : 'volume-slider'}));
+	const track = volume.appendChild(Object.assign(document.createElement('div'), {className : 'track', depth: 1.5}));
+	const range = volume.appendChild(document.createElement('input'));
+	range.setAttribute('type', 'range');
+
 	const toggles = obj.appendChild(Object.assign(document.createElement('div'), {id: 'toggles'}));
 	window.wired  = addToggle('Wired');
 	window.wifi   = addToggle('Wi-Fi');
 	window.blue   = addToggle('Bluetooth');
 	window.power  = addToggle('Power Saver',);
-	window.theme  = addToggle('Dark Mode').firstChild;
+	window.theme  = addToggle('Dark Style').firstChild;
 	theme.set = () => {
 		document.body.id = (theme.checked ? 'dark' : 'light') + "-mode";
 		addAnimation(300, () => {
@@ -166,12 +174,15 @@ scene_graph.appendChild((()=> {
 	}
 	theme.onchange = theme.set;
 	background.upload = addToggle('Upload Image', 'file');
-	background.upload.setAttribute('accept', 'image/jpeg, image/jpg, image/png, image/webp, image/gif, image/svg+xml, image/jxl');
+	background.upload.firstChild.setAttribute('accept', 'image/jpeg, image/jpg, image/png, image/webp, image/gif, image/svg+xml, image/jxl');
 	background.upload.onchange = (e) => {
 		background.set(e.target.files[0])
 	}
 	return obj;
 })());
+
+
+import './oneCanvas.js';
 
 (async () => {
 	const scheme = matchMedia('(prefers-color-scheme: dark)');
