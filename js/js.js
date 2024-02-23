@@ -1,13 +1,5 @@
 "use strict";
-window.lastDraw = 0;
-window.averageFrameTime = 0;
-window.frames = 0;
 import './oneCanvas.js';
-
-window.fileUpload = document.createElement('input');
-window.fileUpload.setAttribute('type', 'file');
-window.fileUpload.setAttribute('accept', 'image/jpeg, image/jpg, image/png, image/webp, image/gif, image/svg+xml, image/jxl');
-window.fileUpload.onchange = (e) => { background.set(e.target.files[0]) };
 
 window.addAnimation = (() => {
 	const queue = new Array();
@@ -22,29 +14,32 @@ window.addAnimation = (() => {
 				i--;
 			}
 		}
-		draw();
+		update(scene_graph);
 		if (!queue.length)
 			return active = false;
 		requestAnimationFrame(animate);
 	}
 	return (length, task, cleanup = null) => {
 		queue.push({ end : performance.now() + length, task, cleanup });
-		if (active) return;
+		if (active)
+			return;
 		active = true;
 		animate();
 	}
 })();
 
-window.surfaces = new Array();
 window.onresize = () => {
 	updateBackground();
-	addAnimation(0, updateSurfaces)
+	update(scene_graph);
 };
 
-document.body.className = 'overview';
-document.body.depth = 1.0;
+const scene_graph = document.body.appendChild(Object.assign(document.createElement('section'), {
+	id : "sceneGraph",
+	depth : 1.0,
+}));
+scene_graph.className = 'overview';
 
-document.body.appendChild((() => {
+scene_graph.appendChild((() => {
 	const obj   = Object.assign(document.createElement('ul'), {id:'panel'});
 	const left  = obj.appendChild(document.createElement('li'));
 	const cent  = obj.appendChild(document.createElement('li'));
@@ -54,11 +49,11 @@ document.body.appendChild((() => {
 			obj.appendChild(document.createElement('div'));
 			obj.appendChild(document.createElement('div'));
 			obj.onclick = () => {
-				if (document.body.classList.contains('app-grid'))
-					document.body.classList.remove('overview', 'app-grid');
+				if (scene_graph.classList.contains('app-grid'))
+					scene_graph.classList.remove('overview', 'app-grid');
 				else {
-					document.body.classList.toggle('overview');
-					document.body.classList.remove('app-grid');
+					scene_graph.classList.toggle('overview');
+					scene_graph.classList.remove('app-grid');
 				}
 			};
 			return obj;
@@ -79,7 +74,7 @@ document.body.appendChild((() => {
 	return obj;
 })());
 
-const workarea = document.body.appendChild(Object.assign(document.createElement('main'), {id : 'workarea'}));
+const workarea = scene_graph.appendChild(Object.assign(document.createElement('main'), {id : 'workarea'}));
 
 workarea.appendChild((() => {
 	const icon = Object.assign(document.createElement('p'), { innerHTML : '<svg><use href="img/icons.svg#search"/></svg>'});
@@ -109,7 +104,9 @@ workarea.appendChild((()=> {
 })());
 
 workarea.appendChild((() => {
-	const obj = Object.assign(document.createElement('div'), {id: 'dash', className: 'hidden', depth: 1.1, mask: true});
+	const obj = Object.assign(document.createElement('div'), {
+		id: 'dash', className: 'hidden', depth: 1.1});
+	obj.mask = createMask(obj);
 	obj.appendChild(addAppList( [
 		['Files','Nautilus', true],
 		['Software','Software', false],
@@ -117,7 +114,7 @@ workarea.appendChild((() => {
 	], true));
 	obj.innerHTML += `<div id="show-apps-toggle" class="app"><svg viewbox="0 0 16 16"><use href="img/icons.svg#show-apps"/></svg><p class="name">Show Apps</p></div>`;
 	obj.lastChild.onclick = () => {
-		document.body.classList.toggle('app-grid');
+		scene_graph.classList.toggle('app-grid');
 	};
 	return obj;
 })());
@@ -136,14 +133,19 @@ workarea.appendChild((() => {
 	return obj;
 })());
 
-document.body.appendChild((()=> {
+scene_graph.appendChild((()=> {
 	function addToggle(name, type="checkbox") {
-		const toggle = toggles.appendChild(document.createElement('input'));
-		toggle.setAttribute('name', name);
+		const label  = toggles.appendChild(document.createElement('label'));
+		const toggle = label.appendChild(document.createElement('input'));
+		const word   = label.appendChild(document.createElement('h3'));
+		word.innerHTML = `<svg><use href="img/icons.svg#${name.toLowerCase().replace(/\s+/g, "-")}"/></svg>${name}`;
 		toggle.setAttribute('type', type);
-		return toggle;
+		return label;
 	}
-	const obj = Object.assign(document.createElement('form'), {id :'quick-settings', className: 'dropdown', depth: 1.5, mask: true});
+	const obj = Object.assign(document.createElement('form'), {
+		id :'quick-settings', className: 'dropdown', depth: 1.5,
+	});
+	obj.mask = createMask(obj);
 	obj.innerHTML = `<ul id="user-area"><li></li><li></li><li></li><li></li></ul>
 		<div id="audio-main">
 			<div class="volume-slider">
@@ -154,34 +156,34 @@ document.body.appendChild((()=> {
 	window.wired  = addToggle('Wired');
 	window.wifi   = addToggle('Wi-Fi');
 	window.blue   = addToggle('Bluetooth');
-	window.power  = addToggle('Power Saver');
-	window.theme  = addToggle('Dark Mode');
+	window.power  = addToggle('Power Saver',);
+	window.theme  = addToggle('Dark Mode').firstChild;
 	theme.set = () => {
 		document.body.id = (theme.checked ? 'dark' : 'light') + "-mode";
-		addAnimation(300, updateBrightness);
+		addAnimation(300, () => {
+			update(scene_graph);
+		});
 	}
 	theme.onchange = theme.set;
-	background.upload = addToggle('Upload Image', 'button');
-	background.upload.onclick = () => {
-		window.fileUpload.click();
-	};
+	background.upload = addToggle('Upload Image', 'file');
+	background.upload.setAttribute('accept', 'image/jpeg, image/jpg, image/png, image/webp, image/gif, image/svg+xml, image/jxl');
+	background.upload.onchange = (e) => {
+		background.set(e.target.files[0])
+	}
 	return obj;
 })());
 
 (async () => {
 	const scheme = matchMedia('(prefers-color-scheme: dark)');
+	const image = await fetch('data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQvOY1r/+BiOh/AAA=')
+	.then(res  => res.blob())
+	.then(blob => blob);
+	background.set(image);
 	scheme.onchange = (e)=> {
 		theme.checked = e.target.matches;
 		theme.set();
 	};
 	scheme.dispatchEvent(new Event('change'));
-	getSurfaces(document.body);
-	updateSurfaces();
-	surfaces.sort((a,b) => a.depth - b.depth);
-	const image = await fetch('data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQvOY1r/+BiOh/AAA=')
-	.then(res  => res.blob())
-	.then(blob => blob);
-	background.set(image);
 })();
 
 function addAppList(apps, hidden = false) {
@@ -191,10 +193,4 @@ function addAppList(apps, hidden = false) {
 	for (let i = 0; i < apps.length; i++)
 		obj.innerHTML += `<li class="app${(apps[i][2] ? ` open` : ``)}" ><img src="apps/org.gnome.${apps[i][1]}.svg"/><h2 class="name">${apps[i][0]}</h2></li>`;
 	return obj;
-}
-
-window.getBrightness = (obj) => {
-	const val = (getComputedStyle(obj).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
-	const abs = Math.abs(val);
-	return Math.cbrt((abs >= 0.04045) ? ((val >= 0) - (val < 0)) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92);
 }
