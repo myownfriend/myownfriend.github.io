@@ -1,54 +1,20 @@
 "use strict";
 
-
-window.addAnimation = (() => {
-	const queue = new Array();
-	let  active = false;
-	function animate() {
-		for (let i = 0; i < queue.length; i++) {
-			queue[i].task();
-			if (queue[i].end < performance.now()) {
-				if (queue[i].cleanup)
-					queue[i].cleanup();
-				queue.splice(i, 1);
-				i--;
-			}
-		}
-		update(scene_graph);
-
-		//console.log(performance.now());
-
-		if (!queue.length)
-			return active = false;
-		requestAnimationFrame(animate);
-	}
-	return (length, task, cleanup = null) => {
-		queue.push({ end : performance.now() + length, task, cleanup });
-		if (active)
-			return;
-		active = true;
-		animate();
-	}
-})();
-
-window.onresize = () => {
-	updateBackground();
-	update(scene_graph);
-};
-
 const scene_graph = document.body.appendChild(Object.assign(document.createElement('section'), {
 	id : "sceneGraph",
+	className : 'overview',
 	depth : 1.0,
 }));
-scene_graph.className = 'overview';
 
 scene_graph.appendChild((() => {
-	const obj   = Object.assign(document.createElement('ul'), {id:'panel'});
+	const obj   = Object.assign(document.createElement('ul'), {
+		id:'panel'
+	});
 	const left  = obj.appendChild(document.createElement('li'));
 	const cent  = obj.appendChild(document.createElement('li'));
 	const right = obj.appendChild(document.createElement('li'));
 	left.appendChild((() => {
-			const obj = Object.assign(document.createElement('button'), {id: 'overview-toggle', depth : 1.2});
+			const obj = Object.assign(document.createElement('button'), {id: 'overview-toggle', depth : 1.1});
 			obj.appendChild(document.createElement('div'));
 			obj.appendChild(document.createElement('div'));
 			obj.onclick = () => {
@@ -61,7 +27,7 @@ scene_graph.appendChild((() => {
 			};
 			return obj;
 	})());
-	cent.appendChild(Object.assign(document.createElement('button'), { id: 'clock', depth : 1.2, innerHTML : 'Thu Nov 25  2:15 AM'}));
+	cent.appendChild(Object.assign(document.createElement('button'), { id: 'clock', depth : 1.1, innerHTML : 'Thu Nov 25  2:15 AM'}));
 	right.appendChild((()=> {
 		let text = '';
 		for (const icon of [
@@ -72,7 +38,7 @@ scene_graph.appendChild((() => {
 			'battery-charging'
 		])
 		text += `<svg><use href="img/icons.svg#${icon}"/></svg>`;
-		return Object.assign(document.createElement('button'), {id: 'system-status-area', depth : 1.2, innerHTML : text})
+		return Object.assign(document.createElement('button'), {id: 'system-status-area', depth : 1.1, innerHTML : text})
 	})())
 	return obj;
 })());
@@ -108,7 +74,10 @@ workarea.appendChild((()=> {
 
 workarea.appendChild((() => {
 	const obj = Object.assign(document.createElement('div'), {
-		id: 'dash', className: 'hidden', depth: 1.1});
+		id: 'dash',
+		className: 'hidden',
+		depth: 1.1,
+	});
 	obj.mask = createMask(obj);
 	obj.appendChild(addAppList( [
 		['Files','Nautilus', true],
@@ -139,21 +108,23 @@ workarea.appendChild((() => {
 scene_graph.appendChild((()=> {
 	function addToggle(name, type="checkbox") {
 		const label  = toggles.appendChild(document.createElement('label'));
+		label.depth = 1.5;
 		const toggle = label.appendChild(document.createElement('input'));
 		const word   = label.appendChild(document.createElement('h3'));
 		word.innerHTML = `<svg><use href="img/icons.svg#${name.toLowerCase().replace(/\s+/g, "-")}"/></svg>${name}`;
 		toggle.setAttribute('type', type);
-		label.depth = 1.5;
 		return label;
 	}
 	const obj = Object.assign(document.createElement('form'), {
-		id :'quick-settings', className: 'dropdown', depth: 1.5,
+		id :'quick-settings',
+		className: 'dropdown',
+		depth: 1.5,
 	});
 	obj.mask = createMask(obj);
 	const userarea = obj.appendChild(Object.assign(document.createElement('ul'), {id: 'user-area'}));
-	for (let i = 0; i < 4; i++)
+	for (let i = 0; i < 4; i++) {
 		userarea.appendChild(Object.assign(document.createElement('li'), {depth: 1.5}));
-
+	}
 	const audio_area = obj.appendChild(Object.assign(document.createElement('div'), {id : 'audio-main'}))
 	const volume = audio_area.appendChild(Object.assign(document.createElement('div'), {className : 'volume-slider'}));
 	const track = volume.appendChild(Object.assign(document.createElement('div'), {className : 'track', depth: 1.5}));
@@ -166,13 +137,13 @@ scene_graph.appendChild((()=> {
 	window.blue   = addToggle('Bluetooth');
 	window.power  = addToggle('Power Saver',);
 	window.theme  = addToggle('Dark Style').firstChild;
+
 	theme.set = () => {
 		document.body.id = (theme.checked ? 'dark' : 'light') + "-mode";
-		addAnimation(300, () => {
-			update(scene_graph);
-		});
+		addAnimation(300, update);
 	}
 	theme.onchange = theme.set;
+
 	background.upload = addToggle('Upload Image', 'file');
 	background.upload.firstChild.setAttribute('accept', 'image/jpeg, image/jpg, image/png, image/webp, image/gif, image/svg+xml, image/jxl');
 	background.upload.onchange = (e) => {
