@@ -1,9 +1,11 @@
 "use strict";
+import './canvas.js';
 
 const scene_graph = document.body.appendChild(Object.assign(document.createElement('section'), {
 	id : "sceneGraph",
 	className : 'overview',
 	depth : 1.0,
+	update : drawSelf,
 }));
 
 scene_graph.appendChild((() => {
@@ -14,7 +16,11 @@ scene_graph.appendChild((() => {
 	const cent  = obj.appendChild(document.createElement('li'));
 	const right = obj.appendChild(document.createElement('li'));
 	left.appendChild((() => {
-			const obj = Object.assign(document.createElement('button'), {id: 'overview-toggle', depth : 1.1});
+			const obj = Object.assign(document.createElement('button'), {
+				id: 'overview-toggle',
+				depth : 1.1,
+				update : drawSelf,
+			});
 			obj.appendChild(document.createElement('div'));
 			obj.appendChild(document.createElement('div'));
 			obj.onclick = () => {
@@ -27,7 +33,12 @@ scene_graph.appendChild((() => {
 			};
 			return obj;
 	})());
-	cent.appendChild(Object.assign(document.createElement('button'), { id: 'clock', depth : 1.1, innerHTML : 'Thu Nov 25  2:15 AM'}));
+	cent.appendChild(Object.assign(document.createElement('button'), {
+		id: 'clock',
+		depth : 1.1,
+		update : drawSelf,
+		innerHTML : 'Thu Nov 25  2:15 AM'}
+	));
 	right.appendChild((()=> {
 		let text = '';
 		for (const icon of [
@@ -38,7 +49,12 @@ scene_graph.appendChild((() => {
 			'battery-charging'
 		])
 		text += `<svg><use href="img/icons.svg#${icon}"/></svg>`;
-		return Object.assign(document.createElement('button'), {id: 'system-status-area', depth : 1.1, innerHTML : text})
+		return Object.assign(document.createElement('button'), {
+			id: 'system-status-area',
+			depth : 1.1,
+			innerHTML : text,
+			update : drawSelf,
+		})
 	})())
 	return obj;
 })());
@@ -50,7 +66,11 @@ workarea.appendChild((() => {
 	const bar = icon.appendChild(document.createElement('input'));
 	bar.setAttribute('type', 'text');
 	bar.setAttribute('placeholder', 'Type to search');
-	const obj = Object.assign(document.createElement('label'), { id : 'search', depth: 1.1});
+	const obj = Object.assign(document.createElement('label'), {
+		id : 'search',
+		depth: 1.1,
+		update : drawSelf,
+	});
 	obj.appendChild(icon);
 	return obj;
 })());
@@ -77,6 +97,7 @@ workarea.appendChild((() => {
 		id: 'dash',
 		className: 'hidden',
 		depth: 1.1,
+		update : drawSelf,
 	});
 	obj.mask = createMask(obj);
 	obj.appendChild(addAppList( [
@@ -109,6 +130,7 @@ scene_graph.appendChild((()=> {
 	function addToggle(name, type="checkbox") {
 		const label  = toggles.appendChild(document.createElement('label'));
 		label.depth = 1.5;
+		label.update = drawSelf;
 		const toggle = label.appendChild(document.createElement('input'));
 		const word   = label.appendChild(document.createElement('h3'));
 		word.innerHTML = `<svg><use href="img/icons.svg#${name.toLowerCase().replace(/\s+/g, "-")}"/></svg>${name}`;
@@ -119,15 +141,23 @@ scene_graph.appendChild((()=> {
 		id :'quick-settings',
 		className: 'dropdown',
 		depth: 1.5,
+		update : drawSelf,
 	});
 	obj.mask = createMask(obj);
 	const userarea = obj.appendChild(Object.assign(document.createElement('ul'), {id: 'user-area'}));
 	for (let i = 0; i < 4; i++) {
-		userarea.appendChild(Object.assign(document.createElement('li'), {depth: 1.5}));
+		userarea.appendChild(Object.assign(document.createElement('li'), {
+			depth  : 1.5,
+			update : drawSelf,
+		}));
 	}
 	const audio_area = obj.appendChild(Object.assign(document.createElement('div'), {id : 'audio-main'}))
 	const volume = audio_area.appendChild(Object.assign(document.createElement('div'), {className : 'volume-slider'}));
-	const track = volume.appendChild(Object.assign(document.createElement('div'), {className : 'track', depth: 1.5}));
+	const track = volume.appendChild(Object.assign(document.createElement('div'), {
+		className : 'track',
+		depth: 1.5,
+		update : drawSelf,
+	}));
 	const range = volume.appendChild(document.createElement('input'));
 	range.setAttribute('type', 'range');
 
@@ -140,7 +170,7 @@ scene_graph.appendChild((()=> {
 
 	theme.set = () => {
 		document.body.id = (theme.checked ? 'dark' : 'light') + "-mode";
-		addAnimation(300, update);
+		update(300);
 	}
 	theme.onchange = theme.set;
 
@@ -151,9 +181,6 @@ scene_graph.appendChild((()=> {
 	}
 	return obj;
 })());
-
-
-import './oneCanvas.js';
 
 (async () => {
 	const scheme = matchMedia('(prefers-color-scheme: dark)');
