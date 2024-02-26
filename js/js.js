@@ -63,15 +63,17 @@ const workarea = scene_graph.appendChild(Object.assign(document.createElement('m
 }));
 
 workarea.appendChild((() => {
-	const icon = Object.assign(document.createElement('p'), { innerHTML : '<svg><use href="img/icons.svg#search"/></svg>'});
-	const bar = icon.appendChild(document.createElement('input'));
-	bar.setAttribute('type', 'text');
-	bar.setAttribute('placeholder', 'Type to search');
 	const obj = Object.assign(document.createElement('label'), {
 		id : 'search',
 		update : drawSelf,
+		//innerHTML: '<svg><use href="img/icons.svg#search"/></svg>',
 	});
-	obj.appendChild(icon);
+	const bar = obj.appendChild(document.createElement('input'));
+	const p   = obj.appendChild(document.createElement('p'));
+	bar.setAttribute('type', 'text');
+	bar.setAttribute('placeholder', 'Type to search');
+	p.innerHTML += '<svg><use href="img/icons.svg#search"/></svg>';
+	// obj.appendChild(icon);
 	return obj;
 })());
 
@@ -138,7 +140,7 @@ scene_graph.appendChild((()=> {
 	const obj = Object.assign(document.createElement('form'), {
 		id :'quick-settings',
 		className: 'dropdown',
-		depth: 1.5,
+		depth: 1.2,
 		update : drawSelf,
 	});
 	obj.mask = createMask(obj);
