@@ -56,6 +56,7 @@ html {
 			--search-hover: rgba(255 255 255 / 0.1);
 			--search-icon:  rgba(255 255 255 / 0.55);
 			--search-place: rgba(255 255 255 / 0.95);
+			--search-focus: rgba(255 255 255 / 0.15);
 			--dropdown-color: rgba(53 53 53 / 0.001);
 			--stage-color: rgba(40 40 40 / 0.001);
 			--thumb-color:  #eee;
@@ -74,6 +75,7 @@ html {
 			--search-hover: rgba(0 0 0 / 0.2);
 			--search-icon:  rgba(0 0 0 / 0.45);
 			--search-place: rgba(0 0 0 / 0.994);
+			--search-focus: rgba(0 0 0 / 0.25);
 			--dropdown-color: rgba(190 190 190 / 0.01);
 			--stage-color:  rgba(172 172 172 / 0.001);
 			--thumb-color:  #000;
@@ -265,13 +267,39 @@ html {
 		background-color: var(--search-color);
 		transition-property: background-color;
 		transition-duration: var(--theme-transition);
-
+		padding:10px 16px;
+		height:40px;
 		box-sizing: border-box;
 
+		& p {
+			padding: 8px 12px;
+			border-radius: inherit;
+			display: flex;
+			align-items: center;
+			transition-property: background-color;
+			transition-duration: var(--nav-transition);
+			position: absolute;
+			width: 100%;
+			height:100%;
+			z-index: -1;
+			top:0;
+			left:0;
+
+			& svg {
+				width: 16px;
+				aspect-ratio: 1;
+				transform: translate(0, 1px);
+
+				& use {
+					fill: var(--search-icon);
+				}
+			}
+		}
 		& input {
 			background-color: transparent;
 			border:none;
 			outline: none;
+			margin-left: 20px;
 			font-size: 15px;
 			font-weight: 400;
 			color: var(--text-color);
@@ -282,31 +310,16 @@ html {
 				color:var(--search-place);
 			}
 		}
-		& p {
-			border: 2px solid transparent;
-			padding: 8px 12px;
-			border-radius: inherit;
-			display: flex;
-			align-items: center;
-			transition-property: background-color;
-			transition-duration: var(--nav-transition);
-
-		}
-		& svg {
-			width: 16px;
-			height: 16px;
-			margin-right: 8px;
-			transform: translate(0, 2px);
-
-			& use {
-				fill: var(--search-icon);
-			}
-		}
 		&:hover p {
 			background: var(--search-hover);
 		}
-		&:focus p {
-			border: 2px solid var(--accent-color);
+		input:focus + p {
+			box-shadow: inset 0 0 0 2px var(--accent-color);
+			background-color: var(--search-focus);
+
+			& svg use{
+				fill: var(--extreme-fg);
+			}
 		}
 	}
 	#workspaces {
