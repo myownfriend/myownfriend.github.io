@@ -340,7 +340,7 @@ html {
 		transition-property: translate, gap;
 		transition-duration: var(--nav-transition);
 
-		.workspace {
+		& svg {
 			flex: 100vw 0 0;
 			transition-property: border-radius, box-shadow;
 			transition-duration: var(--nav-transition);
@@ -434,7 +434,7 @@ html {
 		#workspaces {
 			translate:0 -2.5svh -0.2rem;
 
-			.workspace {
+			& svg {
 				border-radius: 30px;
 				box-shadow: 0 16px 32px 8px rgba(0, 0, 0, 0.3);
 			}
@@ -449,10 +449,9 @@ html {
 				gap: 16rem;
 				translate: calc(-50vw - 16rem) -160vh -4rem;
 
-				& .workspace {
+				& svg {
 					border-radius: 75px;
 					box-shadow: 0 16px 64px 32px rgba(0, 0, 0, 0.2);
-
 				}
 			}
 			#dash #show-apps-toggle {
@@ -475,6 +474,9 @@ html {
 	width: 400px;
 	padding: 18px calc(6px * 3) 28px;
 	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	gap:24px;
 
 	#user-area {
 		height:40px;
@@ -556,6 +558,6 @@ html {
 		}
 	}
 	#audio-main {
-		margin: 15px 30px;
+		padding: 0 30px;
 	}
 }
