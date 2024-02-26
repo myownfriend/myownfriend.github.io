@@ -211,11 +211,6 @@ html {
 		padding: 2px 12px;
 		margin: 3px;
 
-		& svg {
-			margin: 2px 4px 0;
-			height:16px;
-			aspect-ratio: 1;
-		}
 		&:hover {
 			background: var(--dash-hover);
 		}
@@ -242,7 +237,12 @@ html {
 		display: flex;
 		align-items: center;
 		background-color: var(--hover-shade);
-		padding: 1px 12px 4px;
+		gap:8px;
+
+		& svg {
+			height:16px;
+			aspect-ratio: 1;
+		}
 	}
 }
 #workarea {
@@ -267,15 +267,13 @@ html {
 		background-color: var(--search-color);
 		transition-property: background-color;
 		transition-duration: var(--theme-transition);
-		padding:10px 16px;
+		padding:10px 15px;
 		height:40px;
 		box-sizing: border-box;
 
 		& p {
-			padding: 8px 12px;
 			border-radius: inherit;
 			display: flex;
-			align-items: center;
 			transition-property: background-color;
 			transition-duration: var(--nav-transition);
 			position: absolute;
@@ -288,7 +286,8 @@ html {
 			& svg {
 				width: 16px;
 				aspect-ratio: 1;
-				transform: translate(0, 1px);
+				transform: translate(12px, 13px);
+				fill: var(--search-icon);
 
 				& use {
 					fill: var(--search-icon);
@@ -302,6 +301,7 @@ html {
 			margin-left: 20px;
 			font-size: 15px;
 			font-weight: 400;
+			height:17px;
 			color: var(--text-color);
 			transition-property: color;
 			transition-duration: var(--theme-transition);
@@ -363,6 +363,10 @@ html {
 			padding: 15px 30px;
 			max-width: calc((100% - (7 * 2%)) / 8);
 			border-radius: 20px;
+
+			img {
+				filter: drop-shadow(0 0 6px rgba(0 0 0 / 0.1))
+			}
 		}
 	}
 	#dash {
