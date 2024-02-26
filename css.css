@@ -36,75 +36,51 @@
 html {
 	cursor: default;
 	user-select: none;
-	--nav-transition: 250ms;
+	--nav-transition: 300ms;
 	--theme-transition:  300ms;
 	background-color: #000;
 	min-width:1366px;
 	min-height:768px;
 
-	animation-name: fade_from_black;
-	animation-duration: 1s;
-	animation-fill-mode: forwards;
-
 	body {
 		overflow: hidden;
-	}
-	& #dark-mode  {
-		--text-color:   rgb(229 229 229);
 
-		--dash-color:   rgba(61 61 61 / 0.01);
-
-		--dash-hover:   rgba(170 170 170 / 0.001);
-		--hover-shade:  rgba( 91  91  91 / 0.001);
-
-		--track-color: rgba(93 93 93 / 0.001);
-
-		--toggle-color: rgba(71 71 71 / 0.001);
-
-		--search-color: rgba(70 70 70 / 0.001);
-
-
-		--search-hover: rgba(255 255 255 / 0.1);
-		--search-icon:  rgba(255 255 255 / 0.55);
-		--search-place: rgba(255 255 255 / 0.95);
-
-		--dropdown-color: rgba(53 53 53 / 0.001);
-
-
-		--stage-color: rgba(40 40 40 / 0.001);
-
-		--thumb-color:  #eee;
-		--extreme-bg:   #000;
-		--extreme-fg:   #fff;
-		--symbol-color: rgb(246 245 245);
-	}
-	& #light-mode  {
-		--text-color  : rgb(2 2 2);
-
-		--dash-color  : rgba(145 145 145 / 0.01);
-
-		--dash-hover  : rgba(0 0 0 / 0.08);
-		--hover-shade : rgba(141 141 141 / 0.001);
-
-		--track-color : rgba(160 160 160 / 0.001);
-		--toggle-color: rgba(170 170 170 / 0.001);
-
-		--search-color: rgba(145 145 145 / 0.001);
-
-		--search-hover: rgba(0 0 0 / 0.2);
-		--search-icon:  rgba(0 0 0 / 0.45);
-		--search-place: rgba(0 0 0 / 0.994);
-
-		--dropdown-color: rgba(190 190 190 / 0.01);
-
-
-		--stage-color:  rgba(172 172 172 / 0.001);
-
-
-		--thumb-color:  #000;
-		--extreme-bg:   #fff;
-		--extreme-fg:   #000;
-		--symbol-color: rgb(4 4 4);
+		&[theme="dark"]  {
+			--text-color:   rgb(229 229 229);
+			--dash-color:   rgba(61 61 61 / 0.01);
+			--dash-hover:   rgba(170 170 170 / 0.001);
+			--hover-shade:  rgba( 91  91  91 / 0.001);
+			--track-color: rgba(93 93 93 / 0.001);
+			--toggle-color: rgba(71 71 71 / 0.001);
+			--search-color: rgba(70 70 70 / 0.001);
+			--search-hover: rgba(255 255 255 / 0.1);
+			--search-icon:  rgba(255 255 255 / 0.55);
+			--search-place: rgba(255 255 255 / 0.95);
+			--dropdown-color: rgba(53 53 53 / 0.001);
+			--stage-color: rgba(40 40 40 / 0.001);
+			--thumb-color:  #eee;
+			--extreme-bg:   #000;
+			--extreme-fg:   #fff;
+			--symbol-color: rgb(246 245 245);
+		}
+		&[theme="light"]  {
+			--text-color  : rgb(2 2 2);
+			--dash-color  : rgba(145 145 145 / 0.01);
+			--dash-hover  : rgba(0 0 0 / 0.08);
+			--hover-shade : rgba(141 141 141 / 0.001);
+			--track-color : rgba(160 160 160 / 0.001);
+			--toggle-color: rgba(170 170 170 / 0.001);
+			--search-color: rgba(145 145 145 / 0.001);
+			--search-hover: rgba(0 0 0 / 0.2);
+			--search-icon:  rgba(0 0 0 / 0.45);
+			--search-place: rgba(0 0 0 / 0.994);
+			--dropdown-color: rgba(190 190 190 / 0.01);
+			--stage-color:  rgba(172 172 172 / 0.001);
+			--thumb-color:  #000;
+			--extreme-bg:   #fff;
+			--extreme-fg:   #000;
+			--symbol-color: rgb(4 4 4);
+		}
 	}
 	& canvas {
 		width:  100vw;

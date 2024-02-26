@@ -164,8 +164,10 @@ scene_graph.appendChild((()=> {
 	window.power  = addToggle('Power Saver',);
 	window.theme  = addToggle('Dark Style').firstChild;
 
-	theme.set = () => {
-		document.body.id = (theme.checked ? 'dark' : 'light') + "-mode";
+	theme.set = function() {
+		const new_mode = (this.checked ? 'dark' : 'light');
+		document.body.setAttribute('theme', new_mode );
+		localStorage.setItem('theme', new_mode);
 		update(300);
 	}
 	theme.onchange = theme.set;
@@ -188,7 +190,8 @@ scene_graph.appendChild((()=> {
 		theme.checked = e.target.matches;
 		theme.set();
 	};
-	scheme.dispatchEvent(new Event('change'));
+	theme.checked = localStorage.getItem('theme') ? localStorage.getItem('theme') == 'dark' : scheme.matches;
+	theme.set();
 })();
 
 function addAppList(apps, hidden = false) {
