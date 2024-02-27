@@ -203,13 +203,11 @@ window.update = (length = 0) => {
 		return;
 	animate();
 	function animate(timestamp) {
-		if (deadline < timestamp) {
+		draw(document.body);
+		if (!updating) {
 			background.cleanup();
-			updating = false;
 			return;
 		}
-		draw(document.body);
-		updating = true;
 		requestAnimationFrame(animate);
 	}
 }
@@ -223,6 +221,7 @@ function draw(element) {
 		gl.uniform1f(depth , element.depth);
 	if (element.hasOwnProperty('update')) {
 		element.update();
+		updating = deadline > performance.now();
 	}
 	for (const child of element.children)
 		draw(child);
