@@ -180,6 +180,8 @@ scene_graph.appendChild((()=> {
 	const image = await fetch('data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQvOY1r/+BiOh/AAA=')
 	.then(res  => res.blob())
 	.then(blob => blob);
+
+	updateSizes();
 	background.set(image);
 	scheme.onchange = (e)=> {
 		theme.checked = e.target.matches;

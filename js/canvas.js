@@ -87,9 +87,9 @@ const bright = gl.getUniformLocation(program, "brightness");
 const depth  = gl.getUniformLocation(program, "depth");
 
 window.background = gl.canvas.appendChild(Object.assign(document.createElementNS(namespace, 'symbol'), {
-	id : 'background',
-	old : null,
-	now : null,
+	id    : 'background',
+	old   : null,
+	now   : null,
 	set   : function(file) {
 		const bg = document.createElementNS(namespace, 'image');
 		bg.image = new Image();
@@ -129,11 +129,15 @@ analyst.onmessage = (e) => {
 	update(300);
 }
 
-
-window.onresize = () => {
+window.updateSizes = function() {
 	gl.canvas.width  = innerWidth  * devicePixelRatio;
 	gl.canvas.height = innerHeight * devicePixelRatio;
 	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+	getSizes(document.getElementById('sceneGraph'));
+}
+
+window.onresize = () => {
+	updateSizes();
 	update();
 };
 
@@ -150,57 +154,62 @@ window.createMask = (element) => {
 	return mask.appendChild(document.createElementNS(namespace, 'rect'));
 }
 
-window.drawSelf = function() {
-	const rect = this.getBoundingClientRect();
-	const w_center = rect.width  / 2;
-	const h_center = rect.height / 2;
-	rect.bot  = innerHeight - rect.bottom;
-	rect.top2 = innerHeight - rect.top;
+function getSizes(element) {
+	if (element.hasOwnProperty('update')) {
+		const rect = element.getBoundingClientRect();
+		const w_center = rect.width  / 2;
+		const h_center = rect.height / 2;
+		rect.bot  = innerHeight - rect.bottom;
+		rect.top2 = innerHeight - rect.top;
 
-	const rectv = new Float32Array(8);
-	rectv[0] = rectv[2] = rect.left  / innerWidth  *  2 - 1;
-	rectv[4] = rectv[6] = rect.right / innerWidth  *  2 - 1;
-	rectv[3] = rectv[7] = rect.bot   / innerHeight *  2 - 1;
-	rectv[1] = rectv[5] = rect.top2  / innerHeight *  2 - 1;
+		element.rect = new Float32Array(8);
+		element.rect[0] = element.rect[2] = rect.left  / innerWidth  *  2 - 1;
+		element.rect[4] = element.rect[6] = rect.right / innerWidth  *  2 - 1;
+		element.rect[3] = element.rect[7] = rect.bot   / innerHeight *  2 - 1;
+		element.rect[1] = element.rect[5] = rect.top2  / innerHeight *  2 - 1;
 
-	if (this.hasOwnProperty('mask')) {
-		this.mask.setAttribute('x', rect.left);
-		this.mask.setAttribute('y', rect.top - 32);
-		this.mask.setAttribute('height', rect.height);
-		this.mask.setAttribute('width' , rect.width );
+		if (element.hasOwnProperty('mask')) {
+			element.mask.setAttribute('x', rect.left);
+			element.mask.setAttribute('y', rect.top - 32);
+			element.mask.setAttribute('height', rect.height);
+			element.mask.setAttribute('width' , rect.width );
+		}
+		element.size = [
+			(rect.left + w_center) * devicePixelRatio,
+			(rect.bot  + h_center) * devicePixelRatio,
+			w_center * devicePixelRatio,
+			h_center * devicePixelRatio,
+		];
 	}
+	for (const child of element.children)
+		getSizes(child);
+}
 
-	gl.bufferData(gl.ARRAY_BUFFER, rectv, gl.STATIC_DRAW);
-	gl.uniform4fv(size, [
-		(rect.left + w_center) * devicePixelRatio,
-		(rect.bot  + h_center) * devicePixelRatio,
-		w_center * devicePixelRatio,
-		h_center * devicePixelRatio,
-	]);
-
+window.drawSelf = function() {
 	const val = (getComputedStyle(this).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
 	const abs = Math.abs(val);
-	gl.uniform1f(radius, Number(getComputedStyle(this).getPropertyValue('border-radius').split('px')[0] * devicePixelRatio));
 	gl.uniform1f(bright, Math.cbrt((abs >= 0.04045) ? ((val >= 0) - (val < 0)) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92));
+	gl.bufferData(gl.ARRAY_BUFFER, this.rect, gl.STATIC_DRAW);
+	gl.uniform4fv(size, this.size);
+	gl.uniform1f(radius, Number(getComputedStyle(this).getPropertyValue('border-radius').split('px')[0] * devicePixelRatio));
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
 var deadline = 0;
-function update(length = 0) {
-	gl.canvas.width  = innerWidth  * devicePixelRatio;
-	gl.canvas.height = innerHeight * devicePixelRatio;
-	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-
+var updating = false;
+window.update = (length = 0) => {
 	deadline = performance.now() + length;
-
+	if (updating)
+		return;
 	animate();
-
 	function animate(timestamp) {
 		if (deadline < timestamp) {
 			background.cleanup();
+			updating = false;
 			return;
 		}
 		draw(document.body);
+		updating = true;
 		requestAnimationFrame(animate);
 	}
 }
@@ -212,8 +221,9 @@ function updateLights() {
 function draw(element) {
 	if (element.hasOwnProperty('depth'))
 		gl.uniform1f(depth , element.depth);
-	if (element.hasOwnProperty('update'))
+	if (element.hasOwnProperty('update')) {
 		element.update();
+	}
 	for (const child of element.children)
 		draw(child);
 }
