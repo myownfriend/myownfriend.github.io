@@ -89,15 +89,15 @@ const depth  = gl.getUniformLocation(program, "depth");
 window.background = gl.canvas.appendChild(Object.assign(document.createElementNS(namespace, 'symbol'), {
 	id : 'background',
 	old : null,
-	current : null,
+	now : null,
 	set   : function(file) {
 		const bg = document.createElementNS(namespace, 'image');
 		bg.image = new Image();
 		bg.image.src = URL.createObjectURL(file);
 
 		bg.image.onload = () => {
-			this.old = background.current;
-			this.current = bg;
+			this.old = background.now;
+			this.now = bg;
 			bg.aw = Math.max(1.0, bg.image.width  / bg.image.height);
 			bg.ah = Math.max(1.0, bg.image.height / bg.image.width );
 			bg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
@@ -112,7 +112,7 @@ window.background = gl.canvas.appendChild(Object.assign(document.createElementNS
 		}, { once: true };
 	},
 	update  : function() {
-		gl.bufferData(gl.UNIFORM_BUFFER, this.current.lighting, gl.STATIC_READ);
+		gl.bufferData(gl.UNIFORM_BUFFER, this.now.lighting, gl.STATIC_READ);
 	},
 	cleanup : function() {
 		if (this.children.length > 1) {
@@ -124,41 +124,30 @@ window.background = gl.canvas.appendChild(Object.assign(document.createElementNS
 }));
 
 analyst.onmessage = (e) => {
-	background.current.lighting = e.data.lights;
-	background.appendChild(background.current);
+	background.now.lighting = e.data.lights;
+	background.appendChild(background.now);
 	update(300);
 }
 
-var deadline = 0;
-window.update = (length = 0) => {
+
+window.onresize = () => {
 	gl.canvas.width  = innerWidth  * devicePixelRatio;
 	gl.canvas.height = innerHeight * devicePixelRatio;
 	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+	update();
+};
 
-	deadline = performance.now() + length;
-
-	animate();
-
-	function animate(timestamp) {
-		if (deadline < timestamp) {
-			background.cleanup();
-			return;
-		}
-		draw(document.body);
-		requestAnimationFrame(animate);
-	}
+window.setTheme = function() {
+	const new_mode = (this.checked ? 'dark' : 'light');
+	document.body.setAttribute('theme', new_mode );
+	localStorage.setItem('theme', new_mode);
+	update(300);
 }
-
-window.onresize = update;
 
 window.createMask = (element) => {
 	const mask = svg.appendChild(Object.assign(document.createElementNS(namespace,'mask'), {id:`${element.id}-mask`}));
 	mask.appendChild(document.createElementNS(namespace, 'rect'));
 	return mask.appendChild(document.createElementNS(namespace, 'rect'));
-}
-
-function updateLights() {
-	gl.bufferData(gl.UNIFORM_BUFFER, background.current.lighting, gl.STATIC_READ);
 }
 
 window.drawSelf = function() {
@@ -180,6 +169,7 @@ window.drawSelf = function() {
 		this.mask.setAttribute('height', rect.height);
 		this.mask.setAttribute('width' , rect.width );
 	}
+
 	gl.bufferData(gl.ARRAY_BUFFER, rectv, gl.STATIC_DRAW);
 	gl.uniform4fv(size, [
 		(rect.left + w_center) * devicePixelRatio,
@@ -187,14 +177,36 @@ window.drawSelf = function() {
 		w_center * devicePixelRatio,
 		h_center * devicePixelRatio,
 	]);
+
 	const val = (getComputedStyle(this).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
 	const abs = Math.abs(val);
-	gl.uniform1f(radius, Number(getComputedStyle(this).
-	                            getPropertyValue('border-radius').
-	                            split('px')[0] *
-	                            devicePixelRatio));
+	gl.uniform1f(radius, Number(getComputedStyle(this).getPropertyValue('border-radius').split('px')[0] * devicePixelRatio));
 	gl.uniform1f(bright, Math.cbrt((abs >= 0.04045) ? ((val >= 0) - (val < 0)) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92));
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+
+var deadline = 0;
+function update(length = 0) {
+	gl.canvas.width  = innerWidth  * devicePixelRatio;
+	gl.canvas.height = innerHeight * devicePixelRatio;
+	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+	deadline = performance.now() + length;
+
+	animate();
+
+	function animate(timestamp) {
+		if (deadline < timestamp) {
+			background.cleanup();
+			return;
+		}
+		draw(document.body);
+		requestAnimationFrame(animate);
+	}
+}
+
+function updateLights() {
+	gl.bufferData(gl.UNIFORM_BUFFER, background.now.lighting, gl.STATIC_READ);
 }
 
 function draw(element) {

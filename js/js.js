@@ -66,14 +66,12 @@ workarea.appendChild((() => {
 	const obj = Object.assign(document.createElement('label'), {
 		id : 'search',
 		update : drawSelf,
-		//innerHTML: '<svg><use href="img/icons.svg#search"/></svg>',
 	});
 	const bar = obj.appendChild(document.createElement('input'));
 	const p   = obj.appendChild(document.createElement('p'));
 	bar.setAttribute('type', 'text');
 	bar.setAttribute('placeholder', 'Type to search');
 	p.innerHTML += '<svg><use href="img/icons.svg#search"/></svg>';
-	// obj.appendChild(icon);
 	return obj;
 })());
 
@@ -166,12 +164,7 @@ scene_graph.appendChild((()=> {
 	window.power  = addToggle('Power Saver',);
 	window.theme  = addToggle('Dark Style').firstChild;
 
-	theme.set = function() {
-		const new_mode = (this.checked ? 'dark' : 'light');
-		document.body.setAttribute('theme', new_mode );
-		localStorage.setItem('theme', new_mode);
-		update(300);
-	}
+	theme.set = setTheme;
 	theme.onchange = theme.set;
 
 	background.upload = addToggle('Upload Image', 'file');

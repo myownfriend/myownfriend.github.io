@@ -191,6 +191,7 @@ html {
 	justify-content: space-between;
 	contain: strict;
 	width: 100vw;
+	padding: 3px;
 
 	& > * {
 		width:33vw;
@@ -209,7 +210,6 @@ html {
 		border-radius: 14px;
 		transition: background-color var(--nav-transition);
 		padding: 2px 12px;
-		margin: 3px;
 
 		&:hover {
 			background: var(--dash-hover);
