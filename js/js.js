@@ -5,12 +5,12 @@ const scene_graph = document.body.appendChild(Object.assign(document.createEleme
 	id : "sceneGraph",
 	className : 'overview',
 	depth : 1.0,
-	update : drawSelf,
+	update : redraw,
 }));
 
 scene_graph.appendChild((() => {
 	const obj   = Object.assign(document.createElement('ul'), {
-		id:'panel',
+		id :'panel',
 		depth : 1.1,
 	});
 	const left  = obj.appendChild(document.createElement('li'));
@@ -19,7 +19,7 @@ scene_graph.appendChild((() => {
 	left.appendChild((() => {
 			const obj = Object.assign(document.createElement('button'), {
 				id: 'overview-toggle',
-				update : drawSelf,
+				update : redraw,
 			});
 			obj.appendChild(document.createElement('div'));
 			obj.appendChild(document.createElement('div'));
@@ -35,9 +35,19 @@ scene_graph.appendChild((() => {
 	})());
 	cent.appendChild(Object.assign(document.createElement('button'), {
 		id: 'clock',
-		update : drawSelf,
-		innerHTML : 'Thu Nov 25  2:15 AM'}
-	));
+		update : redraw,
+	}));
+	const weekday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+	const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+	function updateClock() {
+		const date = new Date();
+		cent.innerHTML = `${weekday[date.getDay()]} ${months[date.getMonth()]} ${date.getDate()}
+		                  <time>
+						     ${date.getHours() % 12}:${date.getMinutes()} ${date.getHours() >= 12 ? 'P':'A'}M
+						  </time>`;
+	}
+	updateClock();
+	setInterval(updateClock, 1000 * 60);
 	right.appendChild((()=> {
 		let text = '';
 		for (const icon of [
@@ -51,7 +61,7 @@ scene_graph.appendChild((() => {
 		return Object.assign(document.createElement('button'), {
 			id: 'system-status-area',
 			innerHTML : text,
-			update : drawSelf,
+			update : redraw,
 		})
 	})())
 	return obj;
@@ -65,7 +75,7 @@ const workarea = scene_graph.appendChild(Object.assign(document.createElement('m
 workarea.appendChild((() => {
 	const obj = Object.assign(document.createElement('label'), {
 		id : 'search',
-		update : drawSelf,
+		update : redraw,
 	});
 	const bar = obj.appendChild(document.createElement('input'));
 	const p   = obj.appendChild(document.createElement('p'));
@@ -96,7 +106,7 @@ workarea.appendChild((() => {
 	const obj = Object.assign(document.createElement('div'), {
 		id: 'dash',
 		className: 'hidden',
-		update : drawSelf,
+		update : redraw,
 	});
 	obj.mask = createMask(obj);
 	obj.appendChild(addAppList( [
@@ -128,7 +138,7 @@ workarea.appendChild((() => {
 scene_graph.appendChild((()=> {
 	function addToggle(name, type="checkbox") {
 		const label  = toggles.appendChild(document.createElement('label'));
-		label.update = drawSelf;
+		label.update = redraw;
 		const toggle = label.appendChild(document.createElement('input'));
 		const word   = label.appendChild(document.createElement('h3'));
 		word.innerHTML = `<svg><use href="img/icons.svg#${name.toLowerCase().replace(/\s+/g, "-")}"/></svg>${name}`;
@@ -139,20 +149,24 @@ scene_graph.appendChild((()=> {
 		id :'quick-settings',
 		className: 'dropdown',
 		depth: 1.2,
-		update : drawSelf,
+		update : redraw,
 	});
 	obj.mask = createMask(obj);
 	const userarea = obj.appendChild(Object.assign(document.createElement('ul'), {id: 'user-area'}));
 	for (let i = 0; i < 4; i++) {
 		userarea.appendChild(Object.assign(document.createElement('li'), {
-			update : drawSelf,
+			update : redraw,
 		}));
 	}
-	const audio_area = obj.appendChild(Object.assign(document.createElement('div'), {id : 'audio-main'}))
-	const volume = audio_area.appendChild(Object.assign(document.createElement('div'), {className : 'volume-slider'}));
+	const audio_area = obj.appendChild(Object.assign(document.createElement('div'), {
+		id : 'audio-main'
+	}))
+	const volume = audio_area.appendChild(Object.assign(document.createElement('div'), {
+		className : 'volume-slider'
+	}));
 	const track = volume.appendChild(Object.assign(document.createElement('div'), {
 		className : 'track',
-		update : drawSelf,
+		update : redraw,
 	}));
 	const range = volume.appendChild(document.createElement('input'));
 	range.setAttribute('type', 'range');
@@ -168,7 +182,7 @@ scene_graph.appendChild((()=> {
 	theme.onchange = theme.set;
 
 	background.upload = addToggle('Upload Image', 'file');
-	background.upload.firstChild.setAttribute('accept', 'image/jpeg, image/jpg, image/png, image/webp, image/gif, image/svg+xml, image/jxl');
+	background.upload.firstChild.setAttribute('accept', 'image/jpeg, image/jpg, image/png, image/webp, image/gif, image/svg+xml');
 	background.upload.onchange = (e) => {
 		background.set(e.target.files[0])
 	}

@@ -88,7 +88,6 @@ html {
 		width:  100vw;
 		height: 100vh;
 		position: fixed;
-		contain: strict;
 
 		#masks {
 			width:  inherit;
@@ -197,6 +196,13 @@ html {
 		width:33vw;
 		display:flex;
 		justify-content: center;
+		font-size: 1.03em;
+
+		time {
+			display: inline-block;
+			margin-left:16px;
+			font-size: inherit;
+		}
 	}
 	> :first-child {
 		justify-content: flex-start;
@@ -254,7 +260,6 @@ html {
 	justify-content: center;
 	height: calc(100% - 2.2em);
 	perspective: 1vh;
-	-webkit-mask-image: url(#quick-settings-mask);
 	mask-image: url(#quick-settings-mask);
 	mask-position: 0 -2.2em;
 	mask-repeat: no-repeat;
@@ -396,7 +401,6 @@ html {
 		}
 	}
 	#app-grid {
-		-webkit-mask-image: url(#dash-mask);
 		mask-image: url(#dash-mask);
 		mask-repeat: no-repeat;
 	}

@@ -134,9 +134,38 @@ window.updateSizes = function() {
 	gl.canvas.height = innerHeight * devicePixelRatio;
 	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 	getSizes(document.getElementById('sceneGraph'));
+
+	function getSizes(element) {
+		if (element.hasOwnProperty('update')) {
+			const rect = element.getBoundingClientRect();
+			const w_center = rect.width  / 2;
+			const h_center = rect.height / 2;
+			rect.bot  = innerHeight - rect.bottom;
+			rect.top2 = innerHeight - rect.top;
+			element.rect = new Float32Array(8);
+			element.rect[0] = element.rect[2] = rect.left  / innerWidth  *  2 - 1;
+			element.rect[4] = element.rect[6] = rect.right / innerWidth  *  2 - 1;
+			element.rect[3] = element.rect[7] = rect.bot   / innerHeight *  2 - 1;
+			element.rect[1] = element.rect[5] = rect.top2  / innerHeight *  2 - 1;
+			if (element.hasOwnProperty('mask')) {
+				element.mask.setAttribute('x', rect.left);
+				element.mask.setAttribute('y', rect.top - 32);
+				element.mask.setAttribute('height', rect.height);
+				element.mask.setAttribute('width' , rect.width );
+			}
+			element.size = [
+				(rect.left + w_center) * devicePixelRatio,
+				(rect.bot  + h_center) * devicePixelRatio,
+				w_center * devicePixelRatio,
+				h_center * devicePixelRatio,
+			];
+		}
+		for (const child of element.children)
+			getSizes(child);
+	}
 }
 
-window.onresize = () => {
+onresize = () => {
 	updateSizes();
 	update();
 };
@@ -154,38 +183,7 @@ window.createMask = (element) => {
 	return mask.appendChild(document.createElementNS(namespace, 'rect'));
 }
 
-function getSizes(element) {
-	if (element.hasOwnProperty('update')) {
-		const rect = element.getBoundingClientRect();
-		const w_center = rect.width  / 2;
-		const h_center = rect.height / 2;
-		rect.bot  = innerHeight - rect.bottom;
-		rect.top2 = innerHeight - rect.top;
-
-		element.rect = new Float32Array(8);
-		element.rect[0] = element.rect[2] = rect.left  / innerWidth  *  2 - 1;
-		element.rect[4] = element.rect[6] = rect.right / innerWidth  *  2 - 1;
-		element.rect[3] = element.rect[7] = rect.bot   / innerHeight *  2 - 1;
-		element.rect[1] = element.rect[5] = rect.top2  / innerHeight *  2 - 1;
-
-		if (element.hasOwnProperty('mask')) {
-			element.mask.setAttribute('x', rect.left);
-			element.mask.setAttribute('y', rect.top - 32);
-			element.mask.setAttribute('height', rect.height);
-			element.mask.setAttribute('width' , rect.width );
-		}
-		element.size = [
-			(rect.left + w_center) * devicePixelRatio,
-			(rect.bot  + h_center) * devicePixelRatio,
-			w_center * devicePixelRatio,
-			h_center * devicePixelRatio,
-		];
-	}
-	for (const child of element.children)
-		getSizes(child);
-}
-
-window.drawSelf = function() {
+window.redraw = function() {
 	const val = (getComputedStyle(this).getPropertyValue("background-color").split(', ')[1] | 0) / 255;
 	const abs = Math.abs(val);
 	gl.uniform1f(bright, Math.cbrt((abs >= 0.04045) ? ((val >= 0) - (val < 0)) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92));
@@ -202,27 +200,27 @@ window.update = (length = 0) => {
 	if (updating)
 		return;
 	animate();
-	function animate(timestamp) {
+	function animate() {
 		draw(document.body);
 		if (!updating) {
 			background.cleanup();
 			return;
 		}
 		requestAnimationFrame(animate);
+		function draw(element) {
+			if (element.hasOwnProperty('depth'))
+				gl.uniform1f(depth , element.depth);
+			if (element.hasOwnProperty('update')) {
+				element.update();
+				updating = deadline > performance.now();
+			}
+			for (const child of element.children)
+				draw(child);
+		}
+
 	}
 }
 
 function updateLights() {
 	gl.bufferData(gl.UNIFORM_BUFFER, background.now.lighting, gl.STATIC_READ);
-}
-
-function draw(element) {
-	if (element.hasOwnProperty('depth'))
-		gl.uniform1f(depth , element.depth);
-	if (element.hasOwnProperty('update')) {
-		element.update();
-		updating = deadline > performance.now();
-	}
-	for (const child of element.children)
-		draw(child);
 }
