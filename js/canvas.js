@@ -133,9 +133,11 @@ window.updateSizes = function() {
 	gl.canvas.width  = innerWidth  * devicePixelRatio;
 	gl.canvas.height = innerHeight * devicePixelRatio;
 	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-	getSizes(document.getElementById('sceneGraph'));
+	getSizes(document.body);
 
 	function getSizes(element) {
+		if(element.nodeName === 'canvas')
+			return
 		if (element.hasOwnProperty('update')) {
 			const rect = element.getBoundingClientRect();
 			const w_center = rect.width  / 2;
@@ -149,7 +151,7 @@ window.updateSizes = function() {
 			element.rect[1] = element.rect[5] = rect.top2  / innerHeight *  2 - 1;
 			if (element.hasOwnProperty('mask')) {
 				element.mask.setAttribute('x', rect.left);
-				element.mask.setAttribute('y', rect.top - 32);
+				element.mask.setAttribute('y', rect.top);
 				element.mask.setAttribute('height', rect.height);
 				element.mask.setAttribute('width' , rect.width );
 			}

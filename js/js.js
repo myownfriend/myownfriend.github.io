@@ -1,17 +1,17 @@
 "use strict";
 import './canvas.js';
 
-const scene_graph = document.body.appendChild(Object.assign(document.createElement('section'), {
-	id : "sceneGraph",
+document.body.depth = 1.0;
+const scene_graph = document.body.appendChild(Object.assign(document.createElement('main'), {
+	id : "scene",
 	className : 'overview',
-	depth : 1.0,
+	depth : 1.1,
 	update : redraw,
 }));
 
 scene_graph.appendChild((() => {
 	const obj   = Object.assign(document.createElement('ul'), {
 		id :'panel',
-		depth : 1.1,
 	});
 	const left  = obj.appendChild(document.createElement('li'));
 	const cent  = obj.appendChild(document.createElement('li'));
@@ -67,12 +67,7 @@ scene_graph.appendChild((() => {
 	return obj;
 })());
 
-const workarea = scene_graph.appendChild(Object.assign(document.createElement('main'), {
-	id : 'workarea',
-	depth : 1.1,
-}));
-
-workarea.appendChild((() => {
+scene_graph.appendChild((() => {
 	const obj = Object.assign(document.createElement('label'), {
 		id : 'search',
 		update : redraw,
@@ -85,8 +80,8 @@ workarea.appendChild((() => {
 	return obj;
 })());
 
-workarea.appendChild((()=> {
-	const obj =  workarea.appendChild(Object.assign(document.createElement('div'), { id:'app-grid'} ));
+scene_graph.appendChild((()=> {
+	const obj =  scene_graph.appendChild(Object.assign(document.createElement('div'), { id:'app-grid'} ));
 	obj.appendChild(addAppList([
 		['Weather','Weather', false],
 		['Maps', 'Maps', false],
@@ -102,7 +97,7 @@ workarea.appendChild((()=> {
 	return obj;
 })());
 
-workarea.appendChild((() => {
+scene_graph.appendChild((() => {
 	const obj = Object.assign(document.createElement('div'), {
 		id: 'dash',
 		className: 'hidden',
@@ -121,7 +116,7 @@ workarea.appendChild((() => {
 	return obj;
 })());
 
-workarea.appendChild((() => {
+scene_graph.appendChild((() => {
 	const obj = Object.assign(document.createElement('div'), { id: 'workspaces'});
 	for (let i = 0; i < 2; i++)
 		obj.innerHTML += '<svg><use href="#background"/></svg>';
@@ -135,7 +130,7 @@ workarea.appendChild((() => {
 	return obj;
 })());
 
-scene_graph.appendChild((()=> {
+document.body.appendChild((()=> {
 	function addToggle(name, type="checkbox") {
 		const label  = toggles.appendChild(document.createElement('label'));
 		label.update = redraw;
@@ -177,10 +172,8 @@ scene_graph.appendChild((()=> {
 	window.blue   = addToggle('Bluetooth');
 	window.power  = addToggle('Power Saver',);
 	window.theme  = addToggle('Dark Style').firstChild;
-
 	theme.set = setTheme;
 	theme.onchange = theme.set;
-
 	background.upload = addToggle('Upload Image', 'file');
 	background.upload.firstChild.setAttribute('accept', 'image/jpeg, image/jpg, image/png, image/webp, image/gif, image/svg+xml');
 	background.upload.onchange = (e) => {
