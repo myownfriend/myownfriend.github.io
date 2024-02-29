@@ -18,7 +18,7 @@ for (const s of [{type:gl.VERTEX_SHADER,
 	precision mediump float;
 	in   vec4 vPosition;
 	out  vec2 lxy;
-	out  vec2 q; //
+	out  vec2 q;
 	void main() {
 		lxy         = vPosition.xy;
 		gl_Position = vec4(vPosition.xy, 1.0, 1.0);
@@ -86,6 +86,7 @@ const radius = gl.getUniformLocation(program, "radius");
 const bright = gl.getUniformLocation(program, "brightness");
 const depth  = gl.getUniformLocation(program, "depth");
 
+window.mode = ['light','dark'];
 window.background = gl.canvas.appendChild(Object.assign(document.createElementNS(namespace, 'symbol'), {
 	id    : 'background',
 	old   : null,
@@ -111,13 +112,13 @@ window.background = gl.canvas.appendChild(Object.assign(document.createElementNS
 		}, { once: true };
 	},
 	update  : function() {
-		if (this.old != null) {
-			const time_remaining = this.deadline - performance.now();
-			const inc = Math.min(1, 10 / time_remaining);
+		const time_remaining = this.deadline - performance.now();
+		const inc = Math.min(1, 10 / time_remaining);
+ 		if (this.old != null) {
 			for (let i = 0; i < this.old.lighting.length; i++) {
 				this.now.lighting[i] += (this.old.lighting[i] - this.now.lighting[i]) * inc;
 			}
-			if (time_remaining <= 0 && this.children.length > 1) {
+			if (time_remaining <= 0) {
 				URL.revokeObjectURL(this.old.image.src);
 				this.old.remove();
 				this.old = null;
@@ -127,15 +128,15 @@ window.background = gl.canvas.appendChild(Object.assign(document.createElementNS
 	},
 }));
 
-analyst.onmessage = (e) => {
-	const timespan = 300;
-	background.deadline = performance.now() + timespan;
+analyst.onmessage = function(e) {
+	let timespan = 0;
+ 	background.now.lighting = e.data.lights;
 	if (background.old != null) {
+		timespan = 300;
 		background.now.lighting = background.old.lighting;
 		background.old.lighting = e.data.lights;
-	} else {
-		background.now.lighting = e.data.lights;
 	}
+	background.deadline = performance.now() + timespan;
 	background.appendChild(background.now);
 	update(timespan);
 }
@@ -185,10 +186,9 @@ onresize = () => {
 };
 
 window.setTheme = function() {
-	const new_mode = (this.checked ? 'dark' : 'light');
-	document.body.setAttribute('theme', new_mode );
+	const new_mode = window.mode[this.checked | 0];
+	document.body.setAttribute('theme', new_mode);
 	localStorage.setItem('theme', new_mode);
-	update(300);
 }
 
 window.createMask = (element) => {
@@ -209,6 +209,7 @@ window.redraw = function() {
 
 var deadline = 0;
 var updating = false;
+
 window.update = (length = 0) => {
 	deadline = performance.now() + length;
 	if (updating)
@@ -233,6 +234,3 @@ window.update = (length = 0) => {
 	}
 }
 
-function updateLights() {
-	gl.bufferData(gl.UNIFORM_BUFFER, background.now.lighting, gl.STATIC_READ);
-}

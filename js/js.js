@@ -175,7 +175,10 @@ dropdowns.appendChild((()=> {
 	window.power  = addToggle('Power Saver',);
 	window.theme  = addToggle('Dark Style').firstChild;
 	theme.set = setTheme;
-	theme.onchange = theme.set;
+	theme.onchange = ()=> {
+		theme.set();
+		update(300);
+	};
 	background.upload = addToggle('Upload Image', 'file');
 	background.upload.firstChild.setAttribute('accept', 'image/jpeg, image/jpg, image/png, image/webp, image/gif, image/svg+xml');
 	background.upload.onchange = (e) => {
@@ -186,19 +189,19 @@ dropdowns.appendChild((()=> {
 
 (async () => {
 	const scheme = matchMedia('(prefers-color-scheme: dark)');
+	scheme.onchange = function() {
+		theme.checked = this.matches;
+		theme.set();
+		update();
+	};
+	theme.checked = localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : scheme.matches;
+	theme.set();
+	updateSizes();
 	const image = await fetch('data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQvOY1r/+BiOh/AAA=')
 	.then(res  => res.blob())
 	.then(blob => blob);
-
-	updateSizes();
-	background.set(image);
-	scheme.onchange = (e)=> {
-		theme.checked = e.target.matches;
-		theme.set();
-	};
-	theme.checked = localStorage.getItem('theme') ? localStorage.getItem('theme') == 'dark' : scheme.matches;
-	theme.set();
-})();
+	background.set(image)
+})()
 
 function addAppList(apps, hidden = false) {
 	const obj = Object.assign(document.createElement('ul'), {className: 'app-list'});

@@ -42,6 +42,7 @@ html {
 
 	body {
 		overflow: hidden;
+		--accent-color : #3584e4;
 
 		& use {
 			fill: var(--symbol-color);
@@ -398,7 +399,6 @@ html {
 	background-color: var(--stage-color);
 	transition-property: background-color;
 	transition-duration: var(--theme-transition);
-	--accent-color : #3584e4;
 
 	& > * {
 		position: fixed;
@@ -500,11 +500,12 @@ html {
 					transform: translate(-6px, 3px);
 				}
 			}
-			& :checked + h3{
-				background-color: var(--accent-color)
-			}
 			input {
 				display: none;
+
+				&:checked + h3{
+					background-color: var(--accent-color)
+				}
 			}
 		}
 	}
@@ -534,7 +535,7 @@ html {
 				transition: background-color var(--theme-transition);
 			}
 			&::-moz-range-progress {
-				background: #1c6cd0;
+				background: var(--accent-color);
 				height: 4px;
 				border-radius: 4px;
 			}
