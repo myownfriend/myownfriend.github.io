@@ -1,21 +1,20 @@
 "use strict";
 import './canvas.js';
 
-document.body.depth = 1.0;
-const scene_graph = document.body.appendChild(Object.assign(document.createElement('main'), {
+const scene = document.body.appendChild(Object.assign(document.createElement('main'), {
 	id : "scene",
 	className : 'overview',
-	depth : 1.1,
+	z : 1.1,
 	update : redraw,
 }));
 
-scene_graph.appendChild((() => {
-	const obj   = Object.assign(document.createElement('ul'), {
+scene.appendChild((() => {
+	const obj = Object.assign(document.createElement('div'), {
 		id :'panel',
 	});
-	const left  = obj.appendChild(document.createElement('li'));
-	const cent  = obj.appendChild(document.createElement('li'));
-	const right = obj.appendChild(document.createElement('li'));
+	const left  = obj.appendChild(document.createElement('section'));
+	const cent  = obj.appendChild(document.createElement('section'));
+	const right = obj.appendChild(document.createElement('section'));
 	left.appendChild((() => {
 			const obj = Object.assign(document.createElement('button'), {
 				id: 'overview-toggle',
@@ -24,11 +23,11 @@ scene_graph.appendChild((() => {
 			obj.appendChild(document.createElement('div'));
 			obj.appendChild(document.createElement('div'));
 			obj.onclick = () => {
-				if (scene_graph.classList.contains('app-grid'))
-					scene_graph.classList.remove('overview', 'app-grid');
+				if (scene.classList.contains('app-grid'))
+					scene.classList.remove('overview', 'app-grid');
 				else {
-					scene_graph.classList.toggle('overview');
-					scene_graph.classList.remove('app-grid');
+					scene.classList.toggle('overview');
+					scene.classList.remove('app-grid');
 				}
 			};
 			return obj;
@@ -67,21 +66,21 @@ scene_graph.appendChild((() => {
 	return obj;
 })());
 
-scene_graph.appendChild((() => {
-	const obj = Object.assign(document.createElement('label'), {
+scene.appendChild((() => {
+	const obj = Object.assign(document.createElement('div'), {
 		id : 'search',
 		update : redraw,
 	});
 	const bar = obj.appendChild(document.createElement('input'));
-	const p   = obj.appendChild(document.createElement('p'));
+	const p   = obj.appendChild(document.createElement('label'));
 	bar.setAttribute('type', 'text');
 	bar.setAttribute('placeholder', 'Type to search');
 	p.innerHTML += '<svg><use href="img/icons.svg#search"/></svg>';
 	return obj;
 })());
 
-scene_graph.appendChild((()=> {
-	const obj =  scene_graph.appendChild(Object.assign(document.createElement('div'), { id:'app-grid'} ));
+scene.appendChild((()=> {
+	const obj =  Object.assign(document.createElement('div'), { id:'app-grid'} );
 	obj.appendChild(addAppList([
 		['Weather','Weather', false],
 		['Maps', 'Maps', false],
@@ -97,7 +96,7 @@ scene_graph.appendChild((()=> {
 	return obj;
 })());
 
-scene_graph.appendChild((() => {
+scene.appendChild((() => {
 	const obj = Object.assign(document.createElement('div'), {
 		id: 'dash',
 		className: 'hidden',
@@ -111,12 +110,12 @@ scene_graph.appendChild((() => {
 	], true));
 	obj.innerHTML += `<div id="show-apps-toggle" class="app"><svg viewbox="0 0 16 16"><use href="img/icons.svg#show-apps"/></svg><p class="name">Show Apps</p></div>`;
 	obj.lastChild.onclick = () => {
-		scene_graph.classList.toggle('app-grid');
+		scene.classList.toggle('app-grid');
 	};
 	return obj;
 })());
 
-scene_graph.appendChild((() => {
+scene.appendChild((() => {
 	const obj = Object.assign(document.createElement('div'), { id: 'workspaces'});
 	for (let i = 0; i < 2; i++)
 		obj.innerHTML += '<svg><use href="#background"/></svg>';
@@ -130,7 +129,11 @@ scene_graph.appendChild((() => {
 	return obj;
 })());
 
-document.body.appendChild((()=> {
+const dropdowns = document.body.appendChild(Object.assign(document.createElement('div'), {
+	id: 'dropdowns',
+}));
+
+dropdowns.appendChild((()=> {
 	function addToggle(name, type="checkbox") {
 		const label  = toggles.appendChild(document.createElement('label'));
 		label.update = redraw;
@@ -142,8 +145,7 @@ document.body.appendChild((()=> {
 	}
 	const obj = Object.assign(document.createElement('form'), {
 		id :'quick-settings',
-		className: 'dropdown',
-		depth: 1.2,
+		z: 1.2,
 		update : redraw,
 	});
 	obj.mask = createMask(obj);

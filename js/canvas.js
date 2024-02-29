@@ -41,7 +41,7 @@ for (const s of [{type:gl.VERTEX_SHADER,
 	uniform float depth;
 	out vec4 color;
 	void main() {
-		vec2 q = abs(gl_FragCoord.xy - size.xy) - size.zw + radius;
+		vec2 q = abs(gl_FragCoord.xy - size.xy) - size.zw;
 		float alpha = 1.0 - (min(max(q.x, q.y), 0.0) + distance(max(q, vec2(0.0)), vec2(0.0)) - radius);
 		if (alpha <= 0.0) {
 			return;
@@ -94,7 +94,6 @@ window.background = gl.canvas.appendChild(Object.assign(document.createElementNS
 		const bg = document.createElementNS(namespace, 'image');
 		bg.image = new Image();
 		bg.image.src = URL.createObjectURL(file);
-
 		bg.image.onload = () => {
 			this.old = background.now;
 			this.now = bg;
@@ -155,11 +154,12 @@ window.updateSizes = function() {
 				element.mask.setAttribute('height', rect.height);
 				element.mask.setAttribute('width' , rect.width );
 			}
+			element.radius = Number(getComputedStyle(element).getPropertyValue('border-radius').split('px')[0] * devicePixelRatio);
 			element.size = [
 				(rect.left + w_center) * devicePixelRatio,
 				(rect.bot  + h_center) * devicePixelRatio,
-				w_center * devicePixelRatio,
-				h_center * devicePixelRatio,
+				(w_center * devicePixelRatio) - element.radius,
+				(h_center * devicePixelRatio) - element.radius,
 			];
 		}
 		for (const child of element.children)
@@ -190,8 +190,8 @@ window.redraw = function() {
 	const abs = Math.abs(val);
 	gl.uniform1f(bright, Math.cbrt((abs >= 0.04045) ? ((val >= 0) - (val < 0)) * Math.pow((abs + 0.055) / 1.055, 2.2) : val / 12.92));
 	gl.bufferData(gl.ARRAY_BUFFER, this.rect, gl.STATIC_DRAW);
+	gl.uniform1f(radius, this.radius);
 	gl.uniform4fv(size, this.size);
-	gl.uniform1f(radius, Number(getComputedStyle(this).getPropertyValue('border-radius').split('px')[0] * devicePixelRatio));
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
@@ -210,8 +210,8 @@ window.update = (length = 0) => {
 		}
 		requestAnimationFrame(animate);
 		function draw(element) {
-			if (element.hasOwnProperty('depth'))
-				gl.uniform1f(depth , element.depth);
+			if (element.hasOwnProperty('z'))
+				gl.uniform1f(depth , element.z);
 			if (element.hasOwnProperty('update')) {
 				element.update();
 				updating = deadline > performance.now();

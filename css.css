@@ -23,7 +23,7 @@
 	}
 }
 * {
-	font-family:Canterall, sans-serif;
+	font-family: Canterall, sans-serif;
 	color: var(--text-color);
 	box-sizing: border-box;
 	list-style: none;
@@ -39,8 +39,6 @@ html {
 	--nav-transition: 300ms;
 	--theme-transition:  300ms;
 	background-color: #000;
-	min-width:1366px;
-	min-height:768px;
 
 	body {
 		overflow: hidden;
@@ -88,7 +86,7 @@ html {
 			--symbol-color: rgb(4 4 4);
 		}
 	}
-	& canvas {
+	canvas {
 		width:  100vw;
 		height: 100vh;
 		position: fixed;
@@ -188,16 +186,14 @@ html {
 	}
 }
 #panel {
-	position: fixed;
 	height: 2.2em;
-	display: flex;
-	justify-content: space-between;
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
 	contain: strict;
 	width: 100vw;
 	padding: 3px;
 
-	& > * {
-		width:33vw;
+	section {
 		display:flex;
 		justify-content: center;
 		font-size: 1.03em;
@@ -207,12 +203,12 @@ html {
 			margin-left:16px;
 			font-size: inherit;
 		}
-	}
-	> :first-child {
-		justify-content: flex-start;
-	}
-	> :last-child {
-		justify-content: flex-end;
+		&:first-child {
+			justify-content: flex-start;
+		}
+		&:last-child {
+			justify-content: flex-end;
+		}
 	}
 	& button {
 		all:unset;
@@ -258,7 +254,6 @@ html {
 #search {
 	top: calc(12px + 2.2em);
 	width:350px;
-	position: fixed;
 	border-radius: 20px;
 	background-color: var(--search-color);
 	transition-property: background-color;
@@ -267,7 +262,7 @@ html {
 	height:40px;
 	box-sizing: border-box;
 
-	& p {
+	& label {
 		border-radius: inherit;
 		display: flex;
 		transition-property: background-color;
@@ -306,10 +301,10 @@ html {
 			color:var(--search-place);
 		}
 	}
-	&:hover p {
+	&:hover label {
 		background: var(--search-hover);
 	}
-	input:focus + p {
+	input:focus + label {
 		box-shadow: inset 0 0 0 2px var(--accent-color);
 		background-color: var(--search-focus);
 
@@ -324,7 +319,6 @@ html {
 	display: flex;
 	transition-property: translate, gap;
 	transition-duration: var(--nav-transition);
-	position: fixed;
 	bottom: 0;
 
 	& svg {
@@ -338,7 +332,6 @@ html {
 	}
 }
 #app-grid {
-	position: fixed;
 	top:calc(35% + 18px);
 	left:0;
 	width:100vw;
@@ -370,7 +363,6 @@ html {
 #dash {
 	gap:4px;
 	display:flex;
-	position: fixed;
 	bottom:12px;
 	padding: 12px;
 	height: 106px;
@@ -408,6 +400,9 @@ html {
 	transition-duration: var(--theme-transition);
 	--accent-color : #3584e4;
 
+	& > * {
+		position: fixed;
+	}
 	#workspaces {
 		gap: 2.8svw;
 	}
@@ -448,7 +443,7 @@ html {
 		}
 	}
 }
-.dropdown {
+#dropdowns > *{
 	position: fixed;
 	border-radius: calc(16px * 2.25);
 	box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5), inset  0 0 1px var(--toggle-color);
