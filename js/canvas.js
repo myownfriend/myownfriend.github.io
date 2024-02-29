@@ -95,7 +95,7 @@ window.background = gl.canvas.appendChild(Object.assign(document.createElementNS
 		bg.image = new Image();
 		bg.image.src = URL.createObjectURL(file);
 		bg.image.onload = () => {
-			this.old = background.now;
+			this.old = this.now;
 			this.now = bg;
 			bg.aw = Math.max(1.0, bg.image.width  / bg.image.height);
 			bg.ah = Math.max(1.0, bg.image.height / bg.image.width );
@@ -111,21 +111,33 @@ window.background = gl.canvas.appendChild(Object.assign(document.createElementNS
 		}, { once: true };
 	},
 	update  : function() {
-		gl.bufferData(gl.UNIFORM_BUFFER, this.now.lighting, gl.STATIC_READ);
-	},
-	cleanup : function() {
-		if (this.children.length > 1) {
-			URL.revokeObjectURL(this.old.image.src);
-			this.old.remove();
-			this.old = null;
+		if (this.old != null) {
+			const time_remaining = this.deadline - performance.now();
+			const inc = Math.min(1, 10 / time_remaining);
+			for (let i = 0; i < this.old.lighting.length; i++) {
+				this.now.lighting[i] += (this.old.lighting[i] - this.now.lighting[i]) * inc;
+			}
+			if (time_remaining <= 0 && this.children.length > 1) {
+				URL.revokeObjectURL(this.old.image.src);
+				this.old.remove();
+				this.old = null;
+			}
 		}
+		gl.bufferData(gl.UNIFORM_BUFFER, this.now.lighting, gl.STATIC_READ);
 	},
 }));
 
 analyst.onmessage = (e) => {
-	background.now.lighting = e.data.lights;
+	const timespan = 300;
+	background.deadline = performance.now() + timespan;
+	if (background.old != null) {
+		background.now.lighting = background.old.lighting;
+		background.old.lighting = e.data.lights;
+	} else {
+		background.now.lighting = e.data.lights;
+	}
 	background.appendChild(background.now);
-	update(300);
+	update(timespan);
 }
 
 window.updateSizes = function() {
@@ -205,7 +217,6 @@ window.update = (length = 0) => {
 	function animate() {
 		draw(document.body);
 		if (!updating) {
-			background.cleanup();
 			return;
 		}
 		requestAnimationFrame(animate);
@@ -219,7 +230,6 @@ window.update = (length = 0) => {
 			for (const child of element.children)
 				draw(child);
 		}
-
 	}
 }
 
