@@ -86,6 +86,40 @@ const radius = gl.getUniformLocation(program, "radius");
 const bright = gl.getUniformLocation(program, "brightness");
 const depth  = gl.getUniformLocation(program, "depth");
 
+var deadline  = 0;
+var updating  = false;
+var frametime = 0;
+
+window.update = (length = 0) => {
+	const current = performance.now();
+	deadline = current + length;
+	if (updating)
+		return;
+	let lastFrame = current;
+	requestAnimationFrame(animate);
+
+	function animate(timestamp) {
+		frametime = timestamp - lastFrame;
+		draw(document.body);
+		lastFrame = timestamp;
+		if (!updating)
+			return;
+		requestAnimationFrame(animate);
+
+		function draw(element) {
+			if (element.hasOwnProperty('z')) {
+				gl.uniform1f(depth , element.z);
+			}
+			if (element.hasOwnProperty('update')) {
+				element.update();
+				updating = deadline > performance.now();
+			}
+			for (const child of element.children)
+				draw(child);
+		}
+	}
+}
+
 window.mode = ['light','dark'];
 window.background = gl.canvas.appendChild(Object.assign(document.createElementNS(namespace, 'symbol'), {
 	id    : 'background',
@@ -112,8 +146,9 @@ window.background = gl.canvas.appendChild(Object.assign(document.createElementNS
 		}, { once: true };
 	},
 	update  : function() {
-		const time_remaining = this.deadline - performance.now();
-		const inc = Math.min(1, 10 / time_remaining);
+		const current = performance.now();
+		const time_remaining = this.deadline - current;
+		const inc = Math.min(1, frametime / (time_remaining + frametime));
  		if (this.old != null) {
 			for (let i = 0; i < this.old.lighting.length; i++) {
 				this.now.lighting[i] += (this.old.lighting[i] - this.now.lighting[i]) * inc;
@@ -207,30 +242,5 @@ window.redraw = function() {
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
-var deadline = 0;
-var updating = false;
 
-window.update = (length = 0) => {
-	deadline = performance.now() + length;
-	if (updating)
-		return;
-	animate();
-	function animate() {
-		draw(document.body);
-		if (!updating) {
-			return;
-		}
-		requestAnimationFrame(animate);
-		function draw(element) {
-			if (element.hasOwnProperty('z'))
-				gl.uniform1f(depth , element.z);
-			if (element.hasOwnProperty('update')) {
-				element.update();
-				updating = deadline > performance.now();
-			}
-			for (const child of element.children)
-				draw(child);
-		}
-	}
-}
 
