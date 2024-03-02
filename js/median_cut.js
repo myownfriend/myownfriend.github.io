@@ -1,5 +1,4 @@
-"use strict";
-onmessage = (e) => {
+onmessage = function(e) {
 	const bitmap = new OffscreenCanvas(96, 64).getContext('2d');
 	bitmap.drawImage(e.data, 0, 0, bitmap.canvas.width, bitmap.canvas.height);
 	const pixels = bitmap.getImageData(0, 0, bitmap.canvas.width, bitmap.canvas.height).data;
@@ -28,19 +27,9 @@ onmessage = (e) => {
                 for(let x = 0; x < line; x += 4) {
 					const xo = yo + x;
 
-					const sR = pixels[xo]     / 255;
-					const sG = pixels[xo + 1] / 255;
-					const sB = pixels[xo + 2] / 255;
-
-					const rsign = sR < 0 ? -1 : 1;
-					const rabs = Math.abs(sR);
-					const red   = (rabs < 0.04045) ? sR / 12.92 : rsign * (Math.pow((rabs + 0.055) / 1.055, 2.4));
-					const gsign = sG < 0 ? -1 : 1;
-					const gabs = Math.abs(sG);
-					const green = (gabs < 0.04045) ? sG / 12.92 : gsign * (Math.pow((gabs + 0.055) / 1.055, 2.4));
-					const bsign = sB < 0 ? -1 : 1;
-					const babs = Math.abs(sB);
-					const blue  = (babs < 0.04045) ? sB / 12.92 : bsign * (Math.pow((babs + 0.055) / 1.055, 2.4));
+					const red   = deGamma(pixels[xo    ]);
+					const green = deGamma(pixels[xo + 1]);
+					const blue  = deGamma(pixels[xo + 2]);
 
 					const l = Math.cbrt(0.4122214708 * red + 0.5363325363 * green + 0.0514459929 * blue);
 					const m = Math.cbrt(0.2119034982 * red + 0.6806995451 * green + 0.1073969566 * blue);
@@ -154,6 +143,13 @@ onmessage = (e) => {
 	average.b /= area;
 
 	postMessage({
-		lights : buffer,
+		lights : float32,
 	});
+}
+
+function deGamma(c) {
+	c /= 255;
+	const sign = c < 0 ? -1 : 1;
+	const abs = Math.abs(c);
+	return (abs < 0.04045) ? c / 12.92 : sign * (Math.pow((abs + 0.055) / 1.055, 2.4));
 }
