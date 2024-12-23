@@ -139,11 +139,11 @@ window.background = gl.canvas.appendChild(Object.assign(document.createElementNS
 			bg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
 			bg.setAttribute('href' , bg.image.src);
 			bg.setAttribute('width', '100%');
+			time = performance.now();
 			createImageBitmap(bg.image, {
 				resizeWidth : bg.aw * 64,
 				resizeHeight: bg.ah * 64,
 			}).then((image) => {
-				time = performance.now();
 				analyst.postMessage(image, [image]);
 			});
 		}, { once: true };
