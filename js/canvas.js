@@ -120,6 +120,8 @@ window.update = (length = 0) => {
 	}
 }
 
+var time = 0;
+
 window.mode = ['light','dark'];
 window.background = gl.canvas.appendChild(Object.assign(document.createElementNS(namespace, 'symbol'), {
 	id    : 'background',
@@ -141,6 +143,7 @@ window.background = gl.canvas.appendChild(Object.assign(document.createElementNS
 				resizeWidth : bg.aw * 64,
 				resizeHeight: bg.ah * 64,
 			}).then((image) => {
+				time = performance.now();
 				analyst.postMessage(image, [image]);
 			});
 		}, { once: true };
@@ -164,6 +167,7 @@ window.background = gl.canvas.appendChild(Object.assign(document.createElementNS
 }));
 
 analyst.onmessage = function(e) {
+	console.log(performance.now() - time);
 	let timespan = 0;
  	background.now.lighting = e.data.lights;
 	if (background.old != null) {
